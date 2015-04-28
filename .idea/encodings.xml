@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false">
+    <file url="file://G:/MyTask/RfTransceiver/src/com/RfTransceiver/MainActivity.java" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/com/audio/Speex.java" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/com/rftransceiver/AudioData.java" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/com/rftransceiver/AudioSender.java" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/com/rftransceiver/Audio_Decoder.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/com/rftransceiver/Audio_Encoder.java" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/com/rftransceiver/Audio_Player.java" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/com/rftransceiver/Audio_Reciver.java" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/com/rftransceiver/Audio_Recorder.java" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/com/rftransceiver/Usb_Device.java" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/com/rftransceiver/Usb_Thread.java" charset="GBK" />
+  </component>
+</project>
+
