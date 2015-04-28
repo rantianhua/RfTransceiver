@@ -11,7 +11,7 @@ import java.util.List;
 public class Audio_Encoder implements Runnable
 {
 	   private static Audio_Encoder encoder;  //编码器实例
-	    private boolean isEncoding = false; 	  
+	    private volatile  boolean isEncoding = false;
 	   
 	    private List<AudioData> dataList = null;// 存放数据
 	   private Speex coder;
@@ -102,7 +102,6 @@ public class Audio_Encoder implements Runnable
 	                if (encodeSize > 0) 
 	                {  
 	                    sender.addData(encodedData, encodeSize);  
-	                    //encodedData = new byte[encodedData.length];
 	                }
 	            }  
 	        }  

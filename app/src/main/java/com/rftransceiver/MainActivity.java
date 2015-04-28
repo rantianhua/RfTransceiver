@@ -2,7 +2,10 @@ package com.rftransceiver;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -110,7 +113,7 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
             }
             bluetoothFactory = new BluetoothFactory(bluetoothHandler);
         }
-        bluetoothFactory.start();
+        //bluetoothFactory.start();
         //接收器实例
         reciver = new Audio_Reciver();
         //开启解码
@@ -201,6 +204,41 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
         return false;
     }
 
+    private final BroadcastReceiver bluetoothSate = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getAction().equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
+                int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,-1);
+                switch (state) {
+                    case BluetoothAdapter.STATE_ON:
+                        if(bluetoothFactory.getState() == BluetoothFactory.STATE_NONE) {
+                            bluetoothFactory.start();
+                        }
+                        break;
+                    case BluetoothAdapter.STATE_OFF:
+                        showToast("蓝牙已关闭");
+                        bluetoothFactory.stop();
+                        break;
+                }
+            }
+        }
+    };
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        //register a broadcast to listen the state of bluetooth
+        IntentFilter intentFilter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+        this.registerReceiver(bluetoothSate,intentFilter);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        //unregister the broadcast
+        this.unregisterReceiver(bluetoothSate);
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -259,7 +297,6 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
         ButterKnife.inject(this);
         btnSend.setOnClickListener(this);
         btnPlaySounds.setOnClickListener(this);
-        btnRecordSounds.setOnClickListener(this);
         btnClearCounts.setOnClickListener(this);
 
         //为发送实体帮
@@ -267,16 +304,23 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
         btnRecordSounds.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                if (MotionEvent.ACTION_DOWN == event.getAction()) {
-                    sendMode = SendMode.SOUND;
-                    stopReceiver();
-                    startRecord();
-                    return true;
-                }
-                if (MotionEvent.ACTION_UP == event.getAction()) {
-                    stopRecord();
-                    startReceive();
-                    return true;
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        sendMode = SendMode.SOUND;
+                        try {
+                            Thread.sleep(1000);
+                        }catch ( Exception e) {
+                            e.printStackTrace();
+                        }
+                        showToast("开始录音");
+                        stopReceiver();
+                        startRecord();
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        stopRecord();
+                        startReceive();
+                        return true;
                 }
                 return false;
             }
@@ -310,17 +354,12 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
             case R.id.btn_clear_counts:
                 //清空计数器
                 sumRec = 0;
+                sumSend = 0;
                 tvSendCounts.setText(getString(R.string.send_counts,0));
                 tvReceiveCounts.setText(getString(R.string.receive_counts, sumRec));
                 break;
             case R.id.btn_play_sounds:
                 //播放语音
-                break;
-            case R.id.btn_record_sound:
-                sendMode = SendMode.SOUND;
-//                stopReceiver();
-//                startRecord();
-                //录音
                 break;
             default:
                 break;
@@ -349,28 +388,22 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
             }
             sendToDst(buff);
         } else {
-            if(!noty) {
-                //发送语音，先通知对方
-                byte[] note = new byte[66];
-                note[0] = (byte) 0x01;
-                note[65] = (byte) 0x04;
-                for (int i = 1; i < 65; i++) {
-                    note[i] = (byte) 0x02;
-                }
-                sendToDst(note);
-                noty = true;
-            }
-            byte[] sounds =new byte[66];
-            sounds[0] = (byte) 0x01;
-            sounds[65] = (byte) 0x04;
+//            if(!noty) {
+//                //发送语音，先通知对方
+//                byte[] note = new byte[66];
+//                note[0] = (byte) 0x01;
+//                note[65] = (byte) 0x04;
+//                for (int i = 1; i < 65; i++) {
+//                    note[i] = (byte) 0x02;
+//                }
+//                sendToDst(note);
+//                noty = true;
+//            }
             byte[] data = (byte[]) content;
-            System.arraycopy(data,0,sounds,1,size);
-            if(size < 64) {
-                sounds[65] = (byte)0x07;    //表示结束包
-                sounds[64] = (byte) size;   //原数据段的最后一位表示实际数据的长度
-                noty = false;
+            if(size < 65) {
+                int hhh = 0;
             }
-            sendToDst(sounds);
+            sendToDst(data);
             data = null;
         }
     }
@@ -417,7 +450,6 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
         if(recorder == null) {
             recorder=new Audio_Recorder();
         }
-        AudioSender.end = false;
         recorder.startRecording();//启动录制
     }
 

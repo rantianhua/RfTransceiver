@@ -3,7 +3,6 @@ package com.rftransceiver;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
-import android.util.Log;
 
 //录制PCM数据类
 //需要加入权限 <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -12,7 +11,7 @@ import android.util.Log;
 public class Audio_Recorder  implements Runnable
 {
 
-    private boolean isRecording = false;   //录音标志
+    private volatile boolean isRecording = false;   //录音标志
     private AudioRecord audioRecord;    
     
     //录制参数选项
@@ -56,8 +55,7 @@ public class Audio_Recorder  implements Runnable
     
     public void run() 
     {
-        Log.e("Recoder", "open record");
-        // 录制前，先启动编码器
+        //start the encoder
         Audio_Encoder encoder = Audio_Encoder.getInstance();
         encoder.startEncoding();     
         try 
@@ -77,7 +75,7 @@ public class Audio_Recorder  implements Runnable
             bufferRead = audioRecord.read(samples, 0, bufferSize);  
             if (bufferRead > 0) 
             {  
-                // 将数据添加给编码器
+                // add the data to the encoder
                 encoder.addData(samples, bufferRead);
             }
             try

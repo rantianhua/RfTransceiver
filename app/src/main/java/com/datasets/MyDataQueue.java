@@ -8,7 +8,7 @@ import java.util.Queue;
  */
 public class MyDataQueue {
 
-    private static MyDataQueue dataQueue1 = null,dataQueue2 = null,dataQueue3;
+    private static MyDataQueue dataQueue1 = null,dataQueue2 = null;
 
     private volatile Queue<Object> queue = null;
 
@@ -22,12 +22,6 @@ public class MyDataQueue {
          * 标志语音解码
          */
         Sound_Decoder,
-
-        /**
-         * 标志接收文本
-         */
-        Text_receiver,
-
     }
 
     private MyDataQueue(){
@@ -47,11 +41,6 @@ public class MyDataQueue {
                     dataQueue2 = new MyDataQueue();
                 }
                 return dataQueue2;
-            case Text_receiver:
-                if(dataQueue3 == null) {
-                    dataQueue3 = new MyDataQueue();
-                }
-                return dataQueue3;
         }
         return null;
     }
@@ -62,19 +51,17 @@ public class MyDataQueue {
                 if(dataQueue1 != null) {
                     dataQueue1 =null;
                 }
+                break;
             case Sound_Decoder:
                 if(dataQueue2 != null) {
                     dataQueue2 = null;
                 }
-            case Text_receiver:
-                if(dataQueue3 != null) {
-                    dataQueue3 = null;
-                }
+                break;
         }
     }
 
-    public synchronized boolean  add(Object o) {
-        return queue.offer(o);
+    public synchronized void add(Object o) {
+        queue.offer(o);
     }
 
     public synchronized Object get() {
@@ -84,4 +71,5 @@ public class MyDataQueue {
     public synchronized int getSize() {
         return queue.size();
     }
+
 }

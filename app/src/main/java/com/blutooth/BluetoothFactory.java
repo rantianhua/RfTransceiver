@@ -364,11 +364,7 @@ public class BluetoothFactory {
             byte[] temp= new byte[64];  //每接收64个进行处理
             int indexTemp = 0;  //计数器
             byte[] tempSounds = new byte[10];   //语音缓存，10字节为一单位，方便直接解码
-//            byte[] tempText = new byte[63];   //文本缓存，63字节为一单位
             int indexSounds = 0;    //语音信息计数器
-//            int indexText = 0;    //文本信息计数器
-//            int indexFlag = 1;  //读取内容标志位计数器
-//            int indexEnd = 1;   //内容结束标志计数器
             int mode  = -1; //mode 表示此次接收的数据类型，0表示语音，1表示文本，-1是初始值
             int counts = -1;    //表示64字节整包的数量
             int bytes;
@@ -376,16 +372,16 @@ public class BluetoothFactory {
                 // 保持对InputStream的监听，直到有异常抛出
                 try {
                     bytes = mmInStream.read(buffer);
-                    for(int i = 0;i < bytes;i++) {
+                    for (int i = 0; i < bytes; i++) {
                         temp[indexTemp++] = buffer[i];
-                        if(indexTemp == 64) {
+                        if (indexTemp == 64) {
                             //已读满64位
                             if (mode == -1) {
                                 //先确认数据类型
                                 for (byte b : temp) {
                                     if (b == (byte) 0x03) {
                                         mode = 0;  //语音
-                                        Log.e("start receive","sounds");
+                                        Log.e("start receive", "sounds");
                                     } else {
                                         mode = 1;   //文本
                                     }
@@ -400,25 +396,25 @@ public class BluetoothFactory {
                                     if (counts == 0) {
                                         //表示这个是结束包，先进行判断
                                         boolean end = false;
-                                        for(byte b : temp) {
-                                            if(b == (byte) 0x0f) {
+                                        for (byte b : temp) {
+                                            if (b == (byte) 0x0f) {
                                                 end = true;
-                                            }else {
+                                            } else {
                                                 end = false;
                                                 break;
                                             }
-                                            if(end) {
+                                            if (end) {
                                                 //复位
                                                 counts = -1;
                                                 mode = -1;
                                                 //回传
-                                                Log.e("reveive complete","now can feedback ");
+                                                Log.e("reveive complete", "now can feedback ");
                                                 //通知UI接收完成
                                                 mHandler.obtainMessage(Constants.MESSAGE_READ,
                                                         tempSounds.length, 2, null).sendToTarget();
                                             }
                                         }
-                                    }else {
+                                    } else {
                                         //接收到数据段
                                         if (mode == 0) {
                                             //语音数据
@@ -458,9 +454,19 @@ public class BluetoothFactory {
             }
         }
 
+        int count = 0;
+        StringBuilder sb = new StringBuilder();
         public void write(byte[] sendBuff) {
             try {
                 mmOutStream.write(sendBuff);
+                for(byte b : sendBuff) {
+                    sb.append(String.format("%#x ",b));
+                }
+                Log.e("write ",++count + "个包: " + sb.toString());
+                if(sendBuff[65] == (byte) 0x07) {
+                    count = 0;
+                }
+                sb.delete(0,sb.length());
                 mHandler.obtainMessage(Constants.MESSAGE_WRITE, sendBuff.length, -1,sendBuff)
                         .sendToTarget();
             } catch (IOException e) {
