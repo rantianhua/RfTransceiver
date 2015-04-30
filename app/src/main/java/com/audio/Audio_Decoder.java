@@ -1,9 +1,9 @@
-package com.rftransceiver;
+package com.audio;
 
 import android.util.Log;
 
-import com.audio.Speex;
-import com.datasets.MyDataQueue;
+import com.rftransceiver.datasets.MyDataQueue;
+import com.rftransceiver.datasets.AudioData;
 
 
 public class Audio_Decoder implements Runnable

@@ -1,6 +1,6 @@
-package com.datasets;
+package com.rftransceiver.datasets;
 
-import com.adapter.ListConversationAdapter;
+import com.rftransceiver.adapter.ListConversationAdapter;
 
 /**
  * Created by Rth on 2015/4/27.

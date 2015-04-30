@@ -1,4 +1,4 @@
-package com.rftransceiver;
+package com.rftransceiver.activity;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -23,11 +23,16 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.adapter.ListConversationAdapter;
-import com.blutooth.BluetoothFactory;
-import com.datasets.ConversationData;
-import com.fragments.BluetoothConnectFragment;
-import com.util.Constants;
+import com.rftransceiver.adapter.ListConversationAdapter;
+import com.rftransceiver.R;
+import com.audio.AudioSender;
+import com.audio.Audio_Reciver;
+import com.audio.Audio_Recorder;
+import com.brige.blutooth.BluetoothFactory;
+import com.rftransceiver.datasets.ConversationData;
+import com.rftransceiver.fragments.BluetoothConnectFragment;
+import com.brige.usb.Usb_Device;
+import com.rftransceiver.util.Constants;
 
 import java.util.TimerTask;
 
@@ -117,7 +122,7 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
         //接收器实例
         reciver = new Audio_Reciver();
         //开启解码
-        reciver.startReceiver();
+        //reciver.startReceiver();
     }
 
     private void initBluetoothHandler() {
@@ -128,17 +133,17 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
                 switch (msg.what) {
                     case Constants.MSG_WHAT_STATE:
                         switch (msg.arg1) {
-                            case BluetoothFactory.STATE_CONNECTED:
-                                setTitle("已连接设备");
+                            case 0:
+                                setTitle("无连接");
                                 break;
-                            case BluetoothFactory.STATE_CONNECTING:
-                                setTitle("正在连接...");
-                                break;
-                            case BluetoothFactory.STATE_LISTENING:
+                            case 1:
                                 setTitle("正在监听...");
                                 break;
-                            case BluetoothFactory.STATE_NONE:
-                                setTitle("无连接");
+                            case 2:
+                                setTitle("正在连接...");
+                                break;
+                            case 3:
+                                setTitle("已连接设备");
                                 break;
                         }
                         break;
@@ -211,7 +216,7 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
                 int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,-1);
                 switch (state) {
                     case BluetoothAdapter.STATE_ON:
-                        if(bluetoothFactory.getState() == BluetoothFactory.STATE_NONE) {
+                        if(bluetoothFactory.getState().ordinal() == 0) {
                             bluetoothFactory.start();
                         }
                         break;
@@ -360,6 +365,7 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
                 break;
             case R.id.btn_play_sounds:
                 //播放语音
+                reciver.startReceiver();
                 break;
             default:
                 break;
@@ -388,21 +394,8 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
             }
             sendToDst(buff);
         } else {
-//            if(!noty) {
-//                //发送语音，先通知对方
-//                byte[] note = new byte[66];
-//                note[0] = (byte) 0x01;
-//                note[65] = (byte) 0x04;
-//                for (int i = 1; i < 65; i++) {
-//                    note[i] = (byte) 0x02;
-//                }
-//                sendToDst(note);
-//                noty = true;
-//            }
+            //send sounds
             byte[] data = (byte[]) content;
-            if(size < 65) {
-                int hhh = 0;
-            }
             sendToDst(data);
             data = null;
         }
@@ -457,7 +450,6 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
     private void stopRecord() {
         if(recorder !=null && recorder.isRecording())
         {
-            AudioSender.end = true;
             recorder.stopRecording();
         }
     }

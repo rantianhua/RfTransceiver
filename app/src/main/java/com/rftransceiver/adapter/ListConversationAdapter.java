@@ -1,4 +1,4 @@
-package com.adapter;
+package com.rftransceiver.adapter;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -7,7 +7,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
-import com.datasets.ConversationData;
+import com.rftransceiver.datasets.ConversationData;
 import com.rftransceiver.R;
 
 import java.util.ArrayList;

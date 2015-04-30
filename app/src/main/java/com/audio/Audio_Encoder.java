@@ -1,19 +1,18 @@
-package com.rftransceiver;
+package com.audio;
 
-import com.audio.Speex;
+import com.rftransceiver.datasets.AudioData;
 
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-//PCM数据编码类
-//一般无需修改本类
+//PCM Encoder
 public class Audio_Encoder implements Runnable
 {
-	   private static Audio_Encoder encoder;  //编码器实例
+	   private static Audio_Encoder encoder;  //the instance os Encoder
 	    private volatile  boolean isEncoding = false;
 	   
-	    private List<AudioData> dataList = null;// 存放数据
+	    private List<AudioData> dataList = null;// cache data that will be encode
 	   private Speex coder;
 	    public static Audio_Encoder getInstance() 
 	    {  
@@ -24,13 +23,12 @@ public class Audio_Encoder implements Runnable
 	        return encoder;  
 	    }  
 	  
-	    private Audio_Encoder() //构造函数
+	    private Audio_Encoder()
 	    {  
-	    	//多线程中同步数据
-	        dataList = Collections.synchronizedList(new LinkedList<AudioData>());  
+	        dataList = Collections.synchronizedList(new LinkedList<AudioData>());
 	    }  
 	  
-	    public void addData(short[] data, int size) //添加数据
+	    public void addData(short[] data, int size)
 	    {
 	        AudioData rawData = new AudioData();
 	        rawData.setSize(size);  
@@ -40,7 +38,6 @@ public class Audio_Encoder implements Runnable
 	        dataList.add(rawData);  
 	    }  
 	  
-	    // 开始编码  
 	    public void startEncoding()
 	    {  
 	        if (isEncoding)
@@ -50,8 +47,7 @@ public class Audio_Encoder implements Runnable
 	        new Thread(this).start();  
 	    }  
 	  
-	    // 结束  
-	    public void stopEncoding() 
+	    public void stopEncoding()
 	    {  
 	        this.isEncoding = false;  
 	    }  
@@ -65,7 +61,7 @@ public class Audio_Encoder implements Runnable
 	        int encodeSize = 0;  
 	        byte[] encodedData;
 	  
-	        // 初始化编码器  
+	        // init coder
 	        try 
 	        {
 	        	coder=new Speex();
@@ -81,7 +77,7 @@ public class Audio_Encoder implements Runnable
 	        isEncoding = true;  
 	        while (isEncoding)
 	        {  
-	        	//暂无数据处理
+	        	//no data to handle
 	            if (dataList.size() == 0)
 	            {  
 	                try 
@@ -95,7 +91,7 @@ public class Audio_Encoder implements Runnable
 	            }  
 	            if (isEncoding)
 	            {
-	                AudioData rawData = dataList.remove(0);  //取出待编码数据
+	                AudioData rawData = dataList.remove(0);  //get the data to encode
 	                encodedData = new byte[rawData.getSize()];  
 	                encodeSize=coder.encode(rawData.getRealData(),0,encodedData, rawData.getSize());
 	                 
@@ -105,7 +101,6 @@ public class Audio_Encoder implements Runnable
 	                }
 	            }  
 	        }  
-	      //停止发送
-	        sender.stopSending();  
+	        sender.stopSending();
 	    }  
 }

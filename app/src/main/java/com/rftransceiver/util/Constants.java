@@ -1,4 +1,4 @@
-package com.util;
+package com.rftransceiver.util;
 
 /**
  * Created by Rth on 2015/4/26.

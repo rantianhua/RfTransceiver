@@ -1,4 +1,4 @@
-package com.rftransceiver;
+package com.audio;
 
 import android.media.AudioFormat;
 import android.media.AudioRecord;

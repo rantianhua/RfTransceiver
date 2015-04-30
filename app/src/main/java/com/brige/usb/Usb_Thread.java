@@ -1,9 +1,11 @@
-package com.rftransceiver;
+package com.brige.usb;
 
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbEndpoint;
 import android.os.Handler;
 import android.os.Message;
+
+import com.rftransceiver.datasets.DataPack;
 
 //usb消息线程后台类
 public class Usb_Thread extends Thread

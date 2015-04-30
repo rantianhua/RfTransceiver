@@ -1,19 +1,24 @@
-package com.rftransceiver;
+package com.audio;
 
 
-import com.datasets.MyDataQueue;
+import com.rftransceiver.datasets.MyDataQueue;
+import com.rftransceiver.datasets.AudioData;
 
 public class Audio_Reciver implements Runnable
 {
     private boolean isReceiving = false;
     private MyDataQueue dataQueue = null;
 
+    public Audio_Reciver() {
+        /**
+         * 初始化缓冲区
+         */
+        dataQueue = MyDataQueue.getInstance(MyDataQueue.DataType.Sound_Receiver);
+    }
+
+
 	 public void startReceiver()
 	 {
-         /**
-          * 初始化缓冲区
-          */
-         dataQueue = MyDataQueue.getInstance(MyDataQueue.DataType.Sound_Receiver);
          new Thread(this).start();
 	 }
 

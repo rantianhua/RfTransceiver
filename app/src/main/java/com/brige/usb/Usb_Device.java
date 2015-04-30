@@ -1,4 +1,4 @@
-package com.rftransceiver;
+package com.brige.usb;
 
 import android.app.Activity;
 import android.app.PendingIntent;
@@ -14,8 +14,6 @@ import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbManager;
 import android.os.Handler;
 
-import com.rftransceiver.Usb_Thread;
-
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -28,12 +26,12 @@ public class Usb_Device //usb设备类
 	UsbEndpoint ep_out,ep_in;				 //输入、输出 端点 对象
     Usb_Thread usb_thread;             //usb后台消息线程
 	Handler usb_handle;                 //usb消息handler
-	boolean usb_state;                  //usb的连接状态
-	boolean usb_permisson;              //设置权限
+	public boolean usb_state;                  //usb的连接状态
+	public boolean usb_permisson;              //设置权限
 	 
 	
 	
-   void  Usb_GetPermisson(Activity activity)  //获取usb权限
+   public void  Usb_GetPermisson(Activity activity)  //获取usb权限
 	{
 	    //注册广播
 		final PendingIntent mPermissionIntent = PendingIntent.getBroadcast(activity, 0, new Intent(ACTION_USB_PERMISSION), 0);
@@ -72,7 +70,7 @@ public class Usb_Device //usb设备类
 		
 	}
 	
-	boolean Usb_Connect( )// 进行USB连接 
+	public boolean Usb_Connect( )// 进行USB连接
 	{
 			
 					
@@ -114,7 +112,7 @@ public class Usb_Device //usb设备类
 		return false;	
 	}
 	
-	boolean Usb_Transfer(byte buffer[],int length) //传输数据 使用时放在后台线程
+	public boolean Usb_Transfer(byte buffer[],int length) //传输数据 使用时放在后台线程
 	{
 		 
 		int cnt=connection.bulkTransfer(ep_out, buffer, length, 5000); //输出端点 缓冲区 缓冲长度 时间

@@ -1,4 +1,4 @@
-package com.fragments;
+package com.rftransceiver.fragments;
 
 import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;

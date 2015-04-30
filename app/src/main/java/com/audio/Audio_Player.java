@@ -1,8 +1,10 @@
-package com.rftransceiver;
+package com.audio;
 
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
+
+import com.rftransceiver.datasets.AudioData;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -18,7 +20,7 @@ public class Audio_Player implements Runnable
 		private static Audio_Player player;  
 		private AudioTrack audioTrack;  
 	  
-		private List<AudioData> dataList = null;  
+		private List<AudioData> dataList = null;
 		private AudioData playData;  
 		private boolean isPlaying = false;  
 		
