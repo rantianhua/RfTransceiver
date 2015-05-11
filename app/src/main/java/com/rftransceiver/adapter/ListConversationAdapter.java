@@ -52,7 +52,6 @@ public class ListConversationAdapter extends BaseAdapter {
         if(convertView == null) {
             hodler = new ViewHodler();
             if(data.getConversationType() == ConversationType.Me) {
-                //我发送的消息
                 convertView = inflater.inflate(R.layout.list_conversation_left,null);
                 hodler.tvContent = (TextView) convertView.findViewById(R.id.tv_list_left);
             }else {
@@ -65,6 +64,11 @@ public class ListConversationAdapter extends BaseAdapter {
         }
         hodler.tvContent.setText(data.getContent());
         return convertView;
+    }
+
+    public void clear() {
+        listData.clear();
+        notifyDataSetChanged();
     }
 
     class ViewHodler {
@@ -81,4 +85,12 @@ public class ListConversationAdapter extends BaseAdapter {
         Other
     }
 
+    @Override
+    public int getItemViewType(int position) {
+        if (listData.get(position).getConversationType() == ConversationType.Me) {
+            return 0;
+        }else {
+            return 1;
+        }
+    }
 }

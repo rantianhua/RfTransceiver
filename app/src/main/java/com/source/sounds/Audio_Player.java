@@ -1,4 +1,4 @@
-package com.audio;
+package com.source.sounds;
 
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -13,8 +13,8 @@ import java.util.List;
 
 
 
-//²¥·Å½âÂëºóµÄPCMÊý¾ÝÀà
-//Ò»°ãÎÞÐèÐÞ¸Ä±¾Àà
+//ï¿½ï¿½ï¿½Å½ï¿½ï¿½ï¿½ï¿½ï¿½PCMï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Þ¸Ä±ï¿½ï¿½ï¿½
 public class Audio_Player implements Runnable
 {
 		private static Audio_Player player;  
@@ -24,7 +24,7 @@ public class Audio_Player implements Runnable
 		private AudioData playData;  
 		private boolean isPlaying = false;  
 		
-		////½âÂëÅäÖÃ
+		////ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	    private static final int sampleRate = 8000; 	    
 	   
 		private static final int channelConfig = AudioFormat.CHANNEL_CONFIGURATION_MONO;  
@@ -32,13 +32,13 @@ public class Audio_Player implements Runnable
 	  
 		private Audio_Player() 
 		{
-            //Í¬²½¶àÏß³ÌÊý¾Ý
+            //Í¬ï¿½ï¿½ï¿½ï¿½ï¿½ß³ï¿½ï¿½ï¿½ï¿½ï¿½
 	        dataList = Collections.synchronizedList(new LinkedList<AudioData>());  
 	    }
 
 
 
-    //»ñÈ¡²¥·ÅÀàµÄÊµÀý¶ÔÏó
+    //ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Êµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		public static Audio_Player getInstance()
 	    {  
 		        if (player == null) 
@@ -48,7 +48,7 @@ public class Audio_Player implements Runnable
 		        return player;  
 	    }
 
-    // ½ÓÊÕ½âÂëºóµÄPCMÊý¾Ý
+    // ï¿½ï¿½ï¿½Õ½ï¿½ï¿½ï¿½ï¿½ï¿½PCMï¿½ï¿½ï¿½ï¿½
 		public void addData(short[] decodedData2, int size) 
 		{  
 	        AudioData decodedData = new AudioData();  
@@ -60,7 +60,7 @@ public class Audio_Player implements Runnable
 	        dataList.add(decodedData);  
 	    }
 
-    //Æô¶¯²¥·ÅÆ÷
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		private boolean initAudioTrack() 
 		{  
 	        int bufferSize = AudioTrack.getMinBufferSize(sampleRate,  
@@ -79,9 +79,9 @@ public class Audio_Player implements Runnable
 				// TODO: handle exception
 			}
 
-            // ÉèÖÃ²¥·ÅÒôÁ¿
+            // ï¿½ï¿½ï¿½Ã²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	        audioTrack.setStereoVolume(1.0f, 1.0f);
-            //Æô¶¯²¥·Å
+            //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	        audioTrack.play();  
 	        return true;  
 	    }  
@@ -89,7 +89,7 @@ public class Audio_Player implements Runnable
 		
 		private void playFromList()
 		{
-            //È¡³ö½âÂëµÄÊý¾Ý½øÐÐ²¥·Å
+            //È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý½ï¿½ï¿½Ð²ï¿½ï¿½ï¿½
 	        while (dataList.size() > 0 && isPlaying)
 	        {  
 	            playData = dataList.remove(0);  
@@ -97,7 +97,7 @@ public class Audio_Player implements Runnable
 	        }  
 	    }
 
-    //Æô¶¯²¥·Å
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		public void startPlaying() 
 		{  
 	        if (isPlaying) 
@@ -110,14 +110,14 @@ public class Audio_Player implements Runnable
 
 
 
-    //Í£Ö¹²¥·Å
+    //Í£Ö¹ï¿½ï¿½ï¿½ï¿½
 		public void stopPlaying() 
         {  
             this.isPlaying = false;  
         }
 
 
-    //Ïß³ÌÆô¶¯Ö´ÐÐ
+    //ï¿½ß³ï¿½ï¿½ï¿½ï¿½ï¿½Ö´ï¿½ï¿½
 		public void run() 
 		{
 			this.isPlaying = true;  
@@ -145,7 +145,7 @@ public class Audio_Player implements Runnable
 	        }  
 	        if (this.audioTrack != null)
 	        {
-                //Í£Ö¹²¥·Å
+                //Í£Ö¹ï¿½ï¿½ï¿½ï¿½
 	            if (this.audioTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) 
 	            {  
 	                this.audioTrack.stop();  

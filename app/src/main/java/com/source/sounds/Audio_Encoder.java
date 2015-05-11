@@ -1,5 +1,6 @@
-package com.audio;
+package com.source.sounds;
 
+import com.audio.Speex;
 import com.rftransceiver.datasets.AudioData;
 
 import java.util.Collections;
@@ -13,13 +14,15 @@ public class Audio_Encoder implements Runnable
 	    private volatile  boolean isEncoding = false;
 	   
 	    private List<AudioData> dataList = null;// cache data that will be encode
-	   private Speex coder;
+	    private Speex coder;
+        private SoundsEntity sender;
+
 	    public static Audio_Encoder getInstance() 
 	    {  
 	        if (encoder == null)
 	        {  
-	            encoder = new Audio_Encoder();  
-	        }  
+	            encoder = new Audio_Encoder();
+	        }
 	        return encoder;  
 	    }  
 	  
@@ -35,7 +38,8 @@ public class Audio_Encoder implements Runnable
 	        short[] tempData = new short[size];  
 	        System.arraycopy(data, 0, tempData, 0, size);  
 	        rawData.setRealData(tempData);  
-	        dataList.add(rawData);  
+	        dataList.add(rawData);
+            data = null;
 	    }  
 	  
 	    public void startEncoding()
@@ -54,11 +58,11 @@ public class Audio_Encoder implements Runnable
 	  
 	    public void run() 
 	    {  
-	        // œ»∆Ù∂Ø∑¢ÀÕ∂À  
-	        AudioSender sender = new AudioSender();
-	        sender.startSending();  
-	  
-	        int encodeSize = 0;  
+	        //start sender
+            sender.stopSending();
+	        sender.startSending();
+
+	        int encodeSize = 0;
 	        byte[] encodedData;
 	  
 	        // init coder
@@ -102,5 +106,10 @@ public class Audio_Encoder implements Runnable
 	            }  
 	        }  
 	        sender.stopSending();
-	    }  
+	    }
+
+    public void setSoundsEntity(SoundsEntity soundsEntity) {
+        this.sender =  null;
+        this.sender = soundsEntity;
+    }
 }

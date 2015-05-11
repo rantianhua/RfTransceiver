@@ -1,64 +1,62 @@
-package com.audio;
+package com.source.sounds;
 
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 
-//Â¼ÖÆPCMÊý¾ÝÀà
-//ÐèÒª¼ÓÈëÈ¨ÏÞ <uses-permission android:name="android.permission.RECORD_AUDIO" />
-//Ö÷ÒªÐÞ¸ÄAudio_SenderÀàµÄ·¢ËÍÊý¾Ý²Ù×÷
-//Ò»°ãÎÞÐèÐÞ¸Ä±¾Àà
+//Â¼ï¿½ï¿½PCMï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½È¨ï¿½ï¿½ <uses-permission android:name="android.permission.RECORD_AUDIO" />
+//ï¿½ï¿½Òªï¿½Þ¸ï¿½Audio_Senderï¿½ï¿½Ä·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý²ï¿½ï¿½ï¿½
+//Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Þ¸Ä±ï¿½ï¿½ï¿½
 public class Audio_Recorder  implements Runnable
 {
 
-    private volatile boolean isRecording = false;   //Â¼Òô±êÖ¾
+    private volatile boolean isRecording = false;   //Â¼ï¿½ï¿½ï¿½ï¿½Ö¾
     private AudioRecord audioRecord;    
     
-    //Â¼ÖÆ²ÎÊýÑ¡Ïî
+    //Â¼ï¿½Æ²ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½
     private static final int audioSource = MediaRecorder.AudioSource.MIC;  
-    private static final int sampleRate = 8000;   //È¡ÑùÂÊ8000hz
-    private static final int channelConfig = AudioFormat.CHANNEL_IN_MONO;  //µ¥ÉùµÀ 
+    private static final int sampleRate = 8000;   //È¡ï¿½ï¿½ï¿½ï¿½8000hz
+    private static final int channelConfig = AudioFormat.CHANNEL_IN_MONO;  //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 
     private static final int audioFormat = AudioFormat.ENCODING_PCM_16BIT;    //16Î»
     private static final int BUFFER_FRAME_SIZE =160;  
     private int audioBufSize = 0;  
     
-    private short[] samples;// »º³åÇø  
-    private int bufferRead = 0;// ´ÓrecorderÖÐ¶ÁÈ¡µÄsamplesµÄ´óÐ¡  
+    private short[] samples;// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½  
+    private int bufferRead = 0;// ï¿½ï¿½recorderï¿½Ð¶ï¿½È¡ï¿½ï¿½samplesï¿½Ä´ï¿½Ð¡  
   
-    private int bufferSize = 0;// samplesµÄ´óÐ¡  
+    private int bufferSize = 0;// samplesï¿½Ä´ï¿½Ð¡  
     
+    private Audio_Encoder encoder = Audio_Encoder.getInstance();
+
+    public Audio_Recorder() {
+    }
     
-    
-  
     public void startRecording()
     {  
         bufferSize = BUFFER_FRAME_SIZE;  
-       //»ñÈ¡×îÐ¡»º³åÇø
-        audioBufSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig,  
+        audioBufSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig,
                 audioFormat);  
         if (audioBufSize == AudioRecord.ERROR_BAD_VALUE) 
         {  
             //do something
             return;  
         }  
-        //³õÊ¼»¯²ÉÑù»º³åÇø
-        samples = new short[audioBufSize];  
-        // ³õÊ¼»¯recorder  
+        samples = new short[audioBufSize];
         if (null == audioRecord)
         {  
             audioRecord = new AudioRecord(audioSource, sampleRate,  
                     channelConfig, audioFormat, audioBufSize);  
-        }  
-        //Æô¶¯Ïß³ÌÖÐµÄrun·½·¨
-        new Thread(this).start();  
+        }
+        //start to record data
+        new Thread(this).start();
     }  
     
     public void run() 
     {
         //start the encoder
-        Audio_Encoder encoder = Audio_Encoder.getInstance();
-        encoder.startEncoding();     
-        try 
+        encoder.startEncoding();
+        try
         {
         	  audioRecord.startRecording();  
 		}
@@ -68,13 +66,12 @@ public class Audio_Recorder  implements Runnable
         	return;
 		}
       
-  
-        this.isRecording = true;  
+        this.isRecording = true;
         while (isRecording) 
         {  
             bufferRead = audioRecord.read(samples, 0, bufferSize);  
             if (bufferRead > 0) 
-            {  
+            {
                 // add the data to the encoder
                 encoder.addData(samples, bufferRead);
             }
@@ -93,11 +90,10 @@ public class Audio_Recorder  implements Runnable
     public void stopRecording() 
     {  
         this.isRecording = false;  
-    }  
-  
-    public boolean isRecording()
-    {  
-        return isRecording;  
-    }  
-    
+    }
+
+    public void setSoundsEntity(SoundsEntity soundsEntity) {
+        encoder.setSoundsEntity(soundsEntity);
+    }
+
 }

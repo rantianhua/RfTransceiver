@@ -1,4 +1,4 @@
-package com.audio;
+package com.source.sounds;
 
 
 import com.rftransceiver.datasets.MyDataQueue;
@@ -19,7 +19,9 @@ public class Audio_Reciver implements Runnable
 
 	 public void startReceiver()
 	 {
-         new Thread(this).start();
+         if(!isReceiving) {
+             new Thread(this).start();
+         }
 	 }
 
     @Override
@@ -55,4 +57,8 @@ public class Audio_Reciver implements Runnable
         receviceData.setencodeData(data);
         dataQueue.add(receviceData);
      }
+
+    public void clear() {
+        dataQueue.clear();
+    }
 }

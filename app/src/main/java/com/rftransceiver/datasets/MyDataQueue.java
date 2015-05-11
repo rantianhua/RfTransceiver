@@ -8,20 +8,31 @@ import java.util.Queue;
  */
 public class MyDataQueue {
 
-    private static MyDataQueue dataQueue1 = null,dataQueue2 = null;
+    private static MyDataQueue dataQueue1,dataQueue2,dataQueue3,dataQueue4;
 
     private volatile Queue<Object> queue = null;
 
+
     public enum DataType{
         /**
-         * 标志接收语音信息
+         * the cache to save data received
          */
         Sound_Receiver,
 
         /**
-         * 标志语音解码
+         * the cache to save data to be decoded
          */
         Sound_Decoder,
+
+        /**
+         * the cache to save text data will be send
+         */
+        Text_Send,
+
+        /**
+         * the cache to save sounds data will be send
+         */
+        Sounds_Send,
     }
 
     private MyDataQueue(){
@@ -41,6 +52,16 @@ public class MyDataQueue {
                     dataQueue2 = new MyDataQueue();
                 }
                 return dataQueue2;
+            case Text_Send:
+                if(dataQueue3 == null) {
+                    dataQueue3 = new MyDataQueue();
+                }
+                return dataQueue3;
+            case Sounds_Send:
+                if(dataQueue4 == null) {
+                    dataQueue4 = new MyDataQueue();
+                }
+                return dataQueue4;
         }
         return null;
     }
@@ -57,6 +78,16 @@ public class MyDataQueue {
                     dataQueue2 = null;
                 }
                 break;
+            case Text_Send:
+                if(dataQueue3!= null) {
+                    dataQueue3 = null;
+                }
+                break;
+            case Sounds_Send:
+                if(dataQueue4 != null) {
+                    dataQueue4 =null;
+                }
+                break;
         }
     }
 
@@ -70,6 +101,10 @@ public class MyDataQueue {
 
     public synchronized int getSize() {
         return queue.size();
+    }
+
+    public synchronized void clear() {
+        queue.clear();
     }
 
 }

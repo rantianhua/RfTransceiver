@@ -11,10 +11,18 @@
     <string name="open_bluetooth">开启蓝牙</string>
     <string name="look_devices">连接设备</string>
     <string name="record_sound">开始录音</string>
-    <string name="recording_sound">录音中&#8230;</string>
+    <string name="recording_sound">录音中&#8230;,点击停止</string>
+    <string name="receiving_sounds">正在接收&#8230;</string>
     <string name="play_sounds">播放录音</string>
+    <string name="stop_sounds">停止播放</string>
+    <string name="sounds_im">实时聊天中&#8230;点击停止</string>
     <string name="send">发送</string>
-    <string name="clear_counts">清空</string>
+    <string name="clear">清空</string>
+    <string name="reset_scm">单片机复位</string>
     <string name="receive_counts">已接收 %d 字节</string>
     <string name="send_counts">已发送 %d 字节</string>
+    <string name="channel_1">频道1</string>
+    <string name="channel_2">频道2</string>
+    <string name="channel_3">频道3</string>
+    <string name="channel_4">频道4</string>
 </resources>

@@ -1,58 +1,103 @@
 package com.source.text;
 
+import com.my_interface.SendMessageListener;
+import com.rftransceiver.datasets.MyDataQueue;
+import com.source.DataPacketOptions;
+
 /**
  * Created by Rth on 2015/4/29.
  * this class handle the text content
  * if user input a content ,this class need to unpack the content
  * a packets (66bytes per packet)
  */
-public class TextEntity {
-
-    private boolean haveNote = false;
-
+public class TextEntity implements Runnable{
 
     /**
-     * note that will send text message
+     * the options to decide the packet
      */
-    private byte[] note = new byte[66];
+    private DataPacketOptions options;
+
+    /**
+     * @param sendListener callback in MainActivity
+     */
+    private SendMessageListener sendListener = null;
 
     /**
      *
-     * @param sendListener callback in MainActivity
+     *the cache to save packet
      */
-    private SendTextListener sendListener = null;
+    private MyDataQueue dataQueue = MyDataQueue.getInstance(MyDataQueue.DataType.Text_Send);
 
-    public TextEntity(SendTextListener sendListener) {
-        this.sendListener = sendListener;
-        for(int i = 0;i < 66; i++) {
-            note[i] = (byte) 0x02;
-        }
+    /**
+     *
+     * the counter to count the number of temp,64 bytes per packet
+     */
+    private int index = 0;
+
+    /**
+     * a cache to save text data
+     */
+    private byte[] temp;
+
+    public TextEntity() {
+
     }
 
     public void unpacking(String content) {
-        byte[] temp = new byte[66];
-        temp[0] = (byte) 0x01;
-        temp[1] = (byte) 0x02;
-        temp[65] = (byte) 0x04;
-        int index = 2;  //counter
+        initTemp();
         byte[] text = content.getBytes();
-        if(text.length <= 63) {
-            for(int i = 0; i < text.length;i ++) {
-                temp[index++] = text[i];
+        int len = text.length;
+        for(int i = 0; i < len;i++) {
+            temp[index++] = text[i];
+            if(index == options.getLength()-1) {
+                index = options.getOffset();
+                //cache full
+                dataQueue.add(temp);
+                initTemp();
             }
-            temp[1] = (byte) text.length;
-            send(temp,66);
+        }
+        if(index > options.getOffset()) {
+            //the last packet that length less than 64
+            temp[options.getRealLenIndex()] = (byte) (index-options.getOffset());
+            index = options.getOffset();
+            dataQueue.add(temp);
+        }
+        //start to send data
+        new Thread(this).start();
+    }
+
+    private void initTemp(){
+        temp = null;
+        temp = new byte[options.getLength()];
+        temp[0] = options.getHead();
+        temp[options.getLength()-1] = options.getTail();
+        temp[options.getTypeFlagIndex()] = options.getTypeFlag();
+        temp[options.getRealLenIndex()] = options.getRealLen();
+    }
+
+    @Override
+    public void run() {
+        while (dataQueue.getSize() > 0) {
+            boolean end = dataQueue.getSize() == 1;
+            sendListener.sendText((byte[])dataQueue.get(),end);
+            try {
+                Thread.sleep(350);
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    private void send(byte[] data,int size) {
-
+    public void setSendListener(SendMessageListener sendListener) {
+        this.sendListener = null;
+        this.sendListener = sendListener;
     }
 
-    /**
-     * the interface to callback in MainActivity to send message
-     */
-    public interface SendTextListener{
-        void sendText(byte[] temp,int length);
+    public void setOptions(DataPacketOptions options) {
+        this.options = null;
+        this.options = options;
+        if(options != null) {
+            index = options.getOffset();
+        }
     }
 }

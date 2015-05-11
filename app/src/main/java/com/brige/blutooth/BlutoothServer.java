@@ -19,7 +19,7 @@ public class BlutoothServer extends Thread {
     private final BluetoothAdapter mAdapter;
     private final String TAG = getClass().getSimpleName();
 
-    private boolean isListening = false;
+    private volatile boolean isListening = false;
     private BluetoothServerConnectListener listener;
 
     public BlutoothServer(Handler han,String name,UUID uuid,BluetoothServerConnectListener listener) {
@@ -42,10 +42,10 @@ public class BlutoothServer extends Thread {
         isListening = true;
         while (isListening) {
             try {
+                if(mmServerSocket == null) break;
                 socket = mmServerSocket.accept();
             } catch (IOException e) {
                 Log.e(TAG,  "accept() failed", e);
-                listener.serverConnectFailed();
                 break;
             }
             isListening = false;
@@ -64,9 +64,10 @@ public class BlutoothServer extends Thread {
     }
 
     public void cancel() {
-        Log.e(TAG, "cancel " + this);
         try {
-            mmServerSocket.close();
+            if(mmServerSocket != null) {
+                mmServerSocket.close();
+            }
             isListening = false;
         } catch (IOException e) {
             Log.e(TAG, "close() of server failed", e);

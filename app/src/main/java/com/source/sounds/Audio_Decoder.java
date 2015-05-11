@@ -1,17 +1,17 @@
-package com.audio;
+package com.source.sounds;
 
 import android.util.Log;
 
-import com.rftransceiver.datasets.MyDataQueue;
+import com.audio.Speex;
 import com.rftransceiver.datasets.AudioData;
+import com.rftransceiver.datasets.MyDataQueue;
 
 
 public class Audio_Decoder implements Runnable
 {
 	private static Audio_Decoder decoder;   //解码器单一实例
 	private MyDataQueue dataList = null;
-
-    private static final int MAX_BUFFER_SIZE = 2048;  
+    private static final int MAX_BUFFER_SIZE = 2048;
     private Speex coder=new Speex();
     private short[] decodedData = new short[1024];
     public boolean isDecoding=false;
@@ -33,7 +33,6 @@ public class Audio_Decoder implements Runnable
         this.isDecoding = true;
         coder.init();
         int decodeSize = 0;
-
         while (isDecoding) {
 
             AudioData encodeData  = (AudioData)dataList.get();
@@ -43,7 +42,8 @@ public class Audio_Decoder implements Runnable
             }else{
                 decodedData = new short[MAX_BUFFER_SIZE];
                 //  解码数据的大小
-                decodeSize=coder.decode(encodeData.getencodeData(), decodedData, encodeData.getSize());
+                byte[] raw = encodeData.getencodeData();
+                decodeSize=coder.decode(raw, decodedData, encodeData.getSize());
                 if (decodeSize > 0)
                 {
                     player.addData(decodedData, decodeSize);
@@ -52,7 +52,6 @@ public class Audio_Decoder implements Runnable
             }
         }
         player.stopPlaying();
-        MyDataQueue.recycle(MyDataQueue.DataType.Sound_Decoder);
 	}
     
 	 public void addData(AudioData data)

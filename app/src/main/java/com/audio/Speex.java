@@ -2,12 +2,12 @@
 package com.audio;
 
 //==========================================
-//1¡¢±àÂëÀàÐèÒªÔÚlibs\armeabi\libspeex.so Ö§³Ö
-//2¡¢±àÂëÀà²Ù×÷Ë³Ðò 
-//´´½¨¶ÔÏó              Speex coder=new Speex();  ³õÊ¼»¯±àÂëÆ÷    coder.init();
-//±àÂë                        coder.encode(rawdata,0,encodeddata,160);
-//½âÂë                        coder.decode(encodeddata,0,rawdata,encodeddata.getsize());
-//¹Ø±Õ½âÂëÆ÷         coder.close();
+//1ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½libs\armeabi\libspeex.so Ö§ï¿½ï¿½
+//2ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë³ï¿½ï¿½ 
+//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½              Speex coder=new Speex();  ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½    coder.init();
+//ï¿½ï¿½ï¿½ï¿½                        coder.encode(rawdata,0,encodeddata,160);
+//ï¿½ï¿½ï¿½ï¿½                        coder.decode(encodeddata,0,rawdata,encodeddata.getsize());
+//ï¿½Ø±Õ½ï¿½ï¿½ï¿½ï¿½ï¿½         coder.close();
 //=============================================
 public class Speex  
 {
@@ -19,8 +19,8 @@ public class Speex
 	 * 6 : 11kpbs (artifacts usually only noticeable with headphones)
 	 * 8 : 15kbps (artifacts not usually noticeable)
 	 */
-	//´Ë´¦µ÷½ÚÓïÒô±àÂëÖÊÁ¿
-	private static final int DEFAULT_COMPRESSION = 1;
+	//ï¿½Ë´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	private static final int DEFAULT_COMPRESSION = 2;
 	
 
 	public Speex() 
@@ -28,18 +28,18 @@ public class Speex
 		
 	}
 
-	//±àÂëÆ÷³õÊ¼»¯
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½
 	public void init() 
 	{
 		load();	
-		open(DEFAULT_COMPRESSION);	//¶ÁÈ¡±àÂëÖÊÁ¿ÉèÖÃ	
+		open(DEFAULT_COMPRESSION);	//ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½	
 	}
 	
 	private void load()
 	{
 		try 
 		{
-		    System.loadLibrary("speex");//¶ÁÈ¡so¿â
+		    System.loadLibrary("speex");//ï¿½ï¿½È¡soï¿½ï¿½
 		} 
 		catch (Throwable e) 
 		{
@@ -50,15 +50,15 @@ public class Speex
 
 	public native int open(int compression);
 	
-	//»ñÈ¡ÐèÒªµÄÖ¡³¤
+	//ï¿½ï¿½È¡ï¿½ï¿½Òªï¿½ï¿½Ö¡ï¿½ï¿½
 	public native int getFrameSize();
-	//´«Èë±àÂëºóµÄByteÊý×é½øÐÐ½âÂë£¬sizeÎªByteÊý×éµÄ³¤¶È linÎªÊä³öµÄshortÊý×é 
-	//º¯Êý·µ»Ø±àÂëÊý¾ÝµÄ³¤¶È
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Byteï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð½ï¿½ï¿½ë£¬sizeÎªByteï¿½ï¿½ï¿½ï¿½Ä³ï¿½ï¿½ï¿½ linÎªï¿½ï¿½ï¿½ï¿½ï¿½shortï¿½ï¿½ï¿½ï¿½ 
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ø±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÝµÄ³ï¿½ï¿½ï¿½
 	public native int decode(byte encoded[], short lin[], int size);
-	//´«Èë´ý±àÂëµÄPCMÊý¾Ý,sizeÎªshortÊý×é³¤¶È
-	//º¯Êý·µ»Ø½âÂëÊý¾ÝµÄ³¤¶È
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½PCMï¿½ï¿½ï¿½ï¿½,sizeÎªshortï¿½ï¿½ï¿½é³¤ï¿½ï¿½
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ø½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÝµÄ³ï¿½ï¿½ï¿½
 	public native int encode(short lin[], int offset, byte encoded[], int size);
-	//¹Ø±Õ½âÂëÆ÷
+	//ï¿½Ø±Õ½ï¿½ï¿½ï¿½ï¿½ï¿½
 	public native void close();
 	
 }

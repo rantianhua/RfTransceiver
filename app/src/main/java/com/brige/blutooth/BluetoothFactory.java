@@ -9,6 +9,7 @@ import android.os.Message;
 import android.util.Log;
 
 import com.rftransceiver.util.Constants;
+import com.source.parse.ParseFactory;
 
 import java.util.UUID;
 
@@ -31,6 +32,9 @@ public class BluetoothFactory implements BlutoothServer.BluetoothServerConnectLi
     private BluetoothClient clientThread;
     private WorkThread workThread;
     private BluetoothState mState;
+
+    private ParseFactory parseFactory;
+
 
     public enum BluetoothState {
         STATE_NONE, // no connection
@@ -93,6 +97,12 @@ public class BluetoothFactory implements BlutoothServer.BluetoothServerConnectLi
      */
     public synchronized void connect(BluetoothDevice device) {
         Log.d(TAG, "connect to: " + device);
+
+        if(serverThread != null) {
+            serverThread.cancel();
+            serverThread = null;
+        }
+
         if (mState == BluetoothState.STATE_CONNECTING) {
             if (clientThread != null) {
                 clientThread.cancel();
@@ -117,7 +127,6 @@ public class BluetoothFactory implements BlutoothServer.BluetoothServerConnectLi
 
         if (clientThread != null) {
             clientThread.cancel();
-            clientConnectFailed();
             clientThread = null;
         }
 
@@ -132,6 +141,7 @@ public class BluetoothFactory implements BlutoothServer.BluetoothServerConnectLi
         }
 
         workThread = new WorkThread(socket,mHandler);
+        workThread.setParseFactory(parseFactory);
         workThread.start();
 
         Message msg = mHandler.obtainMessage(Constants.MSG_WHAT_DEVICE_NAME);
@@ -156,7 +166,6 @@ public class BluetoothFactory implements BlutoothServer.BluetoothServerConnectLi
 
         if (workThread != null) {
             workThread.cancel();
-            connectionLost();
             workThread = null;
         }
 
@@ -164,19 +173,20 @@ public class BluetoothFactory implements BlutoothServer.BluetoothServerConnectLi
             clientThread.cancel();
             clientThread = null;
         }
+
         setState(BluetoothState.STATE_NONE);
     }
 
     /**
      * send data to socket
      */
-    public void write(byte[] out) {
+    public void write(byte[] out,boolean end) {
         WorkThread r;
         synchronized (this) {
             if (mState != BluetoothState.STATE_CONNECTED) return;
             r = workThread;
         }
-        r.write(out);
+        r.write(out, end);
     }
 
     private void connectionFailed() {
@@ -185,9 +195,6 @@ public class BluetoothFactory implements BlutoothServer.BluetoothServerConnectLi
         bundle.putString(Constants.TOAST, "无法建立连接，请确保有开启的蓝牙服务端");
         msg.setData(bundle);
         mHandler.sendMessage(msg);
-
-        // 重新开启服务以备建立连接
-        BluetoothFactory.this.start();
     }
 
 
@@ -236,4 +243,10 @@ public class BluetoothFactory implements BlutoothServer.BluetoothServerConnectLi
     public void clientConnectFailed() {
         connectionFailed();
     }
+
+    public void setParseFactory(ParseFactory factory) {
+        this.parseFactory = null;
+        this.parseFactory = factory;
+    }
+
 }
