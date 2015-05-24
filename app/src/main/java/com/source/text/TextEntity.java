@@ -79,12 +79,12 @@ public class TextEntity implements Runnable{
     public void run() {
         while (dataQueue.getSize() > 0) {
             boolean end = dataQueue.getSize() == 1;
-            sendListener.sendText((byte[])dataQueue.get(),end);
-            try {
-                Thread.sleep(350);
-            }catch (Exception e) {
-                e.printStackTrace();
-            }
+            sendListener.sendPacketedData((byte[])dataQueue.get(),end);
+//            try {
+//                Thread.sleep(350);
+//            }catch (Exception e) {
+//                e.printStackTrace();
+//            }
         }
     }
 

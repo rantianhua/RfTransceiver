@@ -2,11 +2,11 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 21
-    buildToolsVersion "21.1.2"
+    buildToolsVersion "19.1.0"
 
     defaultConfig {
         applicationId "com.rftransceiver"
-        minSdkVersion 12
+        minSdkVersion 18
         targetSdkVersion 21
         versionCode 1
         versionName "1.0"
@@ -28,6 +28,6 @@ android {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile 'com.android.support:appcompat-v7:21.0.3'
     compile files('libs/butterknife-6.0.0.jar')
+    compile 'com.android.support:appcompat-v7:22.1.1'
 }

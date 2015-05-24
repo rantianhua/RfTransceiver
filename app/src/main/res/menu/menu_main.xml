@@ -14,16 +14,10 @@
     <item android:id="@+id/action_reset_scm" android:title="@string/reset_scm"
         android:orderInCategory="400" app:showAsAction="never" />
 
-    <item android:id="@+id/action_channel_1" android:title="@string/channel_1"
+    <item android:id="@+id/action_choose_channel" android:title="@string/choose_channel"
         android:orderInCategory="500" app:showAsAction="never" />
 
-    <item android:id="@+id/action_channel_2" android:title="@string/channel_2"
+    <item android:id="@+id/action_choose_bluetooth_style" android:title="@string/choose_bluetooth_style"
         android:orderInCategory="600" app:showAsAction="never" />
-
-    <item android:id="@+id/action_channel_3" android:title="@string/channel_3"
-        android:orderInCategory="700" app:showAsAction="never" />
-
-    <item android:id="@+id/action_channel_4" android:title="@string/channel_4"
-        android:orderInCategory="800" app:showAsAction="never" />
 
 </menu>

@@ -1,4 +1,4 @@
-package com.brige.blutooth;
+package com.brige.blutooth.normal;
 
 /**
  * Created by Rth on 2015/4/30.

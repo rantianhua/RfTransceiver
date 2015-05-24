@@ -66,14 +66,14 @@ public class SoundsEntity implements Runnable
 	        while (isRunning)
 	        {
                 if(isSendering) { //now the cache length is dynamic
-                    if(dataQueue.getSize() > 7) {
-                        for(int i = 0; i < 7;i++) {
+                    if(dataQueue.getSize() > 5) {
+                        for(int i = 0; i < 4;i++) {
                             AudioData restData = (AudioData)dataQueue.get();
                             for(int j = 0;j<restData.getSize();j++) {
                                 temp[index++] = restData.getencodeData()[j];
                                 if (index == options.getLength()-1) {
                                     //temp have been full,can to be sent
-                                    sendListener.sendSound(temp,false);
+                                    sendListener.sendPacketedData(temp,false);
                                     initTemp();
                                     //reset to recount
                                     index = options.getOffset();
@@ -81,11 +81,11 @@ public class SoundsEntity implements Runnable
                             }
                         }
                     }else {
-                        try {
-                            Thread.sleep(10);
-                        }catch (Exception e) {
-                            e.printStackTrace();
-                        }
+//                        try {
+//                            Thread.sleep(10);
+//                        }catch (Exception e) {
+//                            e.printStackTrace();
+//                        }
                     }
                 }else { //the user have stop,now the cache's length is changeless
                     int restCountsInDataQueue = dataQueue.getSize();
@@ -101,11 +101,11 @@ public class SoundsEntity implements Runnable
                                 //temp have been full,can to be sent
                                 if((restCountsInDataQueue+restCountsIntemp) % soundsPackets == 0 && i == restCountsInDataQueue-1) {
                                     temp[options.getRealLenIndex()] = (byte) (index-options.getOffset());
-                                    sendListener.sendSound(temp,true);
+                                    sendListener.sendPacketedData(temp,true);
                                     isRunning = false;  //shutdown this thread
                                     sum = 0;    //ready to count next send
                                 }else {
-                                    sendListener.sendSound(temp,false);
+                                    sendListener.sendPacketedData(temp,false);
                                     initTemp();
                                 }
                                 //reset to recount
@@ -116,7 +116,7 @@ public class SoundsEntity implements Runnable
                     if(index > options.getOffset()) {
                         //now temp is the last packet
                         temp[options.getRealLenIndex()] = (byte) (index-options.getOffset());
-                        sendListener.sendSound(temp,true);
+                        sendListener.sendPacketedData(temp,true);
                         isRunning = false;  //shutdown this thread
                         sum = 0;    //ready to count next send
                         index = options.getOffset();

@@ -1,4 +1,4 @@
-package com.brige.blutooth;
+package com.brige.blutooth.normal;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;

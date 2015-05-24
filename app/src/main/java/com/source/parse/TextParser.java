@@ -40,7 +40,7 @@ public class TextParser {
     }
 
     private void makeText(byte[] data,int len) {
-        if(len > 60 || len % 10 != 0) {
+        if(len > options.getLength() - options.getOffset() -1) {
             return;
         }
         for(int i = options.getOffset();i < len + options.getOffset();i++) {

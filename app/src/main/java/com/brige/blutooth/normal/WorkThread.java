@@ -1,9 +1,11 @@
-package com.brige.blutooth;
+package com.brige.blutooth.normal;
 
 import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
 import android.util.Log;
 
+import com.rftransceiver.util.Constants;
+import com.source.Crc16Check;
 import com.source.parse.ParseFactory;
 
 import java.io.IOException;
@@ -24,6 +26,7 @@ public class WorkThread extends Thread {
     private volatile boolean isReading = false;
     private StringBuilder sb = new StringBuilder();
     private ParseFactory parseFactory;
+    private Crc16Check crc;
 
 
     public WorkThread(BluetoothSocket socket,Handler han) {
@@ -41,6 +44,7 @@ public class WorkThread extends Thread {
 
         mmInStream = tmpIn;
         mmOutStream = tmpOut;
+        crc = new Crc16Check();
     }
 
     public void run() {
@@ -53,15 +57,37 @@ public class WorkThread extends Thread {
 
         byte[] buffer = new byte[1068];
 
+        byte[] temp = new byte[Constants.Packet_Length];
+
+        int index = 0;
+
         while (isReading) {
             try {
                 bytes = mmInStream.read(buffer);
                 try {
-                    parseFactory.roughParse(buffer,bytes);
-                } catch (Exception e) {
+                    for(int i =0; i < bytes;i++) {
+                        temp[index++] =buffer[i];
+                        if(index == Constants.Packet_Length) {
+                            //the cache now is full
+                            //check this cache is right or not
+                            index = 0;
+                            if(crc.isPacketRight(temp)) {
+                                parseFactory.sendToRelativeParser(temp);
+                            }else {
+                                handler.obtainMessage(Constants.MESSAGE_READ,
+                                        3,-1,null).sendToTarget();
+                            }
+                        }
+                    }
+                }catch (Exception e) {
                     e.printStackTrace();
-                    Log.e("WorkTHread","parse work wrong");
                 }
+//                try {
+//                    parseFactory.roughParse(buffer,bytes);
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                    Log.e("WorkTHread","parse work wrong");
+//                }
             } catch (IOException e) {
                 Log.e(TAG, "disconnected", e);
                 break;
@@ -71,16 +97,13 @@ public class WorkThread extends Thread {
 
     public void write(byte[] sendBuff,boolean end) {
         try {
-            if(sendBuff == null) {
-                return;
+            if(mmOutStream == null || sendBuff == null) return;
+            byte[] send = crc.createCrcCode(sendBuff);
+            if(send != null) {
+                mmOutStream.write(send);
             }
-            if(mmOutStream == null) return;
-            mmOutStream.write(sendBuff);
-            for(byte b : sendBuff) {
-                sb.append(String.format("%#x ",b));
-            }
-            Log.e("have write",sb.toString());
-            sb.delete(0,sb.length());
+            send = null;
+            sendBuff = null;
         } catch (IOException e) {
             Log.e("write ","write exception",e);
         }

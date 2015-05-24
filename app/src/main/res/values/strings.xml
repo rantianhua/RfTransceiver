@@ -25,4 +25,43 @@
     <string name="channel_2">频道2</string>
     <string name="channel_3">频道3</string>
     <string name="channel_4">频道4</string>
+
+    <string name="ble_not_supported">BLE is not supported</string>
+    <string name="label_data">Data:</string>
+    <string name="label_device_address">Device address:</string>
+    <string name="label_state">State:</string>
+    <string name="no_data">No data</string>
+    <string name="connected">已连接%1s</string>
+    <string name="disconnected">连接丢失</string>
+    <string name="title_devices">搜索BLE设备</string>
+    <string name="error_bluetooth_not_supported">设备不支持蓝牙</string>
+    <string name="unknown_device">未知设备</string>
+    <string name="unknown_characteristic">未知特性</string>
+    <string name="unknown_service">未知服务</string>
+    <string name="not_connect_device">还未连接设备</string>
+    <!-- Menu items -->
+    <string name="menu_connect">连接</string>
+    <string name="menu_disconnect">断开连接</string>
+    <string name="menu_scan">扫描设备</string>
+    <string name="menu_stop">停止扫描</string>
+    <string name="menu_record">录音</string>
+    <string name="menu_stop_record">停止录音</string>
+    <string name="choose_devices">选择设备</string>
+    <string name="device_bluetooth_not_support">设备不支持蓝牙</string>
+    <string name="bluetooth_none_connection">无连接</string>
+    <string name="bluetooth_listening">正在监听&#8230;</string>
+    <string name="bluetooth_connecting">正在连接&#8230;</string>
+    <string name="bluetooth_connected">已连接设备</string>
+    <string name="received_error_packet">接收到错误数据</string>
+    <string name="choose_channel">选择频道</string>
+    <string name="choose_bluetooth_style">选择蓝牙模式</string>
+    <string name="bluetoothNormal">普通蓝牙</string>
+    <string name="bluetooth_ble">低功耗</string>
+    <string name="bluetooth_closed">蓝牙已关闭</string>
+    <string name="scan_bluetooth_device">查找蓝牙设备</string>
+    <string name="channel_label">当前频道：%1s</string>
+    <string name="style_label">当前处于%1s模式</string>
+    <string name="blue_sytle_normal">普通蓝牙</string>
+    <string name="blue_sytle_ble">BLE</string>
+    <string name="send_failed">发送失败</string>
 </resources>
