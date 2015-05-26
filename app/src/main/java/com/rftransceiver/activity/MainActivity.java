@@ -1,8 +1,8 @@
 package com.rftransceiver.activity;
 
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -11,7 +11,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -19,7 +18,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.widget.SearchView;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
@@ -32,7 +30,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.brige.blutooth.le.BluetoothLeService;
-import com.brige.blutooth.normal.BluetoothFactory;
 import com.my_interface.SendMessageListener;
 import com.rftransceiver.R;
 import com.rftransceiver.adapter.ListConversationAdapter;
@@ -69,8 +66,6 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
 
     private final String TAG = getClass().getSimpleName();
 
-    private BluetoothFactory bluetoothFactory = null;   //manage normal bluetooth
-
     private ListConversationAdapter conversationAdapter = null; //the adapter of listView
 
     private TextEntity textEntity;  //the text entity to decide how packet text data to be sent
@@ -83,17 +78,7 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
 
     private boolean receiveError = false;   //mark have received a error packet or not
 
-    public Blue_Style blueStyle = Blue_Style.Ble;  //the default style is ble
-
-    /**
-     * the enum to mark bluetooth style
-     */
-    public enum Blue_Style {
-        Normal,
-        Ble
-    }
-
-    private boolean supportBle = false; //mark device support ble or not
+    private boolean canWrite = false;
 
     private BluetoothLeService bluetoothLeService; //ble connection controller
 
@@ -106,10 +91,6 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
     private boolean bluetoothConnected = false;
 
     private String deviceName = null;
-
-    private BluetoothGattCharacteristic writeCharacter = null;
-
-    private BluetoothGattCharacteristic notifyCharacter = null;
 
     /**
      *  Handles various events fired by the Service.
@@ -129,33 +110,9 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 bleConnected = false;
                 setTitle(getString(R.string.disconnected, ""));
-            } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
-                // Show all the supported services and characteristics on the user interface.
-                //displayGattServices(mBluetoothLeService.getSupportedGattServices());
-                if(writeCharacter == null) {
-                    writeCharacter = bluetoothLeService.getWriteCharac();
-                    final int charaProp = writeCharacter.getProperties();
-                    if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
-                        // If there is an active notification on a characteristic, clear
-                        // it first so it doesn't update the data field on the user interface.
-                        if (notifyCharacter != null) {
-                            bluetoothLeService.setCharacteristicNotification(
-                                    notifyCharacter, false);
-                            notifyCharacter = null;
-                        }
-                        bluetoothLeService.readCharacteristic(writeCharacter);
-                    }
-                    if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-                        notifyCharacter = writeCharacter;
-                        bluetoothLeService.setCharacteristicNotification(
-                                writeCharacter, true);
-                    }
-                }
+            }else if(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
+                canWrite = true;
             }
-//            else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
-//                displayData(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
-//                displayData(intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA));
-//            }
         }
     };
 
@@ -169,11 +126,6 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
         System.loadLibrary("speex");
         initViews();
 
-        // Use this check to determine whether BLE is supported on the device.  Then you can
-        // selectively disable BLE-related features.
-        if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
-            supportBle = true;
-        }
         //open bluetooth and start bluetooth sever
         openBluetooth();
 
@@ -211,11 +163,7 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
 
         updateChannel(getString(R.string.channel_1));
 
-        if(blueStyle == Blue_Style.Ble) {
-            initBLETool();
-        }else {
-            initNormalBluetoothTool();
-        }
+        initBLETool();
     }
 
     private void initDataExchangeHandler() {
@@ -250,11 +198,13 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
                                         //start to receive sounds data
                                         receiver.startReceiver();
                                         btnSounds.setText(getString(R.string.sounds_im));
+                                        btnSounds.setClickable(false);
                                         break;
                                     case 1:
                                         //end to receive sounds data
                                         receiver.stopReceiver();
                                         btnSounds.setText(getString(R.string.record_sound));
+                                        btnSounds.setClickable(true);
                                         break;
                                     case 2:
                                         //cache the received sounds data
@@ -306,13 +256,6 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
             }
         };
 
-    }
-
-    private void initNormalBluetoothTool() {
-        if(bluetoothFactory == null) {
-            bluetoothFactory = new BluetoothFactory(dataExchangeHandler);
-            bluetoothFactory.setParseFactory(parseFactory);
-        }
     }
 
     private void initBLETool() {
@@ -369,75 +312,40 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
             case R.id.action_connect_device:
                 //open a dialogFragment to discover and pair a bluetooth device
                 SearchActivity.connectlistener = MainActivity.this;
-                SearchActivity.style = blueStyle;
                 startActivity(new Intent(MainActivity.this,SearchActivity.class));
                 return true;
             case R.id.action_clear:
                 conversationAdapter.clear();
                 return true;
             case R.id.action_reset_scm:
-                if(blueStyle == Blue_Style.Ble) {
+                if(canWrite) {
+                    receiver.stopReceiver();
+                    record.stopRecording();
+                    receiver.clear();
+                    parseFactory.resetSounds();
+                    btnSounds.setText(getString(R.string.record_sound));
+
                     bluetoothLeService.write(Constants.Reset,false);
+                    updateChannel(getString(R.string.channel_1));
                 }else {
-                    //bluetoothFactory.write(Constants.Reset,true);
+                    showToast(getString(R.string.not_connect_device));
                 }
-                receiver.stopReceiver();
-                record.stopRecording();
-                receiver.clear();
-                parseFactory.resetSounds();
-                btnSounds.setText(getString(R.string.record_sound));
-                updateChannel(getString(R.string.channel_1));
                 return true;
             case R.id.action_choose_channel:
+                if(!canWrite) {
+                    showToast(getString(R.string.not_connect_device));
+                    return false;
+                }
                 chooseChannel();
-                return true;
-            case R.id.action_choose_bluetooth_style:
-                chooseBluetoothStyle();
                 return true;
         }
         return false;
     }
 
-    private void chooseBluetoothStyle() {
-//        new AlertDialog.Builder(this)
-//                .setTitle(getString(R.string.choose_bluetooth_style))
-//                .setIcon(android.R.drawable.ic_dialog_info)
-//                .setSingleChoiceItems(new String[]{getString(R.string.bluetoothNormal),
-//                                getString(R.string.bluetooth_ble),
-//                        }, 0,
-//                        new DialogInterface.OnClickListener() {
-//
-//                            public void onClick(DialogInterface dialog, int which) {
-//                                receiver.stopReceiver();
-//                                if (which == 0) {
-//                                    blueStyle = Blue_Style.Normal;
-//                                    if (leServiceBind) {
-//                                        unbindService(mServiceConnection);
-//                                    }
-//                                    initNormalBluetoothTool();
-//                                } else if (which == 1) {
-//                                    blueStyle = Blue_Style.Ble;
-//                                    if (bluetoothFactory != null) {
-//                                        bluetoothFactory.stop();
-//                                        bluetoothFactory.setParseFactory(null);
-//                                        bluetoothFactory = null;
-//                                    }
-//                                    initBLETool();
-//                                }
-//                                dialog.dismiss();
-//                            }
-//                        }
-//                )
-//                .setNegativeButton("取消", null)
-//                .show();
-    }
-
     //close a bluetooth connection
     private void closeConnection() {
-        if(blueStyle == Blue_Style.Ble) {
+        if(bluetoothLeService != null) {
             bluetoothLeService.disconnect();
-        }else {
-            bluetoothFactory.stop();
         }
     }
 
@@ -464,15 +372,11 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
 
     private void changeChanel(byte tail) {
         byte[] chanel = new byte[Constants.Packet_Length];
-        chanel[0] = (byte) 0x01;
+        chanel[0] = Constants.Packet_Head;
         chanel[Constants.Packet_Length-2] = tail;
-        chanel[Constants.Packet_Length-1] = (byte) 0x07;
-        if(blueStyle == Blue_Style.Ble) {
-            bluetoothLeService.write(chanel,false);
-            changeChannel = true;
-        }else {
-            //bluetoothFactory.write(chanel,false);
-        }
+        chanel[Constants.Packet_Length-1] = Constants.Packet_Channel_Tail;
+        bluetoothLeService.write(chanel,false);
+        changeChannel = true;
         chanel = null;
     }
 
@@ -484,12 +388,11 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
                 switch (state) {
                     case BluetoothAdapter.STATE_OFF:
                         showToast(getString(R.string.bluetooth_closed));
-                        if(bluetoothFactory != null) {
-                            bluetoothFactory.stop();
+                        if(bluetoothLeService != null) {
+                            bluetoothLeService.disconnect();
                         }
                         break;
                     case BluetoothAdapter.STATE_ON:
-                        //bluetoothFactory.start();
                         break;
                 }
             }
@@ -499,25 +402,16 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
     @Override
     protected void onResume() {
         super.onResume();
-        //register a broadcast to listen the state of bluetooth
-        if(blueStyle == Blue_Style.Ble) {
-            registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
-        }else {
-            IntentFilter intentFilter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
-            this.registerReceiver(bluetoothSate,intentFilter);
-            receiver.startReceiver();
-        }
+        registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
+        registerReceiver(bluetoothSate,
+                new IntentFilter(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED));
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        //unregister the broadcast
-        if(blueStyle == Blue_Style.Ble) {
-            unregisterReceiver(mGattUpdateReceiver);
-        }else {
-            this.unregisterReceiver(bluetoothSate);
-        }
+        unregisterReceiver(mGattUpdateReceiver);
+        unregisterReceiver(bluetoothSate);
     }
 
     @Override
@@ -529,12 +423,6 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
         receiver.stopReceiver();
         textEntity.setSendListener(null);
         textEntity.setOptions(null);
-
-        if(bluetoothFactory != null) {
-            bluetoothFactory.stop();
-            bluetoothFactory.setParseFactory(null);
-            bluetoothFactory = null;
-        }
 
         record = null;
         receiver = null;
@@ -549,20 +437,17 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
     //open the bluetooth
     private void openBluetooth() {
         final BluetoothAdapter bluetoothAdapter;
-        if(supportBle) {
-            // Initializes a Bluetooth adapter.  For API level 18 and above, get a reference to
-            // BluetoothAdapter through BluetoothManager.
-            final BluetoothManager bluetoothManager =
-                    (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-            bluetoothAdapter = bluetoothManager.getAdapter();
-        }else {
-            bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        }
+        // Initializes a Bluetooth adapter.  For API level 18 and above, get a reference to
+        // BluetoothAdapter through BluetoothManager.
+        final BluetoothManager bluetoothManager =
+                (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        bluetoothAdapter = bluetoothManager.getAdapter();
         //check this device weather support bluetooth or not
         //if support then enable the bluetooth
         if(bluetoothAdapter != null) {
-            if(!bluetoothAdapter.enable()) {
-                bluetoothAdapter.enable();
+            if(!bluetoothAdapter.isEnabled()) {
+                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                startActivity(enableBtIntent);
             }
         }else {
             showToast(getString(R.string.device_bluetooth_not_support));
@@ -587,17 +472,22 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_send:
-                if(!bluetoothConnected && !bleConnected){
+                if(!canWrite) {
                     showToast(getString(R.string.not_connect_device));
+                    return;
+                }
+                if(receiver.isReceive()){
+                    showToast(getString(R.string.cannot_send));
                     return;
                 }
                 btnSend.setClickable(false);
                 String sendContent = etSendMessage.getText().toString();
                 etSendMessage.setText("");
-                if(!TextUtils.isEmpty(sendContent)) {
-                    textEntity.unpacking(sendContent);
-                    hideInputSoft();
+                if(TextUtils.isEmpty(sendContent)) {
+                    return;
                 }
+                textEntity.unpacking(sendContent);
+                hideInputSoft();
                 ConversationData data = new ConversationData();
                 data.setContent(sendContent);
                 data.setConversationType(ListConversationAdapter.ConversationType.Me);
@@ -607,23 +497,21 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
                 break;
             case R.id.btn_sounds:
                 if(btnSounds.getText().equals(getString(R.string.record_sound))) {
-                    if(!bluetoothConnected && !bleConnected){
+                    if(!canWrite){
                         showToast(getString(R.string.not_connect_device));
                         return;
                     }
+                    if(receiver.isReceive()){
+                        showToast(getString(R.string.cannot_send));
+                        return;
+                    }
                     //start record
-                    receiver.stopReceiver();
                     record.startRecording();
                     btnSounds.setText(getString(R.string.recording_sound));
                 }
                 else if(btnSounds.getText().equals(getString(R.string.recording_sound))) {
                     //stop recording
                     record.stopRecording();
-                    btnSounds.setText(getString(R.string.record_sound));
-                    receiver.startReceiver();
-                }
-                else if(btnSounds.getText().equals(getString(R.string.sounds_im))) {
-                    receiver.stopReceiver();
                     btnSounds.setText(getString(R.string.record_sound));
                 }
                 break;
@@ -639,12 +527,8 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
     @Override
     public void startConnect(BluetoothDevice device) {
         deviceName = device.getName();
-        if(blueStyle == Blue_Style.Ble) {
+        if(bluetoothLeService != null) {
             bluetoothLeService.connect(device.getAddress());
-        }else {
-            if(bluetoothFactory != null) {
-                bluetoothFactory.connect(device);
-            }
         }
     }
 
@@ -661,15 +545,8 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
     @Override
     public void sendPacketedData (byte[] data,boolean end){
         if(data == null) return;
-        if(blueStyle == Blue_Style.Ble) {
-            if(bluetoothLeService != null) {
-                bluetoothLeService.write(data,true);
-            }
-        }
-        else {
-            if(bluetoothFactory != null) {
-                //bluetoothFactory.write(data,end);
-            }
+        if(canWrite) {
+            bluetoothLeService.write(data,true);
         }
         data = null;
     }

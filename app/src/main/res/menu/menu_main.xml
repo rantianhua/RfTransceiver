@@ -17,7 +17,4 @@
     <item android:id="@+id/action_choose_channel" android:title="@string/choose_channel"
         android:orderInCategory="500" app:showAsAction="never" />
 
-    <item android:id="@+id/action_choose_bluetooth_style" android:title="@string/choose_bluetooth_style"
-        android:orderInCategory="600" app:showAsAction="never" />
-
 </menu>

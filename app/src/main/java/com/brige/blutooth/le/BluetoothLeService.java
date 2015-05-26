@@ -77,6 +77,8 @@ public class BluetoothLeService extends Service {
 
     private  BluetoothGattCharacteristic writeCharacteristic;   //the write characteristic
 
+    private BluetoothGattCharacteristic notifyCharacter;
+
     private Crc16Check crc16Check = new Crc16Check();
 
     private SendMessageListener sendMessageListener;    //to send data to Main thread
@@ -113,6 +115,22 @@ public class BluetoothLeService extends Service {
                     writeCharacteristic = writeServer.getCharacteristic(
                             UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb")
                     );
+                    final int charaProp = writeCharacteristic.getProperties();
+                    if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
+                        // If there is an active notification on a characteristic, clear
+                        // it first so it doesn't update the data field on the user interface.
+                        if (notifyCharacter != null) {
+                            setCharacteristicNotification(
+                                    notifyCharacter, false);
+                            notifyCharacter = null;
+                        }
+                        readCharacteristic(writeCharacteristic);
+                    }
+                    if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+                        notifyCharacter = writeCharacteristic;
+                        setCharacteristicNotification(
+                                writeCharacteristic, true);
+                    }
                 }
                 broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
             } else {
@@ -188,8 +206,9 @@ public class BluetoothLeService extends Service {
                                         sendMessageListener.sendUnPacketedData(temp,0);
                                         MainActivity.changeChannel = false;
                                     }
+                                }else {
+                                    sendMessageListener.sendUnPacketedData(null,1);
                                 }
-                                sendMessageListener.sendUnPacketedData(null,1);
                             }
                             temp = null;
                             temp = new  byte[Constants.Packet_Length];

@@ -51,6 +51,10 @@ public class Audio_Reciver implements Runnable
         isReceiving = false;
     }
 
+    public boolean isReceive() {
+        return isReceiving;
+    }
+
     public void cacheData(byte[] data,int size) {
         AudioData receviceData = new AudioData();
         receviceData.setSize(size);

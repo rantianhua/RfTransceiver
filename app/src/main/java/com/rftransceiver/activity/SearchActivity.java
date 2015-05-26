@@ -47,15 +47,7 @@ public class SearchActivity extends ListActivity implements View.OnClickListener
     Button btnCancel;
 
     public static Connectlistener connectlistener = null;
-    public static MainActivity.Blue_Style style = null;
-
     private BluetoothAdapter adapter = null;
-
-    private Set<BluetoothDevice> devices = new HashSet<>();    //record scanned device
-
-    private ScanCallback callback = null;
-    private BluetoothLeScanner scanner = null;
-    private BroadcastReceiver receiver = null;
 
     private BluetoothAdapter.LeScanCallback leScanCallback = null;
 
@@ -67,46 +59,12 @@ public class SearchActivity extends ListActivity implements View.OnClickListener
         setContentView(R.layout.dialog_bluetooth_connect);
         initView();
 
-        if(style == MainActivity.Blue_Style.Ble) {
-            final BluetoothManager bluetoothManager =
-                    (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-            adapter = bluetoothManager.getAdapter();
-        }else {
-            adapter = BluetoothAdapter.getDefaultAdapter();
-        }
+        final BluetoothManager bluetoothManager =
+                (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        adapter = bluetoothManager.getAdapter();
 
         listAdapter = new LeDeviceListAdapter();
-
         setListAdapter(listAdapter);
-    }
-
-    @TargetApi(21)
-    private void initCallback() {
-        callback = new ScanCallback() {
-            @Override
-            public void onScanResult(int callbackType, ScanResult result) {
-                if(result == null) return;
-                final BluetoothDevice device = result.getDevice();
-                if(device == null) return;
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        listAdapter.addDevice(device);
-                        listAdapter.notifyDataSetChanged();
-                    }
-                });
-            }
-
-            @Override
-            public void onBatchScanResults(List<ScanResult> results) {
-                super.onBatchScanResults(results);
-            }
-
-            @Override
-            public void onScanFailed(int errorCode) {
-                super.onScanFailed(errorCode);
-            }
-        };
     }
 
     private void initLeScanCallback() {
@@ -135,60 +93,6 @@ public class SearchActivity extends ListActivity implements View.OnClickListener
         rlLoading.setVisibility(b ? View.VISIBLE : View.INVISIBLE);
     }
 
-    private void loadPairedDevices() {
-        //展示已配对的设备
-        Set<BluetoothDevice> pairedDevices  = adapter.getBondedDevices();
-        for(BluetoothDevice device : pairedDevices) {
-            if(device != null) {
-                listAdapter.addDevice(device);
-                listAdapter.notifyDataSetChanged();
-            }
-        }
-    }
-
-    private void  initNormalReceive() {
-        //监听ACTION_FOUND事件
-        receiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if(BluetoothDevice.ACTION_FOUND.equals(action)) {
-                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    listAdapter.addDevice(device);
-                    listAdapter.notifyDataSetChanged();
-                }else if(BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
-                    showLoading(false);
-                }
-            }
-        };
-    }
-
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        if(style == MainActivity.Blue_Style.Normal) {
-            loadPairedDevices();
-            if(receiver == null) {
-                initNormalReceive();
-            }
-            //注册监听器
-            IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-            filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-            registerReceiver(receiver, filter);
-        }
-    }
-
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        if(style == MainActivity.Blue_Style.Normal) {
-            //解除监听器
-            unregisterReceiver(receiver);
-        }
-    }
-
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -198,9 +102,6 @@ public class SearchActivity extends ListActivity implements View.OnClickListener
         }
         listAdapter.clear();
         listAdapter = null;
-        style = null;
-        devices.clear();
-        devices = null;
     }
 
     @Override
@@ -214,35 +115,14 @@ public class SearchActivity extends ListActivity implements View.OnClickListener
     //扫描蓝牙设备
     private void searchDevices() {
         showLoading(true);
-        if(style == MainActivity.Blue_Style.Normal) {
-            adapter.startDiscovery();
-        }else if(style == MainActivity.Blue_Style.Ble) {
-            if(Build.VERSION.SDK_INT >= 21) {
-                if(callback == null) {
-                    initCallback();
-                }
-                if(scanner == null) {
-                    scanner = adapter.getBluetoothLeScanner();
-                }
-                new Handler(Looper.myLooper()).postDelayed(new Runnable() {
-                    @TargetApi(21)
-                    @Override
-                    public void run() {
-                        cancelSearch();
-                    }
-                },10000);
-                scanner.startScan(callback);
-            }else {
-                initLeScanCallback();
-                new Handler(Looper.myLooper()).postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        cancelSearch();
-                    }
-                }, 10000);
-                adapter.startLeScan(leScanCallback);
+        initLeScanCallback();
+        new Handler(Looper.myLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                cancelSearch();
             }
-        }
+        }, 10000);
+        adapter.startLeScan(leScanCallback);
     }
 
     @Override
@@ -262,19 +142,10 @@ public class SearchActivity extends ListActivity implements View.OnClickListener
     }
 
     //stop to search device
-    @TargetApi(21)
     private void cancelSearch() {
         rlLoading.setVisibility(View.INVISIBLE);
         btnCancel.setText(getString(R.string.start_search));
-        if(style == MainActivity.Blue_Style.Ble) {
-            if(scanner != null) {
-                scanner.stopScan(callback);
-            }else {
-                adapter.stopLeScan(leScanCallback);
-            }
-        }else if(style == MainActivity.Blue_Style.Normal) {
-            adapter.cancelDiscovery();
-        }
+        adapter.stopLeScan(leScanCallback);
     }
 
     //回调接口，开启蓝牙连接（客户端连接）
@@ -289,7 +160,7 @@ public class SearchActivity extends ListActivity implements View.OnClickListener
 
         public LeDeviceListAdapter() {
             super();
-            mLeDevices = new ArrayList<BluetoothDevice>();
+            mLeDevices = new ArrayList<>();
             mInflator = SearchActivity.this.getLayoutInflater();
         }
 
