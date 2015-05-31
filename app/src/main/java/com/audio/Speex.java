@@ -20,7 +20,7 @@ public class Speex
 	 * 8 : 15kbps (artifacts not usually noticeable)
 	 */
 	//�˴�����������������
-	private static final int DEFAULT_COMPRESSION = 2;
+	private static final int DEFAULT_COMPRESSION = 1;
 	
 
 	public Speex() 

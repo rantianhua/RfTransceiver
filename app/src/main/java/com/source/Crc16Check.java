@@ -105,11 +105,11 @@ public class Crc16Check {
         byte[] crcCode = crcCheck(toBinary(data),0);
         byte[] crcHight = new byte[8];
         System.arraycopy(crcCode,0,crcHight,0,8);
-        data[Constants.Crc_Index_hight] = (byte)getDecimalFromCrcCode(crcHight);
+//        data[Constants.Crc_Index_hight] = (byte)getDecimalFromCrcCode(crcHight);
         crcHight = null;
         byte[] crcLow = new byte[8];
         System.arraycopy(crcCode,8,crcLow,0,8);
-        data[Constants.Crc_Index_low] = (byte) getDecimalFromCrcCode(crcLow);
+//        data[Constants.Crc_Index_low] = (byte) getDecimalFromCrcCode(crcLow);
         crcLow = null;
         return data;
     }
@@ -127,12 +127,12 @@ public class Crc16Check {
     
     public boolean isPacketRight(byte[] data) {
         byte[] crcTemp = new byte[2];
-        crcTemp[0] = data[Constants.Crc_Index_hight];
-        crcTemp[1] = data[Constants.Crc_Index_low];
+//        crcTemp[0] = data[Constants.Crc_Index_hight];
+//        crcTemp[1] = data[Constants.Crc_Index_low];
         byte[] crcCode = toBinary(crcTemp);
         crcTemp = null;
-        data[Constants.Crc_Index_hight] = 0;
-        data[Constants.Crc_Index_low] = 0;
+//        data[Constants.Crc_Index_hight] = 0;
+//        data[Constants.Crc_Index_low] = 0;
         byte[] checkTemp = toBinary(data);
         byte[] checkData = new byte[checkTemp.length+poly.length-1];
         System.arraycopy(checkTemp,0,checkData,0,checkTemp.length);

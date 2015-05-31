@@ -2,6 +2,8 @@ package com.source;
 
 import com.rftransceiver.util.Constants;
 
+import java.util.Random;
+
 /**
  * Created by Rth on 2015/5/6.
  * this class define some options of the data packets for sounds or text
@@ -12,7 +14,7 @@ public class DataPacketOptions {
     /**
      * the packet's total length,default is 66
      */
-    private int length = 66;
+    private int length = Constants.Data_Packet_Length;
 
     /**
      * the packet head
@@ -55,6 +57,11 @@ public class DataPacketOptions {
      * and there need a offset
      */
     private int offset;
+
+    /**
+     * the members' id int the group
+     */
+    private int memberIdIndex = Constants.Group_Member_Id_index;
 
     public DataPacketOptions(Data_Type_InOptions type,int offset) {
         this.offset = offset;
@@ -149,6 +156,14 @@ public class DataPacketOptions {
 
     public void setRealLen(byte realLen) {
         this.realLen = realLen;
+    }
+
+    public int getMemberIdIndex() {
+        return memberIdIndex;
+    }
+
+    public void setMemberIdIndex(int memberIdIndex) {
+        this.memberIdIndex = memberIdIndex;
     }
 
     /**

@@ -57,7 +57,7 @@ public class WorkThread extends Thread {
 
         byte[] buffer = new byte[1068];
 
-        byte[] temp = new byte[Constants.Packet_Length];
+        byte[] temp = new byte[Constants.Data_Packet_Length];
 
         int index = 0;
 
@@ -67,7 +67,7 @@ public class WorkThread extends Thread {
                 try {
                     for(int i =0; i < bytes;i++) {
                         temp[index++] =buffer[i];
-                        if(index == Constants.Packet_Length) {
+                        if(index == Constants.Data_Packet_Length) {
                             //the cache now is full
                             //check this cache is right or not
                             index = 0;

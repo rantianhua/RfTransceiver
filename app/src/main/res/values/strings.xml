@@ -49,12 +49,17 @@
     <string name="bluetooth_closed">蓝牙已关闭</string>
     <string name="scan_bluetooth_device">查找蓝牙设备</string>
     <string name="channel_label">当前频道：%1s</string>
-    <string name="style_label">当前处于%1s模式</string>
+    <string name="style_label">当前RSSI值：%1d</string>
     <string name="blue_sytle_normal">普通蓝牙</string>
     <string name="blue_sytle_ble">BLE</string>
     <string name="send_failed">发送失败</string>
     <string name="starting_bluetooth">正在开启蓝牙&#8230;</string>
     <string name="unknown_device">未知设备</string>
-    <string name="cannot_send">接收中，不能发送！</string>
+    <string name="cannot_send">接收中或未连接设备，不能发送！</string>
+    <string name="create_group">建群</string>
+    <string name="add_group">加群</string>
+    <string name="async_work">同步字</string>
+    <string name="reset_rssi">Rssi</string>
+    <string name="channel_state">信道状态</string>
 
 </resources>

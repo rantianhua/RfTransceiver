@@ -2,9 +2,9 @@ package com.source.parse;
 
 
 import android.os.Handler;
+import android.util.Log;
 
 import com.rftransceiver.util.Constants;
-import com.source.Crc16Check;
 import com.source.DataPacketOptions;
 
 /**
@@ -36,7 +36,7 @@ public class ParseFactory {
 
     private Handler handler;
 
-   // private Crc16Check crc;
+    StringBuilder sb = new StringBuilder();
 
     public ParseFactory() {
         soundsParser = new SoundsParser();
@@ -46,7 +46,7 @@ public class ParseFactory {
 
     private void initTemp() {
 //        temp = null;
-//        temp= new byte[Constants.Packet_Length];
+//        temp= new byte[Constants.Data_Packet_Length];
     }
 
 //    public void roughParse(byte[] buff,int length) throws Exception{
@@ -59,17 +59,17 @@ public class ParseFactory {
 //                    parseRightDataFromWrong();
 //                }
 //            }else {
-//                if(buff[i] == Constants.Packet_Head && index == 0) {
+//                if(buff[i] == Constants.Data_Packet_Head && index == 0) {
 //                    //now build a new cache
 //                    initTemp();
 //                    temp[index++] = buff[i];
 //                }else {
 //                    temp[index++] = buff[i];
-//                    if(index == Constants.Packet_Length) {
+//                    if(index == Constants.Data_Packet_Length) {
 //                        //the cache now is full
 //                        //check this cache is right or not
-//                        if(temp[Constants.Packet_Length-1] != Constants.Packet_Data_Tail  &&
-//                                temp[Constants.Packet_Length-1] != Constants.Packet_Channel_Tail) {
+//                        if(temp[Constants.Data_Packet_Length-1] != Constants.Data_Packet_Tail  &&
+//                                temp[Constants.Data_Packet_Length-1] != Constants.Packet_Channel_Tail) {
 //                            //receive a wrong packet
 //                            error = temp;
 //                        }
@@ -85,11 +85,11 @@ public class ParseFactory {
 
 //    private void parseRightDataFromWrong() {
 //        //calculate the right data's numbers in error
-//        int right  = Constants.Packet_Length - index;
+//        int right  = Constants.Data_Packet_Length - index;
 //        for(int i = 0; i < index;i ++) {
 //            temp[i+right] = temp[i];
 //        }
-//        for(int i = index;i < Constants.Packet_Length;i ++) {
+//        for(int i = index;i < Constants.Data_Packet_Length;i ++) {
 //            temp[i] = error[i];
 //        }
 //        sendToRelativeParser(temp);
@@ -98,7 +98,7 @@ public class ParseFactory {
 //    }
 
     public void sendToRelativeParser(byte[] temp) {
-        if(temp[Constants.Packet_Length-1] == Constants.Packet_Data_Tail) {
+        if(temp[Constants.Data_Packet_Length -1] == Constants.Data_Packet_Tail) {
             //check the data type and then send to relative parser
             if(temp[Constants.Packet_Type_flag_Index] == Constants.Type_Sounds) {
                 //sounds packet
@@ -106,10 +106,39 @@ public class ParseFactory {
             }else if(Constants.Type_Text == temp[Constants.Packet_Type_flag_Index]) {
                 //text packet
                 textParser.parseText(temp);
+            }else {
+                Log.e("receive", "unknow data");
+                for(byte d : temp) {
+                    sb.append(String.format("%#s ",d));
+                }
+                Log.e("error packet",sb.toString());
+                sb.delete(0,sb.length());
             }
-        }else if(temp[Constants.Packet_Length-1] == Constants.Packet_Channel_Tail) {
-            int channel = temp[Constants.Packet_Length-2] ;
-            handler.obtainMessage(Constants.MESSAGE_READ,2,channel,null).sendToTarget();
+        }else if(temp[Constants.Data_Packet_Length -1] == Constants.Instruction_Packet_Tail) {
+            switch (temp[1]) {
+                case 1:
+                    handler.obtainMessage(Constants.MESSAGE_READ,3,-1,null).sendToTarget();
+                    break;
+                case 2:
+                    handler.obtainMessage(Constants.MESSAGE_READ,2,temp[2],null).sendToTarget();
+                    break;
+                case 3:
+                    handler.obtainMessage(Constants.MESSAGE_READ,4,temp[2],null).sendToTarget();
+                    break;
+                case 4:
+                    handler.obtainMessage(Constants.MESSAGE_READ,5,temp[2],temp[3]).sendToTarget();
+                    break;
+                case 5:
+                    handler.obtainMessage(Constants.MESSAGE_READ,6,-1,null).sendToTarget();
+                    break;
+            }
+        }else {
+            Log.e("receive", "unknow data tail");
+            for(byte d : temp) {
+                sb.append(String.format("%#s ",d));
+            }
+            Log.e("error packet",sb.toString());
+            sb.delete(0,sb.length());
         }
     }
 

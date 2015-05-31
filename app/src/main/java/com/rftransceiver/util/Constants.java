@@ -1,5 +1,12 @@
 package com.rftransceiver.util;
 
+import android.os.AsyncTask;
+
+import com.rftransceiver.group.GroupEntity;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by Rth on 2015/4/26.
  */
@@ -32,19 +39,26 @@ public class Constants {
     /**
      * the every data packet's length
      */
-    public static final int Packet_Length = 66;
+    public static final int Data_Packet_Length = 60;
 
     /**
-     * the head and tail of packet
+     * the length of instruction packet
      */
-    public static final byte Packet_Head = (byte) 0x01;
-
-    public static final byte Packet_Data_Tail = (byte) 0xff;
+    public static final int Instruction_Packet_Length = 10;
 
     /**
-     * the packet tail tell the cms to change communication channel
+     * the head and tail of data packet
      */
-    public static final byte Packet_Channel_Tail = (byte) 0x07;
+    public static final byte Data_Packet_Head = (byte) 0x01;
+
+    public static final byte Data_Packet_Tail = (byte) 0xff;
+
+    /**
+     * the head and tail of instruction packet
+     */
+    public static final byte Instruction_Packet_Head = (byte) 0x02;
+
+    public static final byte Instruction_Packet_Tail = (byte) 0xfe;
 
     /**
      * mark the index of data type in data packet
@@ -57,26 +71,52 @@ public class Constants {
     public static final int Packet_real_data_index = 2;
 
     /**
-     * mark the index of crc code in every packet
-     * now use 16 bits crc code ,so need two bytes to save it
+     * the id of group members in the group
      */
-    public static final int Crc_Index_hight = 3;
-    public static final int Crc_Index_low = 4;
+    public static final int Group_Member_Id_index = 3;
+
+
 
     /**
      * mark every sounds encoded packets' length
      */
-    public static final int Small_Sounds_Packet_Length = 15;
+    public static final int Small_Sounds_Packet_Length = 10;
+
+
+    public static final String WIFI_IDENTIFY = "wifi_identity";
 
     /**
-     * the packet to tell the scm to clear all data
+     * instruction packets
      */
-    public static final byte[] Reset = new byte[66];
+    public static final byte[] RESET = new byte[Instruction_Packet_Length];
+    public static final byte[] ASYNC_WORD = new byte[Instruction_Packet_Length];
+    public static final byte[] CHANNEL = new byte[Instruction_Packet_Length];
+    public static final byte[] RSSI = new byte[Instruction_Packet_Length];
+    public static final byte[] CHANNEL_STATE = new byte[Instruction_Packet_Length];
     static {
-        Reset[0] = (byte) 0xfe;
-        Reset[1] = Reset[0];
-        Reset[2] = Reset[0];
-        Reset[3] = Reset[0];
+
+        RESET[0] = Instruction_Packet_Head;
+        RESET[RESET.length-1] = Instruction_Packet_Tail;
+        RESET[1] = (byte)0xff;
+
+        ASYNC_WORD[0] = Instruction_Packet_Head;
+        ASYNC_WORD[ASYNC_WORD.length-1] = Instruction_Packet_Tail;
+        ASYNC_WORD[1] = (byte)0x01;
+
+        CHANNEL[0] = Instruction_Packet_Head;
+        CHANNEL[CHANNEL.length-1] = Instruction_Packet_Tail;
+        CHANNEL[1] = (byte)0x02;
+
+        RSSI[0] = Instruction_Packet_Head;
+        RSSI[RSSI.length-1] = Instruction_Packet_Tail;
+        RSSI[1] = (byte) 0x03;
+
+        CHANNEL_STATE[0] = Instruction_Packet_Head;
+        CHANNEL_STATE[CHANNEL_STATE.length-1] = Instruction_Packet_Tail;
+        CHANNEL_STATE[1] = (byte) 0x04;
     }
 
+    public static String groupName = null;
+
+    public static byte[] groupAsync = null;
 }

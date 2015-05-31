@@ -31,15 +31,10 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.my_interface.SendMessageListener;
-import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.util.Constants;
-import com.source.Crc16Check;
-import com.source.parse.ParseFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -79,7 +74,7 @@ public class BluetoothLeService extends Service {
 
     private BluetoothGattCharacteristic notifyCharacter;
 
-    private Crc16Check crc16Check = new Crc16Check();
+    //private Crc16Check crc16Check = new Crc16Check();
 
     private SendMessageListener sendMessageListener;    //to send data to Main thread
 
@@ -163,7 +158,7 @@ public class BluetoothLeService extends Service {
         }
     };
 
-    private byte[] temp = new byte[Constants.Packet_Length];    //packet cache
+    private byte[] temp = new byte[Constants.Data_Packet_Length];    //packet cache
     private int index = 0;  //to count the cache's length
 
     private void senMyMessage(BluetoothGattCharacteristic characteristic) {
@@ -187,31 +182,20 @@ public class BluetoothLeService extends Service {
             final byte[] data = characteristic.getValue();
             if (data != null && data.length > 0) {
                 int bytes = data.length;
-                Log.e(TAG,"data length is" + bytes);
                 if(bytes < 6) {
                     return;
                 }
                 try {
                     for(int i =0; i < bytes;i++) {
                         temp[index++] =data[i];
-                        if(index == Constants.Packet_Length) {
+                        if(index == Constants.Data_Packet_Length) {
                             //the cache now is full
                             //check this cache is right or not
                             index = 0;
-                            if(crc16Check.isPacketRight(temp)) {
-                                sendMessageListener.sendUnPacketedData(temp,0);
-                            }else {
-                                if(MainActivity.changeChannel) {
-                                    if(temp[Constants.Packet_Length-1] == Constants.Packet_Channel_Tail) {
-                                        sendMessageListener.sendUnPacketedData(temp,0);
-                                        MainActivity.changeChannel = false;
-                                    }
-                                }else {
-                                    sendMessageListener.sendUnPacketedData(null,1);
-                                }
-                            }
+
+                            sendMessageListener.sendUnPacketedData(temp,0);
                             temp = null;
-                            temp = new  byte[Constants.Packet_Length];
+                            temp = new  byte[Constants.Data_Packet_Length];
                         }
                     }
                 }catch (Exception e) {
@@ -227,36 +211,24 @@ public class BluetoothLeService extends Service {
         sendBroadcast(intent);
     }
 
-    public void write(byte[] send,boolean crc) {
-        byte[] checkedData = null;
-        if(crc) {
-            checkedData = crc16Check.createCrcCode(send);
-        }else  {
-            checkedData = send;
-        }
-        for(int i =0; i < 4;i++) {
-            byte[] sam;
-            if(i == 3) {
-                sam = null;
-                sam = new byte[6];
-                System.arraycopy(checkedData,i*20,sam,0,6);
-            }else {
-                sam = null;
-                sam = new byte[20];
-                System.arraycopy(checkedData,i*20,sam,0,20);
-            }
+    public void write(byte[] send) {
+        for(int i =0; i < 3;i++) {
+            byte[] sam = new byte[20];
+            System.arraycopy(send,i*20,sam,0,20);
             writeCharacteristic.setValue(sam);
             sam = null;
             if(!mBluetoothGatt.writeCharacteristic(writeCharacteristic)) {
                 sendMessageListener.sendUnPacketedData(null,2);
             }
         }
-        checkedData = null;
         send = null;
     }
 
-    public BluetoothGattCharacteristic getWriteCharac() {
-        return writeCharacteristic;
+    public void writeInstruction(byte[] instruction) {
+        writeCharacteristic.setValue(instruction);
+        if(!mBluetoothGatt.writeCharacteristic(writeCharacteristic)) {
+            sendMessageListener.sendUnPacketedData(null,2);
+        }
     }
 
     public void setSendMessageListener(SendMessageListener listener) {
