@@ -14,9 +14,14 @@ public class GroupEntity {
 
     private List<GroupMember> members;
 
+    public GroupEntity() {
+        members = new ArrayList<>();
+    }
+
+
     public GroupEntity(String name,byte[] asyncWord) {
-        this.asyncWord = asyncWord;
-        this.name = name;
+        setAsyncWord(asyncWord);
+        setName(name);
         members = new ArrayList<>();
     }
 

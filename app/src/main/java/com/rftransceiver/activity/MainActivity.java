@@ -1,5 +1,6 @@
 package com.rftransceiver.activity;
 
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
@@ -48,8 +49,8 @@ import butterknife.ButterKnife;
 import butterknife.InjectView;
 
 
-public class MainActivity extends ActionBarActivity implements View.OnClickListener,
-        SearchActivity.Connectlistener,SendMessageListener,WifiNetService.CallBack{
+public class MainActivity extends Activity implements View.OnClickListener,
+        SearchActivity.Connectlistener,SendMessageListener{
 
     @InjectView(R.id.listview_conversation)
     ListView listView;
@@ -79,8 +80,6 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
     private  ParseFactory parseFactory; //manage how to parse received packeted data
 
     private BluetoothLeService bluetoothLeService; //ble connection controller
-
-    private  WifiNetService wifiNetService;  //the service to control the actions of wifi
 
     private String deviceName = null;
 
@@ -120,19 +119,6 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
         }
     };
 
-    private final ServiceConnection serviceConnectionWifi = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            WifiNetService.LocalWifiBinder binder = (WifiNetService.LocalWifiBinder)iBinder;
-            wifiNetService = binder.getService();
-            wifiNetService.setCallBack(MainActivity.this);
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName componentName) {
-            wifiNetService = null;
-        }
-    };
 
     private final ServiceConnection serviceConnectionBle = new ServiceConnection() {
 
@@ -153,7 +139,6 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
         }
     };
 
-    private boolean groupOwner = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -201,8 +186,6 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
 
         //bind the ble service
         bindService(new Intent(this, BluetoothLeService.class), serviceConnectionBle, BIND_AUTO_CREATE);
-        //bind the wifiNetService
-        bindService(new Intent(this,WifiNetService.class),serviceConnectionWifi,BIND_AUTO_CREATE);
     }
 
     private void initDataExchangeHandler() {
@@ -359,11 +342,9 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
                 chooseChannel();
                 return true;
             case R.id.action_create_group:
-                groupOwner = true;
                 createGroup();
                 return true;
             case R.id.action_add_group:
-                groupOwner = false;
                 addGroup();
                 return true;
             case R.id.action_asyn_word:
@@ -384,54 +365,22 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
     }
 
     private void createGroup() {
-        final EditText editText = new EditText(this);
-        new AlertDialog.Builder(MainActivity.this,R.style.Base_Theme_AppCompat_Light_Dialog_Alert)
-                .setTitle("input the group name")
-                .setView(editText)
-                .setPositiveButton("sure",new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        String name = editText.getText().toString();
-                        if(!TextUtils.isEmpty(name)) {
-                            MyWifiActivity.service = wifiNetService;
-                            Intent intent = new Intent(MainActivity.this,MyWifiActivity.class);
-                            intent.putExtra("name",name);
-                            startActivity(intent);
-                            intent = null;
-                        }
-                    }
-                })
-                .show();
+        Intent intent = new Intent(this,MyWifiActivity.class);
+        intent.putExtra(MyWifiActivity.ACTION,MyWifiActivity.CREATE_GROUP);
+        startActivity(intent);
     }
 
     private void addGroup() {
-        final EditText editText = new EditText(this);
-        new AlertDialog.Builder(MainActivity.this,R.style.Base_Theme_AppCompat_Light_Dialog_Alert)
-                .setTitle("input in ip address")
-                .setView(editText)
-                .setPositiveButton("sure",new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        String addres = editText.getText().toString();
-                        if(!TextUtils.isEmpty(addres)) {
-                            wifiNetService.createClientSocket(addres);
-                        }
-                    }
-                })
-                .show();
+        Intent intent = new Intent(this,MyWifiActivity.class);
+        intent.putExtra(MyWifiActivity.ACTION,MyWifiActivity.ADD_GROUP);
+        startActivity(intent);
     }
 
     private void sendAsyncWord() {
         if(!isReceiving && findWriteCharac) {
-//            Random random = new Random(System.currentTimeMillis());
-//            byte[] word = new byte[2];
-//            random.nextBytes(word);
-//            System.arraycopy(word,0,Constants.ASYNC_WORD,2,2);
             Constants.ASYNC_WORD[2] = 9;
             Constants.ASYNC_WORD[3] = 10;
             bluetoothLeService.writeInstruction(Constants.ASYNC_WORD);
-//            word = null;
-//            random = null;
         }
     }
 
@@ -538,19 +487,20 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
 
         unbindService(serviceConnectionBle);
         bluetoothLeService = null;
-
-        wifiNetService.setCallBack(null);
-        unbindService(serviceConnectionWifi);
     }
 
     //open the bluetooth
     private void openBluetooth() {
-        final BluetoothAdapter bluetoothAdapter;
+        BluetoothAdapter bluetoothAdapter = null;
         // Initializes a Bluetooth adapter.  For API level 18 and above, get a reference to
         // BluetoothAdapter through BluetoothManager.
-        final BluetoothManager bluetoothManager =
-                (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        bluetoothAdapter = bluetoothManager.getAdapter();
+        try {
+            final BluetoothManager bluetoothManager =
+                    (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+            bluetoothAdapter = bluetoothManager.getAdapter();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         //check this device weather support bluetooth or not
         //if support then enable the bluetooth
         if(bluetoothAdapter != null) {
@@ -560,7 +510,7 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
             }
         }else {
             showToast(getString(R.string.device_bluetooth_not_support));
-            finish();
+            //finish();
         }
     }
 
@@ -675,29 +625,6 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
                 showToast(getString(R.string.send_failed));
                 break;
         }
-    }
-
-    @Override
-    public void updateDevicesList(WifiP2pDeviceList devicesList) {
-//        for(WifiP2pDevice device : devicesList.getDeviceList()) {
-//            adapter.addDevice(device);
-//            adapter.notifyDataSetChanged();
-//        }
-    }
-
-    @Override
-    public void readData(String data) {
-        if(groupOwner){
-
-        }else {
-            showToast("group name is " + data);
-            Constants.groupName = data;
-        }
-    }
-
-    @Override
-    public void showToastMessage(String message) {
-        //showTost(message);
     }
 
     private static IntentFilter makeGattUpdateIntentFilter() {

@@ -5,61 +5,62 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.net.wifi.p2p.WifiP2pConfig;
-import android.net.wifi.p2p.WifiP2pDevice;
-import android.net.wifi.p2p.WifiP2pDeviceList;
-import android.net.wifi.p2p.WifiP2pInfo;
-import android.net.wifi.p2p.WifiP2pManager;
+import android.net.DhcpInfo;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
-import android.os.Looper;
 import android.os.Message;
+import android.provider.Settings;
 import android.util.Log;
 
-import org.apache.http.conn.util.InetAddressUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.BindException;
-import java.net.InetAddress;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
-import java.util.Enumeration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by rantianhua on 15-5-27.
  */
-public class WifiNetService extends Service implements WifiP2pManager.PeerListListener
-        ,WifiP2pManager.ConnectionInfoListener,Handler.Callback{
+public class WifiNetService extends Service implements Handler.Callback{
 
     private final String TAG = getClass().getSimpleName();
     private final int port = 4583;  //the port of socket
+    public static final String WIFI_HOT_HEADER = "interphone_";
+    private String SSID;
+    private final String PSD = "interphone_psd";
     private LocalWifiBinder localWifiBinder = new LocalWifiBinder();
-
-    private WifiP2pManager manager;
-    private WifiP2pManager.Channel channel;
+    private WifiManager manager;
     private BroadcastReceiver wifiReceiver;
     private CallBack callback;  //the interface communicate with Activity
 
     private Handler serverAccept;   //open a server socket to wait to accept a client connect
-    //private Handler clientConnect;  //create a client socket to connect
-    private Handler work;   //create a work thread for send data
-    private Socket clientSocket;    //the socket to read and write
-    private ServerSocket serverSocket;  //the server socket waiting to be connected
-    private WifiP2pDevice connectDevice;    //the device to connect
-    private volatile boolean endAccept  = false;
-    private boolean workStart = false;
-    private volatile  boolean reading = false;
-
+    private ServerSocket serverSocket;  //the serverSocket wait to be connected
     private Runnable startServerSocket;
-    private Runnable startReadingFromScoket;
+    private boolean endAccept = false;
+    private String connectSsid;
+
+    /**
+     * the thread pool to execute mutiClientSocket
+     */
+    private ExecutorService pool;
+    private List<WorkRunnabble> works;
 
     public class LocalWifiBinder extends Binder{
         public WifiNetService getService() {
@@ -70,88 +71,224 @@ public class WifiNetService extends Service implements WifiP2pManager.PeerListLi
     @Override
     public void onCreate() {
         super.onCreate();
-        manager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
-        channel = manager.initialize(this,getMainLooper(),null);
-        wifiReceiver = new WiFiDirectBroadcastReceiver(this);
+        manager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 
+        wifiReceiver = new WiFiBroadcastReceiver(this);
         registerReceiver(wifiReceiver,getIntentFilter());
 
-        setEndAccept(false);
-        HandlerThread server = new HandlerThread("wifi_server");
-        server.start();
-        serverAccept = new Handler(server.getLooper(),this);
+        SSID = WIFI_HOT_HEADER+Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
 
-        //open server socket
-        startServerSocket = new OpenServerSocket();
-        serverAccept.post(startServerSocket);
+        pool = Executors.newFixedThreadPool(10);
+        works = new ArrayList<>();
 
+    }
 
+    /**
+     * create wifi hot
+     */
+    public void startWifiAp() {
+        //first disable wifi
+        if(manager.isWifiEnabled()){
+            manager.setWifiEnabled(false);
+        }
+
+        Method method = null;
+        try {
+            method = manager.getClass().getMethod("setWifiApEnabled",
+                    WifiConfiguration.class, boolean.class);
+            WifiConfiguration configuration = new WifiConfiguration();
+            configuration.SSID = SSID;
+            configuration.preSharedKey = PSD;
+
+            configuration.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.OPEN);
+            configuration.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
+            configuration.allowedProtocols.set(WifiConfiguration.Protocol.WPA);
+            configuration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+            configuration.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
+            configuration.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.TKIP);
+            configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
+            configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
+
+            method.invoke(manager, configuration, true);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        //check wifiAp is enable or not
+        final Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if(isWifiApEnabled()) {
+                    timer.cancel();
+                    callback.wifiApCreated();
+                }
+            }
+        },10,1000);
+    }
+
+    public boolean isWifiApEnabled() {
+        try {
+            Method method = manager.getClass().getMethod("isWifiApEnabled");
+            method.setAccessible(true);
+            return (Boolean) method.invoke(manager);
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public void startWifi() {
+        if(!manager.isWifiEnabled()) {
+            manager.setWifiEnabled(true);
+        }
+    }
+
+    public void closeWifi() {
+        if(manager.isWifiEnabled()) {
+            manager.setWifiEnabled(false);
+        }
     }
 
     public void setCallBack(CallBack callback) {
         this.callback = callback;
     }
 
-    /**
-     * find the available peers
-     */
-    public void findPeers() {
-        manager.discoverPeers(channel,new WifiP2pManager.ActionListener() {
-            @Override
-            public void onSuccess() {
-                Log.e(TAG,"discoveryPeers success");
-            }
+    public boolean isWifiEnable() {
+        return manager.isWifiEnabled();
+    }
 
-            @Override
-            public void onFailure(int i) {
-                Log.e(TAG,"discoveryPeers failed " + i);
-            }
-        });
+    public void enableWifi() {
+        manager.setWifiEnabled(true);
+    }
+
+    public void wifiEnabled() {
+        if(callback != null) {
+           callback.wifiEnabled();
+        }
+    }
+
+    public void wifiConnected(String ssid) {
+        Log.e("wifiConnected","ssid is" + ssid);
+        if(connectSsid != null && connectSsid.equals(ssid)) {
+            createClientSocket(ssid);
+            connectSsid = null;
+        }
     }
 
     /**
-     * after find peers success ,call this method to update devices list
+     * connect wifi hot
+     * @param ssid the wifiAp's name
+     * @return
      */
-    public void getPeersList() {
-        manager.requestPeers(channel, this);
+    public boolean connectAction(String ssid) {
+        WifiConfiguration configuration = setUpWifiConfig(ssid);
+        if(configuration == null) {
+            Log.e("connectWifi","setupWifiConfig failed");
+            return false;
+        }
+
+        WifiConfiguration tempConfig = isExist(SSID);
+        if(tempConfig != null) {
+            manager.removeNetwork(tempConfig.networkId);
+        }
+
+        int netId = manager.addNetwork(configuration);
+        //disconnect exist connect
+        manager.disconnect();
+        manager.enableNetwork(netId,true);
+        connectSsid = ssid;
+        return manager.reconnect();
     }
 
     /**
-     * connect the peers device
+     *
+     * @param ssid the wifiAp's name
+     * @return true if the hot have connected,else false
      */
-    public void connectDevice(WifiP2pConfig config,WifiP2pDevice device) {
-        this.connectDevice = device;
-        manager.connect(channel, config, new WifiP2pManager.ActionListener() {
-            @Override
-            public void onSuccess() {
-                requestConnection();
+    public boolean ssidConnected(String ssid) {
+        WifiInfo info = manager.getConnectionInfo();
+        if(info != null) {
+            String connectSsid = info.getSSID();
+            if(connectSsid != null && (ssid.equalsIgnoreCase(connectSsid)
+                    || connectSsid.equalsIgnoreCase("\""+ssid+"\""))) {
+                Log.e(TAG,"已连接的ssid是"+ info.getSSID());
+                return true;
             }
-
-            @Override
-            public void onFailure(int i) {
-                callback.showToastMessage("device connect failed " + i);
-            }
-        });
+        }
+        return false;
     }
-
-    ////////////////////////////////////
-    public void createClientSocket(String addres,String name) {
-        //close server socket
-        setEndAccept(true);
-        setReading(false);
-        closeServerSocket();
-        serverAccept.removeCallbacks(startServerSocket);
-        serverAccept.getLooper().quit();
-        new ClientConnect().execute(addres,name);
-    }
-    /////////////////////////////////////////////
 
     /**
-     * call this method after a connect established
+     * @param ssid the wifiAp's name
+     * @return the existed WifiConfiguration
      */
-    public void requestConnection() {
-        manager.requestConnectionInfo(channel, this);
+    private WifiConfiguration isExist(String ssid) {
+        List<WifiConfiguration> existingConfigs = manager.getConfiguredNetworks();
+        for (WifiConfiguration existingConfig : existingConfigs) {
+            if (existingConfig.SSID.equals("\"" + ssid + "\"")) {
+                return existingConfig;
+            }
+        }
+        return null;
     }
+
+    /**
+     * @param ssid  the wifiAp's name
+     * @return WifiConfiguration
+     */
+    private WifiConfiguration setUpWifiConfig(String ssid) {
+        WifiConfiguration configuration = new WifiConfiguration();
+        configuration.allowedAuthAlgorithms.clear();
+        configuration.allowedGroupCiphers.clear();
+        configuration.allowedKeyManagement.clear();
+        configuration.allowedPairwiseCiphers.clear();
+        configuration.allowedProtocols.clear();
+        configuration.SSID = "\"" + ssid + "\"";
+
+        configuration.preSharedKey = "\"" + PSD + "\"";
+        configuration.hiddenSSID = true;
+        configuration.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.OPEN);
+        configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
+        configuration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        configuration.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.TKIP);
+        // config.allowedProtocols.set(WifiConfiguration.Protocol.WPA);
+        configuration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
+        configuration.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
+        return configuration;
+    }
+
+    /**
+     * open a serverSocket to wait connect
+     */
+    public void openServer() {
+        HandlerThread server = new HandlerThread("server");
+        server.start();
+        serverAccept = new Handler(server.getLooper(),this);
+        startServerSocket = new OpenServerSocket();
+        serverAccept.post(startServerSocket);
+    }
+
+    /**
+     * statrt scan wifi device
+     */
+    public void startScan() {
+        manager.startScan();
+    }
+
+    public List<ScanResult> getScanResults() {
+        return manager.getScanResults();
+    }
+
+
+    /**
+     * create client socket to exchange data
+     */
+    public void createClientSocket(String ssid) {
+        new ClientConnect().execute(ssid);
+    }
+
 
     private synchronized void setEndAccept(boolean end) {
         endAccept = end;
@@ -164,7 +301,8 @@ public class WifiNetService extends Service implements WifiP2pManager.PeerListLi
     @Override
     public void onDestroy() {
         super.onDestroy();
-        manager.cancelConnect(channel, null);
+        unregisterReceiver(wifiReceiver);
+
         if(out != null) {
             try {
                 out.close();
@@ -175,14 +313,9 @@ public class WifiNetService extends Service implements WifiP2pManager.PeerListLi
             }
         }
 
-        if(workStart) {
-            setReading(false);
-            closeClientSocket();
-            work.removeCallbacks(startReadingFromScoket);
-            work.getLooper().quit();
-        }
+        closeWorks();
 
-        if (!getEndAccept()) {
+        if(serverAccept != null) {
             setEndAccept(true);
             //close Looper Thread
             closeServerSocket();
@@ -190,17 +323,19 @@ public class WifiNetService extends Service implements WifiP2pManager.PeerListLi
             serverAccept.getLooper().quit();
         }
 
+        pool.shutdown();
+        try {
+            if(!pool.awaitTermination(60, TimeUnit.SECONDS)) {
+                pool.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            pool.shutdownNow();
+        }finally {
+            pool = null;
+        }
         wifiReceiver = null;
-        channel = null;
         manager = null;
-    }
-
-    private synchronized void setReading(boolean b) {
-        reading = b;
-    }
-
-    private synchronized boolean getReading(){
-        return reading;
     }
 
     @Override
@@ -211,86 +346,72 @@ public class WifiNetService extends Service implements WifiP2pManager.PeerListLi
     @Override
     public boolean onUnbind(Intent intent) {
         localWifiBinder = null;
-        Log.e(TAG,"unbind WifiNetService");
-        unregisterReceiver(wifiReceiver);
         return super.onUnbind(intent);
     }
 
     private IntentFilter getIntentFilter() {
         //create an intentfilter for broadcast receiver
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
-        intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
-        intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
-        intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
+        intentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+        intentFilter.addAction(WifiManager.ACTION_PICK_WIFI_NETWORK);
+        intentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+        intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
         return intentFilter;
     }
 
-    @Override
-    public void onPeersAvailable(WifiP2pDeviceList wifiP2pDeviceList) {
-        if(wifiP2pDeviceList != null) {
-            callback.updateDevicesList(wifiP2pDeviceList);
-        }
-    }
-
-    @Override
-    public void onConnectionInfoAvailable(WifiP2pInfo wifiP2pInfo) {
-        if(wifiP2pInfo.isGroupOwner) {
-            callback.showToastMessage("i am group owner");
-        }else {
-            callback.showToastMessage("i am not group owner");
-        }
-        createClientConnect(wifiP2pInfo);
-    }
-
-    /**
-     * to create a client Socket connect
-     * @param wifiP2pInfo contain InetSocketAddress
-     */
-    private void createClientConnect(WifiP2pInfo wifiP2pInfo) {
-        //close server socket
-//        setEndAccept(true);
-//        setReading(false);
-//        closeServerSocket();
-//        serverAccept.removeCallbacks(startServerSocket);
-//        serverAccept.getLooper().quit();
-//        new ClientConnect().execute(wifiP2pInfo);
-    }
-
-    private class ClientConnect extends AsyncTask<String,Void,Void> {
+    private class ClientConnect extends AsyncTask<String,Void,String> {
 
         @Override
-        protected Void doInBackground(String... strings) {
-            String host = strings[0];
-            String name = strings[1];
+        protected String doInBackground(String... strings) {
+            String host = getServerIpAdress();
             try {
                 Socket socket = new Socket();
                 socket.bind(null);
                 socket.connect(new InetSocketAddress(host, port));
-                clientSocket = socket;
-                openWorkThread();
-                writeMessage(name);
+                WorkRunnabble work = new WorkRunnabble(socket,strings[0]);
+                works.add(work);
+                pool.execute(work);
             } catch (IOException e) {
-                Log.e(TAG,e.getMessage(),e);
-                callback.showToastMessage("client socket connect error");
+                Log.e(TAG, "client socket connect error" + e.getMessage(), e);
+                return null;
             }
             host = null;
-            name = null;
-            return null;
+            return strings[0];
+        }
+
+        @Override
+        protected void onPostExecute(String ssid) {
+            callback.socketCreated(ssid);
+        }
+
+        /**
+         *
+         * @return the ipAddress of WifiAp
+         */
+        private String getServerIpAdress() {
+            DhcpInfo info = manager.getDhcpInfo();
+            return intToStringIp(info.serverAddress);
+        }
+
+        private String intToStringIp(int i) {
+            return (i & 0xFF) + "." + ((i >> 8) & 0xFF) + "." + ((i >> 16) & 0xFF) + "."
+                    + ((i >> 24) & 0xFF);
         }
     }
 
-    /**
-     * after a socket established ,open work thread to read and write data
-     */
-    private void openWorkThread() {
-        if(!workStart) {
-            workStart = true;
-            HandlerThread workThread = new HandlerThread("workThread");
-            workThread.start();
-            work = new Handler(workThread.getLooper(),this);
-            startReadingFromScoket = new OpenReading();
-            work.post(startReadingFromScoket);
+    public void closeWifiAp() {
+        if (isWifiApEnabled()) {
+            try {
+                Method method = manager.getClass().getMethod("getWifiApConfiguration");
+                method.setAccessible(true);
+                WifiConfiguration config = (WifiConfiguration) method.invoke(manager);
+                Method method2 = manager.getClass().getMethod("setWifiApEnabled",
+                        WifiConfiguration.class, boolean.class);
+                method2.invoke(manager, config, false);
+            }
+           catch (Exception e) {
+               e.printStackTrace();
+           }
         }
     }
 
@@ -298,16 +419,7 @@ public class WifiNetService extends Service implements WifiP2pManager.PeerListLi
      * @param hello the data to be written to socket
      */
     private OutputStream out;
-    private void writeMessage(String hello) {
-        try{
-            if(out == null) {
-                out = clientSocket.getOutputStream();
-            }
-            out.write(hello.getBytes());
-        }catch (Exception e) {
-            Log.e(TAG,"error in writeMessage " + e.getMessage(),e);
-        }
-    }
+
 
     /**
      *
@@ -323,49 +435,123 @@ public class WifiNetService extends Service implements WifiP2pManager.PeerListLi
         return true;
     }
 
+
+    private void closeWorks() {
+        Log.e(TAG,"close works");
+        for(int i  = 0;i < works.size(); i ++) {
+            works.get(i).cancel();
+        }
+        works.clear();
+        works = null;
+    }
+
     /**
-     * create a runnable to read from socket all the time
+     * create a runnable to read and write from socket
      */
-    class OpenReading implements Runnable {
+    class WorkRunnabble implements Runnable {
+
+        private OutputStream out = null;
+        private InputStream in = null;
+        private String ssid;
+        private Socket socket = null;
+        private boolean reading = false;
+
+        public WorkRunnabble(Socket socket,String ssid) {
+            this.ssid = ssid;
+            this.socket = socket;
+            try {
+                out = socket.getOutputStream();
+                in = socket.getInputStream();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
         @Override
         public void run() {
-            InputStream in = null;
             setReading(true);
             try {
-                in = clientSocket.getInputStream();
                 int bytes = 0;
                 byte[] buff = new byte[1024];
                 while (getReading()) {
                     bytes = in.read(buff);
-                    byte[] data = new byte[bytes];
-                    System.arraycopy(buff,0,data,0,bytes);
-                    callback.readData(new String(data));
+                    if(bytes > 0) {
+                        byte[] data = new byte[bytes];
+                        System.arraycopy(buff,0,data,0,bytes);
+                        callback.readData(new String(data));
+                    }
                 }
             }catch (Exception e) {
                 Log.e(TAG,"error in read from socket " + e.getMessage(),e);
             }finally {
-                if(in != null) {
-                    try {
-                        in.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }finally {
-                        in  = null;
-                    }
+                cancel();
+            }
+        }
+
+        public void writeMessage(String hello) {
+            try{
+                if(out != null) {
+                    out.write(hello.getBytes());
+                    out.flush();
+                }
+            }catch (Exception e) {
+                Log.e(TAG,"error in writeMessage " + e.getMessage(),e);
+                cancel();
+            }
+        }
+
+        public void cancel() {
+            setReading(false);
+            if(in != null) {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }finally {
+                    in  = null;
                 }
             }
+            if(out != null) {
+                try {
+                    out.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }finally {
+                    out  = null;
+                }
+            }
+            if(socket != null) {
+                try {
+                    socket.close();
+                    socket = null;
+                }catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            //cleanWorks();
+        }
+
+        public synchronized void setReading(boolean reading) {
+            this.reading = reading;
+        }
+
+        public synchronized boolean getReading(){
+            return this.reading;
+        }
+
+        public String getSsid() {
+            return this.ssid;
         }
     }
 
-    private void closeClientSocket() {
-        if(clientSocket != null && !clientSocket.isClosed()) {
-            try {
-                clientSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }finally {
-                clientSocket = null;
+    /**
+     * clean the dead runnable in works
+     */
+    private void cleanWorks() {
+        for(int i= 0;i < works.size();i ++) {
+            if(!works.get(i).reading) {
+                works.remove(i);
+                break;
             }
         }
     }
@@ -380,9 +566,13 @@ public class WifiNetService extends Service implements WifiP2pManager.PeerListLi
             try{
                 serverSocket = new ServerSocket(port);
                 while (!getEndAccept()) {
-                    Log.e(TAG,"waiting accept ...");
-                    clientSocket = serverSocket.accept();
-                    openWorkThread();
+                    Log.e(TAG, "waiting accept ...");
+                    Socket socket  = serverSocket.accept();
+                    Log.e(TAG, "connected  ...");
+                    WorkRunnabble work = new WorkRunnabble(socket,null);
+                    works.add(work);
+                    pool.execute(work);
+                    work.writeMessage("hello");
                 }
             }catch (Exception e) {
                 Log.e(TAG,"error in openServerSocket" + e.getMessage(),e);
@@ -405,13 +595,27 @@ public class WifiNetService extends Service implements WifiP2pManager.PeerListLi
     }
 
     public interface CallBack {
-        void updateDevicesList(WifiP2pDeviceList devicesList);
-        void showToastMessage(String message);
-        void readData(String data);
-    }
+        /**
+         * the wifiAp have created
+         */
+        void wifiApCreated();
 
-    private final int OPEN_SERVER = 0;  //open server socket
-    private final int OPEN_READING = 1;  //open work thread to read from socket and write to socket
-    private final int CLOSE_SERVER_SOCKET = 2;
+        /**
+         *
+         * @param data read from socket
+         */
+        void readData(String data);
+
+        /**
+         * the wifi have opened
+         */
+        void wifiEnabled();
+
+        /**
+         *
+         * @param ssid note the main thread the socket establish successful or not
+         */
+        void socketCreated(String ssid);
+    }
 
 }
