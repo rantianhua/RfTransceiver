@@ -119,8 +119,6 @@ public class Constants {
     public static final String SP_USER = "user";    //the name of sharedPreference which is to save user's information,
     public static final String NICKNAME = "nickname";
 
-    public static String groupName = null;
-
-    public static byte[] groupAsync = null;
+    public static final int MSG_GROUP_INFO = 0; //indicate this message is group's base info
 
 }

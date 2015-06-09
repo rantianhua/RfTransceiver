@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:paddingTop="80dp"
+    android:paddingStart="20dp"
+    android:paddingEnd="20dp"
+    android:background="@drawable/lanchuner_bg"
+    >
+
+    <ImageView
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:background="@drawable/init_take_img_bg"
+        android:layout_centerHorizontal="true"
+        android:src="@drawable/camera"
+        android:scaleType="center"
+        android:id="@+id/img_init_camera"
+        />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/ll_init_tv"
+        android:orientation="horizontal"
+        android:layout_below="@+id/img_init_camera"
+        android:layout_marginTop="20dp"
+        android:gravity="center_horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="5dp"
+            android:textColor="#fff"
+            android:textSize="20sp"
+            android:text="昵称"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="5dp"
+            android:textColor="#fff"
+            android:text="name"
+            android:textSize="14sp"
+            />
+
+    </LinearLayout>
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/et_init_nickname"
+        android:layout_alignBottom="@+id/tv_init_counter"
+        android:layout_alignParentStart="true"
+        android:layout_toStartOf="@+id/tv_init_counter"
+        android:layout_marginEnd="20dp"
+        android:textColor="#fff"
+        android:background="@android:color/transparent"
+        android:paddingBottom="5dp"
+        android:singleLine="true"
+        android:imeOptions="actionDone"
+        android:hint="@string/hint_et_nickname"
+        />
+
+    <View
+        android:layout_width="wrap_content"
+        android:layout_height="0.4dp"
+        android:layout_alignStart="@+id/et_init_nickname"
+        android:layout_alignEnd="@+id/et_init_nickname"
+        android:layout_below="@+id/et_init_nickname"
+        android:background="#fff"
+        android:id="@+id/line_init_1"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/white"
+        android:text="5/10"
+        android:layout_below="@+id/ll_init_tv"
+        android:layout_marginTop="50dp"
+        android:layout_alignParentEnd="true"
+        android:textSize="20sp"
+        android:id="@+id/tv_init_counter"/>
+
+    <ImageButton
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:background="@drawable/cancel"
+        android:layout_alignBottom="@+id/et_init_nickname"
+        android:layout_alignEnd="@+id/et_init_nickname"
+        android:layout_marginBottom="8dp"
+        android:id="@+id/ibn_init_cancel"/>
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/btn_init_ok"
+        android:layout_below="@+id/line_init_1"
+        android:layout_marginTop="70dp"
+        android:layout_marginStart="60dp"
+        android:layout_marginEnd="60dp"
+        android:textColor="@color/white"
+        android:text="@string/sure"
+        android:textSize="18sp"
+        android:background="@drawable/btn_init_sure_bg"
+        />
+
+</RelativeLayout>

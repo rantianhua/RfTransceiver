@@ -22,28 +22,11 @@ public class LauncherActivity extends Activity{
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        String nickName = getSharedPreferences(Constants.SP_USER,0).getString(Constants.NICKNAME,"");
-        if(TextUtils.isEmpty(nickName)) {
-            getWindow().requestFeature(Window.FEATURE_NO_TITLE);
-        }
-
         setContentView(R.layout.activity_launcher);
 
-        if(TextUtils.isEmpty(nickName)) {
-            final InitFragment initFragment = new InitFragment();
-            initFragment.setListener(new InitFragment.OnNicknameFinished() {
-                @Override
-                public void finishNicname() {
-                    Toast.makeText(LauncherActivity.this,"finish nickname",Toast.LENGTH_SHORT).show();
-                    initFragment.setListener(null);
-                }
-            });
-            getFragmentManager().beginTransaction()
-                    .add(R.id.container_launcher,initFragment)
-                    .commit();
-        }else {
-
-        }
+        getFragmentManager().beginTransaction()
+                .add(R.id.frame_content,new InitFragment())
+                .commit();
     }
 
 }

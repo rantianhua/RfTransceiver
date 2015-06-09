@@ -12,7 +12,9 @@ public class GroupEntity {
 
     private byte[] asyncWord;   //the async word to distinguish different group
 
-    private List<GroupMember> members;
+    private String picFilePath; //the file path of picture
+
+    private List<GroupMember> members;  //record all of group members
 
     public GroupEntity() {
         members = new ArrayList<>();
@@ -39,5 +41,17 @@ public class GroupEntity {
 
     public void setAsyncWord(byte[] asyncWord) {
         this.asyncWord = asyncWord;
+    }
+
+    public String getPicFilePath() {
+        return picFilePath;
+    }
+
+    public void setPicFilePath(String picFilePath) {
+        this.picFilePath = picFilePath;
+    }
+
+    public List<GroupMember> getMembers() {
+        return members;
     }
 }

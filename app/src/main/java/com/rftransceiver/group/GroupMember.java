@@ -6,8 +6,9 @@ package com.rftransceiver.group;
 public class GroupMember {
 
 
-    private String name;
-    private int id;
+    private String name;    //the name of group member
+    private String path;    //the path of picture
+    private int id; //the member's id in the group
 
     public GroupMember(String name,int id) {
         this.id = id;
@@ -28,5 +29,13 @@ public class GroupMember {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 }

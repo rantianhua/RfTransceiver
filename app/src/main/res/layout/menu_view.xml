@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:paddingTop="80dp"
+        android:paddingBottom="15dp">
+
+        <ImageView
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:id="@+id/img_menu_photo"
+            android:layout_centerHorizontal="true"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="5dp"
+            android:layout_below="@id/img_menu_photo"
+            android:layout_marginTop="8dp"
+            android:layout_centerHorizontal="true"
+            android:textColor="#fff"
+            android:text="用户名"
+            android:id="@+id/tv_menu_name"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0.8dp"
+            android:id="@+id/line_menu_1"
+            android:layout_below="@+id/tv_menu_name"
+            android:layout_marginTop="12dp"
+            />
+
+        <View
+            android:layout_width="0.8dp"
+            android:layout_height="30dp"
+            android:id="@+id/line_menu_2"
+            android:layout_below="@+id/line_menu_1"
+            android:layout_marginTop="5dp"
+            android:layout_centerHorizontal="true"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="20dp"
+            android:layout_below="@+id/line_menu_1"
+            android:layout_marginTop="10dp"
+            android:layout_toStartOf="@+id/line_menu_2"
+            android:layout_marginEnd="30dp"
+            android:textColor="#fff"
+            android:text="建组"
+            android:id="@+id/tv_menu_create_group"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="20dp"
+            android:layout_below="@+id/line_menu_1"
+            android:layout_marginTop="10dp"
+            android:layout_toEndOf="@+id/line_menu_2"
+            android:layout_marginStart="30dp"
+            android:textColor="#fff"
+            android:text="建组"
+            android:id="@+id/tv_menu_add_group"
+            />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0.8dp"
+            android:id="@+id/line_menu_3"
+            android:layout_below="@+id/line_menu_2"
+            android:layout_marginTop="5dp"
+            />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:gravity="center_vertical|start"
+            android:id="@+id/tv_menu_interphone"
+            android:layout_below="@+id/line_menu_3"
+            android:textColor="#fff"
+            android:text="对讲机"
+            />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:gravity="center_vertical|start"
+            android:id="@+id/tv_menu_maillist"
+            android:layout_below="@+id/tv_menu_interphone"
+            android:textColor="#fff"
+            android:text="通讯录"
+            />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:gravity="center_vertical|start"
+            android:id="@+id/tv_menu_my_device"
+            android:layout_below="@+id/tv_menu_maillist"
+            android:textColor="#fff"
+            android:text="我的设备"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/tv_menu_setting"
+            android:layout_below="@+id/tv_menu_my_device"
+            android:textColor="#fff"
+            android:text="设置"
+            android:layout_alignParentStart="true"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/tv_menu_quit"
+            android:layout_below="@+id/tv_menu_my_device"
+            android:textColor="#fff"
+            android:text="退出"
+            android:layout_alignParentEnd="true"
+            />
+
+    </RelativeLayout>
+
+</ScrollView>

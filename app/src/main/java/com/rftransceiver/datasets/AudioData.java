@@ -1,22 +1,22 @@
 package com.rftransceiver.datasets;
 
-public class AudioData //音频数据类
+public class AudioData
 {
-	int size;  //数据大小
-	short[] realData;  //实时数据
-	byte[] encodeData;//已编码数据
-	public void setSize(int size) //设置大小 
+	int size;
+	short[] realData;
+	byte[] encodeData;
+	public void setSize(int size) //锟斤拷锟矫达拷小 
 	{
 		this.size = size;  		
 	}
 
-	public void setRealData(short[] tempData)  //设置实时数据缓冲区
+	public void setRealData(short[] tempData)
 	{
 		  this.realData = tempData;  
 		
 	}
 	
-	public void setencodeData(byte[] tempData)  //设置编码数据缓冲区
+	public void setencodeData(byte[] tempData)
 	{
 		  this.encodeData = tempData;  
 		

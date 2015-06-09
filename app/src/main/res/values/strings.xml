@@ -61,5 +61,7 @@
     <string name="async_work">同步字</string>
     <string name="reset_rssi">Rssi</string>
     <string name="channel_state">信道状态</string>
+    <string name="sure">确定</string>
+    <string name="hint_et_nickname">请输入昵称</string>
 
 </resources>
