@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.rftransceiver.customviews.LockerView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:lockerview="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content" android:layout_height="match_parent"
+    lockerview:padding_right="100dp"
+    lockerview:content_paddingTop="60dp"
+    android:scrollbars="none"
+    android:background="@drawable/lanchuner_bg">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:id="@+id/frame_menu"
+            >
+            <include layout="@layout/menu_view"/>
+        </FrameLayout>
+
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/frame_content"/>
+
+    </LinearLayout>
+
+</com.rftransceiver.customviews.LockerView>

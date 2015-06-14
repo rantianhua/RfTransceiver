@@ -56,12 +56,20 @@
     <string name="starting_bluetooth">正在开启蓝牙&#8230;</string>
     <string name="unknown_device">未知设备</string>
     <string name="cannot_send">接收中或未连接设备，不能发送！</string>
-    <string name="create_group">建群</string>
-    <string name="add_group">加群</string>
+    <string name="create_group">建组</string>
+    <string name="add_group">加组</string>
     <string name="async_work">同步字</string>
     <string name="reset_rssi">Rssi</string>
     <string name="channel_state">信道状态</string>
     <string name="sure">确定</string>
     <string name="hint_et_nickname">请输入昵称</string>
+    <string name="all_pictures">所有图片</string>
+    <string name="bind_device">绑定设备</string>
+    <string name="hint_et_pass">请输入密码</string>
+    <string name="interphone">对讲机</string>
+    <string name="contacts">通讯录</string>
+    <string name="my_device">我的设备</string>
+    <string name="setting">设置</string>
+    <string name="exit">退出</string>
 
 </resources>

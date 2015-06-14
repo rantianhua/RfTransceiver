@@ -2,5 +2,17 @@
 <resources>
     <declare-styleable name="LockerView">
         <attr name="padding_right" format="dimension"/>
+        <attr name="content_paddingTop" format="dimension"/>
     </declare-styleable>
+    
+    <declare-styleable name="RoundImageView">
+        <attr name="border_radius"/>
+        <attr name="type"/>
+    </declare-styleable>
+
+    <attr name="border_radius" format="dimension"/>
+    <attr name="type">
+        <enum name="circle" value="0"/>
+        <enum name="round" value="1"/>
+    </attr>
 </resources>

@@ -30,18 +30,18 @@ public class LockerView extends HorizontalScrollView {
     private int halfMenuWidth;  //the half width of menu width,used to judge open menu or not
     private boolean menuOpened = false; //indicate the menu opened or not
     private int menuPaddingRight = 100; //the default padding is 100dp
-    private float density;
     private int screenWidth;
     private boolean show = false;
     private View menu;
     private View content;
     private boolean clickToClose = false;
+    private static int contentPaddingTop = 30;
 
     public LockerView(Context context,AttributeSet attributeSet) {
         super(context,attributeSet);
 
         DisplayMetrics dm = getResources().getDisplayMetrics();
-        density = dm.density;
+        float density = dm.density;
         screenWidth = dm.widthPixels;
 
         menuPaddingRight = (int)(menuPaddingRight * density + 0.5f);
@@ -51,6 +51,8 @@ public class LockerView extends HorizontalScrollView {
         try{
             menuPaddingRight = a.getDimensionPixelSize(R.styleable.LockerView_padding_right,
                     menuPaddingRight);
+            contentPaddingTop = a.getDimensionPixelSize(R.styleable.LockerView_content_paddingTop,
+                    contentPaddingTop);
         }catch (Exception e){
             e.printStackTrace();
         }finally {
@@ -167,7 +169,7 @@ public class LockerView extends HorizontalScrollView {
                     m.setScaleX(1.0f - 0.3f * scale);
                     m.setScaleY(1.0f - 0.3f * scale);
                     m.setAlpha(0.6f + 0.4f * (1-scale));
-                    c.setTranslationY((1-scale) * 100);
+                    c.setTranslationY((1-scale) * contentPaddingTop);
                 }
             });
             animator.start();

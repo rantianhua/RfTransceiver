@@ -121,4 +121,6 @@ public class Constants {
 
     public static final int MSG_GROUP_INFO = 0; //indicate this message is group's base info
 
+    public static final String PHOTO_NAME = "/photo.png";
+    public static final String PHOTO_PATH = "photo_path";
 }

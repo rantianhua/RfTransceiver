@@ -1,133 +1,245 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent">
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent"
+    >
+
+    <ScrollView
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:scrollbars="none"
+        android:layout_above="@+id/rl_bottom_menu"
+        >
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:paddingTop="60dp"
+            android:paddingBottom="15dp"
+            >
+
+            <ImageView
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:id="@+id/img_menu_photo"
+                android:layout_centerHorizontal="true"
+                android:scaleType="centerCrop"
+                />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="5dp"
+                android:layout_below="@id/img_menu_photo"
+                android:layout_marginTop="8dp"
+                android:layout_centerHorizontal="true"
+                android:textColor="@color/white"
+                android:text="用户名"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:id="@+id/tv_menu_name"/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0.5dp"
+                android:id="@+id/line_menu_1"
+                android:layout_below="@+id/tv_menu_name"
+                android:layout_marginTop="12dp"
+                android:background="@color/white"
+                />
+
+            <View
+                android:layout_width="0.5dp"
+                android:layout_height="30dp"
+                android:id="@+id/line_menu_2"
+                android:layout_below="@+id/line_menu_1"
+                android:layout_marginTop="5dp"
+                android:layout_centerHorizontal="true"
+                android:background="@color/white"
+                />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="20dp"
+                android:layout_below="@+id/line_menu_1"
+                android:layout_marginTop="10dp"
+                android:layout_toStartOf="@+id/line_menu_2"
+                android:layout_marginEnd="30dp"
+                android:textColor="@color/white"
+                android:text="@string/create_group"
+                android:id="@+id/tv_menu_create_group"
+                />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="20dp"
+                android:layout_below="@+id/line_menu_1"
+                android:layout_marginTop="10dp"
+                android:layout_toEndOf="@+id/line_menu_2"
+                android:layout_marginStart="30dp"
+                android:textColor="@color/white"
+                android:text="@string/add_group"
+                android:id="@+id/tv_menu_add_group"
+                />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0.5dp"
+                android:id="@+id/line_menu_3"
+                android:layout_below="@+id/line_menu_2"
+                android:layout_marginTop="5dp"
+                android:background="@color/white"
+                />
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:id="@+id/img_menu_interphone"
+                android:scaleType="centerCrop"
+                android:src="@drawable/walkie_talkie"
+                android:layout_alignBottom="@+id/tv_menu_interphone"
+                android:layout_marginBottom="10dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:gravity="start|bottom"
+                android:id="@+id/tv_menu_interphone"
+                android:layout_below="@+id/line_menu_3"
+                android:layout_marginTop="15dp"
+                android:textColor="@color/white"
+                android:text="@string/interphone"
+                android:paddingStart="40dp"
+                android:paddingEnd="0dp"
+                android:paddingBottom="10dp"
+                />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0.5dp"
+                android:background="@color/white"
+                android:id="@+id/line_menu_4"
+                android:layout_below="@+id/tv_menu_interphone"/>
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:id="@+id/img_menu_contacts"
+                android:scaleType="centerCrop"
+                android:src="@drawable/contacts"
+                android:layout_alignBottom="@+id/tv_menu_contacts"
+                android:layout_marginBottom="10dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:gravity="bottom|start"
+                android:id="@+id/tv_menu_contacts"
+                android:layout_below="@+id/line_menu_4"
+                android:textColor="@color/white"
+                android:text="@string/contacts"
+                android:paddingStart="40dp"
+                android:paddingEnd="0dp"
+                android:paddingBottom="10dp"
+                />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0.5dp"
+                android:background="@color/white"
+                android:id="@+id/line_menu_5"
+                android:layout_below="@+id/tv_menu_contacts"/>
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:id="@+id/img_menu_mydevice"
+                android:scaleType="centerCrop"
+                android:src="@drawable/me"
+                android:layout_alignBottom="@+id/tv_menu_my_device"
+                android:layout_marginBottom="10dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:gravity="bottom|start"
+                android:id="@+id/tv_menu_my_device"
+                android:layout_below="@+id/line_menu_5"
+                android:textColor="@color/white"
+                android:text="@string/my_device"
+                android:paddingStart="40dp"
+                android:paddingEnd="0dp"
+                android:paddingBottom="10dp"
+                />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0.5dp"
+                android:background="@color/white"
+                android:id="@+id/line_menu_6"
+                android:layout_below="@+id/tv_menu_my_device"/>
+
+        </RelativeLayout>
+
+    </ScrollView>
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/transparent"
-        android:paddingLeft="16dp"
-        android:paddingRight="16dp"
-        android:paddingTop="80dp"
-        android:paddingBottom="15dp">
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:layout_alignParentBottom="true"
+        android:id="@+id/rl_bottom_menu"
+        android:background="@android:color/transparent">
 
         <ImageView
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:id="@+id/img_menu_photo"
-            android:layout_centerHorizontal="true"
-            />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="5dp"
-            android:layout_below="@id/img_menu_photo"
-            android:layout_marginTop="8dp"
-            android:layout_centerHorizontal="true"
-            android:textColor="#fff"
-            android:text="用户名"
-            android:id="@+id/tv_menu_name"/>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="0.8dp"
-            android:id="@+id/line_menu_1"
-            android:layout_below="@+id/tv_menu_name"
-            android:layout_marginTop="12dp"
-            />
-
-        <View
-            android:layout_width="0.8dp"
-            android:layout_height="30dp"
-            android:id="@+id/line_menu_2"
-            android:layout_below="@+id/line_menu_1"
-            android:layout_marginTop="5dp"
-            android:layout_centerHorizontal="true"
-            />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="20dp"
-            android:layout_below="@+id/line_menu_1"
-            android:layout_marginTop="10dp"
-            android:layout_toStartOf="@+id/line_menu_2"
-            android:layout_marginEnd="30dp"
-            android:textColor="#fff"
-            android:text="建组"
-            android:id="@+id/tv_menu_create_group"
-            />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="20dp"
-            android:layout_below="@+id/line_menu_1"
-            android:layout_marginTop="10dp"
-            android:layout_toEndOf="@+id/line_menu_2"
-            android:layout_marginStart="30dp"
-            android:textColor="#fff"
-            android:text="建组"
-            android:id="@+id/tv_menu_add_group"
-            />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="0.8dp"
-            android:id="@+id/line_menu_3"
-            android:layout_below="@+id/line_menu_2"
-            android:layout_marginTop="5dp"
-            />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="100dp"
-            android:gravity="center_vertical|start"
-            android:id="@+id/tv_menu_interphone"
-            android:layout_below="@+id/line_menu_3"
-            android:textColor="#fff"
-            android:text="对讲机"
-            />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="100dp"
-            android:gravity="center_vertical|start"
-            android:id="@+id/tv_menu_maillist"
-            android:layout_below="@+id/tv_menu_interphone"
-            android:textColor="#fff"
-            android:text="通讯录"
-            />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="100dp"
-            android:gravity="center_vertical|start"
-            android:id="@+id/tv_menu_my_device"
-            android:layout_below="@+id/tv_menu_maillist"
-            android:textColor="#fff"
-            android:text="我的设备"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/img_setting_menu"
+            android:layout_centerVertical="true"
+            android:src="@drawable/setting"
+            android:scaleType="centerCrop"
             />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/tv_menu_setting"
-            android:layout_below="@+id/tv_menu_my_device"
-            android:textColor="#fff"
-            android:text="设置"
-            android:layout_alignParentStart="true"
+            android:textColor="@color/white"
+            android:text="@string/setting"
+            android:layout_toEndOf="@+id/img_setting_menu"
+            android:layout_marginStart="10dp"
+            android:layout_centerVertical="true"
             />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/tv_menu_quit"
-            android:layout_below="@+id/tv_menu_my_device"
-            android:textColor="#fff"
-            android:text="退出"
+            android:id="@+id/tv_menu_exit"
+            android:textColor="@color/red"
+            android:text="@string/exit"
+            android:layout_centerVertical="true"
             android:layout_alignParentEnd="true"
+            android:textStyle="bold"
+            />
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/img_exit_menu"
+            android:layout_centerVertical="true"
+            android:src="@drawable/exit"
+            android:scaleType="centerCrop"
+            android:layout_toStartOf="@+id/tv_menu_exit"
+            android:layout_marginEnd="10dp"
             />
 
     </RelativeLayout>
 
-</ScrollView>
+
+</RelativeLayout>

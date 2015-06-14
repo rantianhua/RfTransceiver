@@ -47,8 +47,8 @@ public class SearchActivity extends ListActivity implements View.OnClickListener
     Button btnCancel;
 
     public static Connectlistener connectlistener = null;
-    private BluetoothAdapter adapter = null;
 
+    private BluetoothAdapter adapter = null;
     private BluetoothAdapter.LeScanCallback leScanCallback = null;
 
     private LeDeviceListAdapter listAdapter = null;

@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="white">#fff</color>
+    <color name="take_pic">#ee464646</color>
+    <color name="blue_with_press">#02203c</color>
+    <color name="blue_without_press">#0060b1</color>
+    <color name="dark_blue">#043564</color>
+    <color name="red">#ffa40000</color>
 </resources>
