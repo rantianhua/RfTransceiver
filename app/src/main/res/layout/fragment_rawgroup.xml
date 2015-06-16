@@ -47,16 +47,33 @@
         android:id="@+id/member_layout"/>
 
     <com.rftransceiver.customviews.ArcView
-        android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:id="@+id/arcview"
-        custom:stroke_width="5dp"
-        custom:stroke_color="@color/white"
-        android:layout_alignStart="@+id/img_photo_raw_group"
-        android:layout_alignEnd="@+id/img_photo_raw_group"
+        android:layout_width="85dp"
+        android:layout_height="85dp"
+        android:id="@+id/arcview1"
+        custom:stroke_color="#fff"
         android:layout_centerHorizontal="true"
-        android:layout_alignBottom="@+id/img_photo_raw_group"
-        android:layout_marginBottom="40dp"
+        android:layout_above="@+id/btn_sure_raw_group"
+        android:layout_marginBottom="10dp"
+        />
+
+    <com.rftransceiver.customviews.ArcView
+        android:layout_width="85dp"
+        android:layout_height="85dp"
+        android:id="@+id/arcview2"
+        custom:stroke_color="#fff"
+        android:layout_centerHorizontal="true"
+        android:layout_above="@+id/btn_sure_raw_group"
+        android:layout_marginBottom="10dp"
+        />
+
+    <com.rftransceiver.customviews.ArcView
+        android:layout_width="85dp"
+        android:layout_height="85dp"
+        android:id="@+id/arcview3"
+        custom:stroke_color="#fff"
+        android:layout_centerHorizontal="true"
+        android:layout_above="@+id/btn_sure_raw_group"
+        android:layout_marginBottom="10dp"
         />
 
     <ImageView
@@ -67,7 +84,6 @@
         android:layout_marginBottom="15dp"
         android:layout_centerHorizontal="true"
         android:scaleType="centerCrop"
-        android:background="@drawable/member_info_bg"
         />
     
     <Button

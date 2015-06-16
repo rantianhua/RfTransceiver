@@ -29,6 +29,6 @@
 
     <declare-styleable name="ArcView">
         <attr name="stroke_width" format="dimension"/>
-        <attr name="stroke_color" format="reference"/>
+        <attr name="stroke_color" format="color"/>
     </declare-styleable>
 </resources>

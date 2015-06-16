@@ -27,6 +27,7 @@ import android.widget.Toast;
 import com.brige.wifi.WifiNetService;
 import com.rftransceiver.R;
 import com.rftransceiver.activity.GroupActivity;
+import com.rftransceiver.customviews.ArcView;
 import com.rftransceiver.customviews.CircleImageDrawable;
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.group.GroupMember;
@@ -64,6 +65,12 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
     Button btnSure;
     @InjectView(R.id.btn_cancel_raw_group)
     Button btnCancel;
+    @InjectView(R.id.arcview1)
+    ArcView arcView1;
+    @InjectView(R.id.arcview2)
+    ArcView arcView2;
+    @InjectView(R.id.arcview3)
+    ArcView arcView3;
 
     /**
      * CREATE indicate is creating group
@@ -280,6 +287,9 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
                 initTimer();
             }
         }
+        arcView1.startRipple(0);
+        arcView2.startRipple(1300);
+        arcView3.startRipple(2600);
     }
 
     @Override
@@ -291,6 +301,9 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
                 resultTimer = null;
             }
         }
+        arcView1.stopRipple();
+        arcView2.stopRipple();
+        arcView3.stopRipple();
     }
 
     /**
