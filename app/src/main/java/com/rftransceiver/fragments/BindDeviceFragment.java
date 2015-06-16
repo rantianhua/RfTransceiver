@@ -32,6 +32,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.rftransceiver.R;
+import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.util.CommonAdapter;
 import com.rftransceiver.util.CommonViewHolder;
 
@@ -59,10 +60,10 @@ public class BindDeviceFragment extends ListFragment {
         public void onLeScan(final BluetoothDevice device, int i, byte[] bytes) {
             if(device == null) return;
             if(devices.contains(device)) return;
-            devices.add(device);
             getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
+                    devices.add(device);
                     CommonAdapter commonAdapter = (CommonAdapter)getListAdapter();
                     commonAdapter.notifyDataSetChanged();
                 }
@@ -86,7 +87,6 @@ public class BindDeviceFragment extends ListFragment {
      */
     private View selectedView;
 
-    private boolean isOpeningBluetooth = false;
 
     /**
      * the instance of CallbackInBindDeviceFragment
@@ -135,7 +135,7 @@ public class BindDeviceFragment extends ListFragment {
 
     private void startSearch() {
         if(!adapter.isEnabled() || adapter.getState() == BluetoothAdapter.STATE_TURNING_ON) {
-            isOpeningBluetooth = true;
+            MainActivity.needSearchDevice = true;
         }else {
             searchDevices();
         }
@@ -157,6 +157,7 @@ public class BindDeviceFragment extends ListFragment {
         if(selectedView != null) {
             selectedView.setSelected(false);
         }
+        cancelSearch();
         selectedView = v.findViewById(R.id.tv_device_name_list);
         selectedView.setSelected(true);
         if(pwdDialogFragment == null) {

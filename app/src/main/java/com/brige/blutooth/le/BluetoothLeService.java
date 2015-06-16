@@ -181,6 +181,7 @@ public class BluetoothLeService extends Service {
             final byte[] data = characteristic.getValue();
             if (data != null && data.length > 0) {
                 int bytes = data.length;
+                Log.e("receive data " ,"length is " + bytes);
                 if(bytes < 6) {
                     return;
                 }
@@ -191,7 +192,6 @@ public class BluetoothLeService extends Service {
                             //the cache now is full
                             //check this cache is right or not
                             index = 0;
-
                             sendMessageListener.sendUnPacketedData(temp,0);
                             temp = null;
                             temp = new  byte[Constants.Data_Packet_Length];

@@ -1,14 +1,20 @@
 package com.rftransceiver.util;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.text.TextUtils;
+import android.util.Base64;
+import android.util.TypedValue;
 
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.group.GroupMember;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -32,18 +38,18 @@ public class GroupUtil {
      * @param groupEntity   the Group's description
      * @return the jsonobject contain group's base info
      */
-    private static JSONObject getGroupBaseInfo(GroupEntity groupEntity) {
+    private static JSONObject getGroupBaseInfo(GroupEntity groupEntity,Context context) {
         JSONObject object = null;
         try {
             object = new JSONObject();
+            object.put("msg",GROUP_BASEINFO);
             object.put(NAME,groupEntity.getName());
-            byte[] async = groupEntity.getAsyncWord();
-            String asyncWord = async[0] + "|" + async[1];
-            object.put(GROUP_ASYNC_WORD,asyncWord);
-            asyncWord = null;
+            object.put(GROUP_MEMBER_ID,groupEntity.getTempId());
+            object.put(GROUP_ASYNC_WORD,
+                    Base64.encodeToString(groupEntity.getAsyncWord(), Base64.DEFAULT));
             String path = groupEntity.getPicFilePath();
             if(path != null) {
-               object.put(PIC,getPicBytes(path));
+                object.put(PIC,Base64.encodeToString(getPicBytes(path,context), Base64.DEFAULT));
                 path = null;
             }
         }catch (Exception e) {
@@ -52,13 +58,18 @@ public class GroupUtil {
         return object;
     }
 
+
+
     /**
      *
      * @param path the file path of specific picture
      * @return byte[] data of the picture
      */
-    private static byte[] getPicBytes(String path) {
-        Bitmap bitmap = BitmapFactory.decodeFile(path);
+    private static byte[] getPicBytes(String path,Context context) {
+        int size = (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                30,context.getResources().getDisplayMetrics());
+        size = size * size;
+        Bitmap bitmap = ImageUtil.createImageThumbnail(path,size);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG,100,outputStream);
         bitmap.recycle();
@@ -68,18 +79,81 @@ public class GroupUtil {
 
     /**
      *
-     * @param member the group member object
      * @return jsonobject contains member's base info
      */
-    private static JSONObject getMemberBaseInfo(GroupMember member) {
+    private static JSONObject getMemberInfo(Object o, Context context) {
         JSONObject object = null;
         try {
             object = new JSONObject();
-            object.put(NAME,member.getName());
-            String path = member.getPath();
-            if(path != null){
-                object.put(PIC,getPicBytes(path));
-                path = null;
+            object.put("msg",MEMBER_BASEINFO);
+            String memberName = null;
+            byte[] bitmapData = null;
+            if(o != null) {
+                GroupMember member = (GroupMember) o;
+                memberName = member.getName();
+                Bitmap bitmap = member.getBitmap();
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.JPEG,100,outputStream);
+                bitmapData = outputStream.toByteArray();
+                bitmap.recycle();
+                object.put(GroupUtil.GROUP_MEMBER_ID,member.getId());
+            }else {
+                SharedPreferences sp = context.getSharedPreferences(Constants.SP_USER,0);
+                memberName = sp.getString(Constants.NICKNAME,"");
+                String photoPath = sp.getString(Constants.PHOTO_PATH,"");
+                bitmapData = getPicBytes(photoPath,context);
+            }
+            object.put(NAME,memberName);
+            object.put(PIC,
+                    Base64.encodeToString(bitmapData,Base64.DEFAULT));
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        return object;
+    }
+
+    /**
+     *
+     * @return jsonObject contain message to request group base info
+     */
+    private static JSONObject getRequstGBI() {
+        JSONObject object = null;
+        try {
+            object = new JSONObject();
+            object.put("msg",REQUEST_GBI);
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        return object;
+    }
+
+    /**
+     * @return JsonObject contains message to close socket
+     */
+    private static JSONObject getMsgCS() {
+        JSONObject object = null;
+        try {
+            object = new JSONObject();
+            object.put("msg",CLOSE_SOCKET);
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        return object;
+    }
+
+    /**
+     * @return JsonObject contains message to cancel create or add group
+     */
+    private static JSONObject getMsgCancel(Object message) {
+        JSONObject object = null;
+        try {
+            object = new JSONObject();
+            if(message instanceof Integer) {
+                object.put("msg", CANCEL_ADD);
+                object.put(GroupUtil.GROUP_MEMBER_ID,(int)message);
+            }else if(message instanceof String) {
+                object.put("msg", CANCEL_CREATE);
+                object.put(GROUP_SSID,message);
             }
         }catch (Exception e) {
             e.printStackTrace();
@@ -89,41 +163,79 @@ public class GroupUtil {
 
     /**
      *
-     * @param id the group owner distribute a id to every member
-     * @return jsonobject contains member's id
+     * @param type the type of data to be sent
+     * @param o the message need to be send
+     * @return jsonobject of the send data
      */
-    private static JSONObject getMemberId(int id) {
-        JSONObject object = null;
-        try {
-            object = new JSONObject();
-            object.put(GROUP_MEMBER_ID,id);
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
-        return object;
-    }
-
-    public static JSONObject getWriteData(WriteDataType type,Object o) {
+    public static String getWriteData(String type,Object o,Context context) {
         switch (type) {
             case GROUP_BASEINFO:
-                return getGroupBaseInfo((GroupEntity)o);
+                return getGroupBaseInfo((GroupEntity)o,context).toString();
             case MEMBER_BASEINFO:
-                return getMemberBaseInfo((GroupMember)o);
-            case MEMBER_ID:
-                return getMemberId((int)o);
+                return getMemberInfo(o, context).toString();
+            case REQUEST_GBI:
+                return getRequstGBI().toString();
+            case CLOSE_SOCKET:
+                return getMsgCS().toString();
+            case CANCEL_ADD:
+                return getMsgCancel(o).toString();
+            case CANCEL_CREATE:
+                return getMsgCancel(o).toString();
+            case GROUP_FULL_INFO:
+                return getGroupFullInfo(o,context);
         }
         return null;
     }
 
-    public enum WriteDataType {
-        GROUP_BASEINFO,
-        MEMBER_BASEINFO,
-        MEMBER_ID
+    /**
+     *
+     * @param o
+     * @param context
+     * @return full info of a created group
+     */
+    private static String getGroupFullInfo(Object o, Context context) {
+        GroupEntity entity = (GroupEntity)o;
+        List<GroupMember> members = entity.getMembers();
+        JSONArray jsonArray = null;
+        JSONObject data = null;
+        try{
+            jsonArray = new JSONArray();
+            for(int i = 0;i < members.size();i++) {
+                JSONObject object = getMemberInfo(members.get(i),context);
+                jsonArray.put(object);
+            }
+            data = new JSONObject();
+            data.put("msg",jsonArray);
+        }catch (Exception e ){
+            e.printStackTrace();
+        }
+        return data == null ? null : data.toString();
     }
 
-    public static final String NAME = "name";   //the key of group owner's or member's name
+
+//    /**
+//     * the enum to distinguish different data type
+//     */
+//    public enum WriteDataType {
+//        GROUP_BASEINFO,
+//        MEMBER_BASEINFO,
+//        MEMBER_ID,
+//        REQUEST_GBI
+//    }
+
+    public static final String NAME = "name";   //the key of group's or member's name
     public static final String PIC = "pic";     //the key of group owner's or member's picture
+    public static final String OWNER_NAME = "owner_name";   //the key of group owner's or member's name
     public static final String GROUP_MEMBER_ID = "memberId";    //the key of group member's id
     public static final String GROUP_ASYNC_WORD = "async_word"; //the key of group's async word
+    public static final String GROUP_SSID = "ssid"; //the key of group's async word
+
+    public static final String REQUEST_GBI = "request_base_info"; //the value of msg,to rewuest group base info
+    public static final String GROUP_BASEINFO = "group_base_info"; //the value of msg
+    public static final String MEMBER_BASEINFO = "member_base_info"; //the value of msg
+    public static final String CLOSE_SOCKET = "close_socket"; //the value of msg
+    public static final String CANCEL_ADD = "cancel_add";   //cancel add group
+    public static final String CANCEL_CREATE = "cancel_create";   //cancel create group
+    public static final String GROUP_FULL_INFO = "group_full_info";   //cancel create group
 
 }

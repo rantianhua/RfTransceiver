@@ -1,5 +1,7 @@
 package com.rftransceiver.group;
 
+import android.util.Log;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,6 +17,8 @@ public class GroupEntity {
     private String picFilePath; //the file path of picture
 
     private List<GroupMember> members;  //record all of group members
+
+    private int tempId; //every new member's id;
 
     public GroupEntity() {
         members = new ArrayList<>();
@@ -53,5 +57,27 @@ public class GroupEntity {
 
     public List<GroupMember> getMembers() {
         return members;
+    }
+
+    public int getTempId() {
+        return tempId;
+    }
+
+    public void setTempId(int tempId) {
+        this.tempId = tempId;
+    }
+
+    /**
+     * remove member by member id
+     * @param cancelId
+     */
+    public void removeMemberById(int cancelId) {
+        for(int i = 0; i < members.size();i ++) {
+            if(members.get(i).getId() == cancelId) {
+                members.remove(i);
+                Log.e("removeMemberById", "remove " + cancelId);
+                break;
+            }
+        }
     }
 }

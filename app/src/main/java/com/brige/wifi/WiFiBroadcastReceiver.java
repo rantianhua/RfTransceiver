@@ -6,11 +6,7 @@ import android.content.Intent;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.net.wifi.p2p.WifiP2pInfo;
-import android.net.wifi.p2p.WifiP2pManager;
 import android.util.Log;
-
-import com.rftransceiver.activity.MyWifiActivity;
 
 /**
  * Created by rantianhua on 15-5-26.
@@ -33,10 +29,8 @@ public class WiFiBroadcastReceiver extends BroadcastReceiver{
             if(state == WifiManager.WIFI_STATE_ENABLED) {
                 service.wifiEnabled();
             }else if(state == WifiManager.WIFI_STATE_DISABLED) {
-                Log.e("WiFiBroadcastReceiver", "wifi disabled");
+
             }
-        }else if(WifiManager.ACTION_PICK_WIFI_NETWORK.equals(action)) {
-            Log.e("WiFiBroadcastReceiver", "ACTION_PICK_WIFI_NETWORK");
         }else if(WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
             //Log.e("WiFiBroadcastReceiver", "NETWORK_STATE_CHANGED_ACTION");
             WifiInfo info = intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
@@ -51,8 +45,6 @@ public class WiFiBroadcastReceiver extends BroadcastReceiver{
                     }
                 }
             }
-        }else if(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(action)){
-
         }
     }
 }

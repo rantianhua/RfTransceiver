@@ -17,8 +17,17 @@ import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Message;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.util.Log;
 
+
+import com.rftransceiver.group.GroupEntity;
+import com.rftransceiver.group.GroupMember;
+import com.rftransceiver.util.Constants;
+import com.rftransceiver.util.GroupUtil;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,7 +63,6 @@ public class WifiNetService extends Service implements Handler.Callback{
     private ServerSocket serverSocket;  //the serverSocket wait to be connected
     private Runnable startServerSocket;
     private boolean endAccept = false;
-    private String connectSsid;
 
     /**
      * the thread pool to execute mutiClientSocket
@@ -171,9 +179,8 @@ public class WifiNetService extends Service implements Handler.Callback{
 
     public void wifiConnected(String ssid) {
         Log.e("wifiConnected","ssid is" + ssid);
-        if(connectSsid != null && connectSsid.equals(ssid)) {
-            createClientSocket(ssid);
-            connectSsid = null;
+        if(callback != null) {
+            callback.wifiApConnected(ssid);
         }
     }
 
@@ -185,7 +192,6 @@ public class WifiNetService extends Service implements Handler.Callback{
     public boolean connectAction(String ssid) {
         WifiConfiguration configuration = setUpWifiConfig(ssid);
         if(configuration == null) {
-            Log.e("connectWifi","setupWifiConfig failed");
             return false;
         }
 
@@ -198,7 +204,6 @@ public class WifiNetService extends Service implements Handler.Callback{
         //disconnect exist connect
         manager.disconnect();
         manager.enableNetwork(netId,true);
-        connectSsid = ssid;
         return manager.reconnect();
     }
 
@@ -213,7 +218,6 @@ public class WifiNetService extends Service implements Handler.Callback{
             String connectSsid = info.getSSID();
             if(connectSsid != null && (ssid.equalsIgnoreCase(connectSsid)
                     || connectSsid.equalsIgnoreCase("\""+ssid+"\""))) {
-                Log.e(TAG,"已连接的ssid是"+ info.getSSID());
                 return true;
             }
         }
@@ -271,6 +275,74 @@ public class WifiNetService extends Service implements Handler.Callback{
     }
 
     /**
+     * write member info to group owner
+     * @param s
+     */
+    public void writeMemberInfo(final String s) {
+        pool.execute(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < works.size(); i++) {
+                    WorkRunnabble avliableWork = works.get(i);
+                    if (avliableWork.getReading()) {
+                        avliableWork.writeMessage(s);
+                        break;
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * cancel add group , send message to wifiAp
+     * @param id
+     */
+    public void cancelAddGroup(final int id) {
+        for(int i = 0; i < works.size();i++) {
+            WorkRunnabble workRunnable = works.get(i);
+            if(workRunnable.getReading()) {
+                workRunnable.writeMessage(GroupUtil.getWriteData(GroupUtil.CANCEL_ADD,
+                        id,null));
+                workRunnable.cancel();
+                break;
+            }
+        }
+    }
+
+    /**
+     * cancel create group
+     */
+    public void cancelCreateGroup() {
+        for(int i = 0;i < works.size();i++) {
+            WorkRunnabble run = works.get(i);
+            if(run.getReading()) {
+                run.writeMessage(GroupUtil.getWriteData(GroupUtil.CANCEL_CREATE,
+                        SSID,null));
+            }
+        }
+    }
+
+    //send group full members to every member
+    public void sendFullGroup(final GroupEntity groupEntity) {
+        pool.execute(new Runnable() {
+            @Override
+            public void run() {
+                String groupInfo = GroupUtil.getWriteData(GroupUtil.GROUP_FULL_INFO,
+                        groupEntity,WifiNetService.this.getApplicationContext());
+                if(groupInfo != null) {
+                    for(int i = 0;i < works.size();i++ ){
+                        WorkRunnabble run = works.get(i);
+                        if(run.getReading()) {
+                            run.writeMessage(groupInfo);
+                        }
+                    }
+                }
+                callback.sendGroupFinished();
+            }
+        });
+    }
+
+    /**
      * statrt scan wifi device
      */
     public void startScan() {
@@ -285,10 +357,10 @@ public class WifiNetService extends Service implements Handler.Callback{
     /**
      * create client socket to exchange data
      */
-    public void createClientSocket(String ssid) {
-        new ClientConnect().execute(ssid);
+    public void createClientSocket(String ssid,boolean requestGroupInfo) {
+        String request = requestGroupInfo ? "request" : "";
+        new ClientConnect().execute(ssid,request);
     }
-
 
     private synchronized void setEndAccept(boolean end) {
         endAccept = end;
@@ -353,9 +425,7 @@ public class WifiNetService extends Service implements Handler.Callback{
         //create an intentfilter for broadcast receiver
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
-        intentFilter.addAction(WifiManager.ACTION_PICK_WIFI_NETWORK);
         intentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
-        intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
         return intentFilter;
     }
 
@@ -363,16 +433,40 @@ public class WifiNetService extends Service implements Handler.Callback{
 
         @Override
         protected String doInBackground(String... strings) {
+            //before connect, close have established connection
+            if(works.size() > 0) {
+                final WorkRunnabble preWork = works.get(0);
+                pool.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        preWork.writeMessage(GroupUtil.getWriteData(GroupUtil.CLOSE_SOCKET,
+                                null,null));
+                        preWork.cancel();
+                    }
+                });
+            }
             String host = getServerIpAdress();
             try {
                 Socket socket = new Socket();
                 socket.bind(null);
                 socket.connect(new InetSocketAddress(host, port));
-                WorkRunnabble work = new WorkRunnabble(socket,strings[0]);
+                final WorkRunnabble work = new WorkRunnabble(socket,-1);
                 works.add(work);
                 pool.execute(work);
+                if(!TextUtils.isEmpty(strings[1])) {
+                    pool.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            work.writeMessage(GroupUtil.getWriteData(GroupUtil.REQUEST_GBI,
+                                    null, null));
+                        }
+                    });
+                }
             } catch (IOException e) {
                 Log.e(TAG, "client socket connect error" + e.getMessage(), e);
+                if(callback != null){
+                    callback.socketConnectFailed(strings[0]);
+                }
                 return null;
             }
             host = null;
@@ -381,7 +475,9 @@ public class WifiNetService extends Service implements Handler.Callback{
 
         @Override
         protected void onPostExecute(String ssid) {
-            callback.socketCreated(ssid);
+            if(ssid != null && callback != null) {
+                callback.socketCreated(ssid);
+            }
         }
 
         /**
@@ -452,12 +548,16 @@ public class WifiNetService extends Service implements Handler.Callback{
 
         private OutputStream out = null;
         private InputStream in = null;
-        private String ssid;
         private Socket socket = null;
         private boolean reading = false;
 
-        public WorkRunnabble(Socket socket,String ssid) {
-            this.ssid = ssid;
+        /**
+         * every member have a id as an identity
+         */
+        private int id;
+
+        public WorkRunnabble(Socket socket,int id) {
+            this.id = id;
             this.socket = socket;
             try {
                 out = socket.getOutputStream();
@@ -470,15 +570,53 @@ public class WifiNetService extends Service implements Handler.Callback{
         @Override
         public void run() {
             setReading(true);
+            boolean receving = false;
             try {
                 int bytes = 0;
                 byte[] buff = new byte[1024];
+                StringBuilder sb = new StringBuilder();
                 while (getReading()) {
                     bytes = in.read(buff);
                     if(bytes > 0) {
                         byte[] data = new byte[bytes];
                         System.arraycopy(buff,0,data,0,bytes);
-                        callback.readData(new String(data));
+                        if(!receving && data[0] == Constants.Data_Packet_Head) {
+                            //start receiving data
+                            receving = true;
+                            if(bytes < 1024 && data[data.length-1] == Constants.Data_Packet_Tail) {
+                                //callback.readData(sb.toString());
+                                //do parse data in other thread , avoid blocking read data
+                                receving = false;
+                                sb.append(new String(data,1,bytes-2));
+                                final String temp = sb.toString();
+                                sb.delete(0,sb.length());
+                                pool.execute(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        parseReadData(temp);
+                                    }
+                                });
+                            }else {
+                                sb.append(new String(data,1,data.length-1));
+                            }
+                        }else if(receving && data[data.length-1] == Constants.Data_Packet_Tail) {
+                            //end receiving data
+                            receving = false;
+                            sb.append(new String(data,0,data.length-1));
+                            //callback.readData(sb.toString());
+                            //do parse data in other thread , avoid blocking read data
+                            final  String temp = sb.toString();
+                            pool.execute(new Runnable() {
+                                @Override
+                                public void run() {
+                                    parseReadData(temp);
+                                }
+                            });
+                            sb.delete(0,sb.length());
+                        }else {
+                            sb.append(new String(data,0,data.length));
+                        }
+                        data = null;
                     }
                 }
             }catch (Exception e) {
@@ -488,11 +626,80 @@ public class WifiNetService extends Service implements Handler.Callback{
             }
         }
 
-        public void writeMessage(String hello) {
+        /**
+         * @param data received data
+         */
+        private void parseReadData(String data) {
+            JSONObject object = null;
             try{
-                if(out != null) {
-                    out.write(hello.getBytes());
+                object = new JSONObject(data);
+                Log.e("readData", "have read some data" + object);
+                String type = object.getString("msg");
+                switch (type) {
+                    case GroupUtil.GROUP_BASEINFO:
+                        //received group base info
+                        if(callback == null) return;
+                        callback.readData(GroupUtil.GROUP_BASEINFO,object);
+                        break;
+                    case GroupUtil.REQUEST_GBI:
+                        //need send group owner info to connected device
+                        if(callback == null) return;
+                        String info = callback.getGroupInfo(getId());
+                        if(info == null) return;
+                        writeMessage(info);
+                        break;
+                    case GroupUtil.CLOSE_SOCKET:
+                        cancel();
+                        break;
+                    case GroupUtil.MEMBER_BASEINFO:
+                        if(callback == null) return;
+                        object.put(GroupUtil.GROUP_MEMBER_ID,getId());
+                        callback.readData(GroupUtil.MEMBER_BASEINFO,object);
+                        break;
+                    case GroupUtil.CANCEL_ADD:
+                        if(callback == null) return;
+                        callback.readData(GroupUtil.CANCEL_ADD,object);
+                        int closeId = -1;
+                        closeId = object.getInt(GroupUtil.GROUP_MEMBER_ID);
+                        if(closeId != -1) {
+                            WorkRunnabble closeRunnable = works.get(closeId-1);
+                            if(closeRunnable.getId() == closeId) {
+                                closeRunnable.cancel();
+                                Log.e("CANCEL_ADD","cancel a member");
+                            }
+                        }
+                        break;
+                    case GroupUtil.CANCEL_CREATE:
+                        if(callback == null ) return;
+                        callback.readData(GroupUtil.CANCEL_CREATE,object);
+                        break;
+                    default:
+                        callback.readData(GroupUtil.GROUP_FULL_INFO,object);
+                        break;
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
+            }finally {
+                if(object != null) {
+                    object = null;
+                }
+            }
+        }
+
+        public synchronized void writeMessage(String hello) {
+            try{
+                if(out != null && hello != null) {
+                    Log.e("have write",hello);
+                    byte[] data = hello.getBytes();
+                    byte[] sendData = new byte[data.length+2];
+                    sendData[0] = Constants.Data_Packet_Head;
+                    sendData[sendData.length-1] = Constants.Data_Packet_Tail;
+                    System.arraycopy(data,0,sendData,1,data.length);
+                    out.write(sendData,0,sendData.length);
                     out.flush();
+                    data = null;
+                    sendData = null;
+                    hello = null;
                 }
             }catch (Exception e) {
                 Log.e(TAG,"error in writeMessage " + e.getMessage(),e);
@@ -539,20 +746,12 @@ public class WifiNetService extends Service implements Handler.Callback{
             return this.reading;
         }
 
-        public String getSsid() {
-            return this.ssid;
+        public int getId() {
+            return id;
         }
-    }
 
-    /**
-     * clean the dead runnable in works
-     */
-    private void cleanWorks() {
-        for(int i= 0;i < works.size();i ++) {
-            if(!works.get(i).reading) {
-                works.remove(i);
-                break;
-            }
+        public void setId(int id) {
+            this.id = id;
         }
     }
 
@@ -568,11 +767,9 @@ public class WifiNetService extends Service implements Handler.Callback{
                 while (!getEndAccept()) {
                     Log.e(TAG, "waiting accept ...");
                     Socket socket  = serverSocket.accept();
-                    Log.e(TAG, "connected  ...");
-                    WorkRunnabble work = new WorkRunnabble(socket,null);
+                    WorkRunnabble work = new WorkRunnabble(socket,works.size()+1);
                     works.add(work);
                     pool.execute(work);
-                    work.writeMessage("hello");
                 }
             }catch (Exception e) {
                 Log.e(TAG,"error in openServerSocket" + e.getMessage(),e);
@@ -601,10 +798,10 @@ public class WifiNetService extends Service implements Handler.Callback{
         void wifiApCreated();
 
         /**
-         *
+         * @param type the type of the read data
          * @param data read from socket
          */
-        void readData(String data);
+        void readData(String type,JSONObject data);
 
         /**
          * the wifi have opened
@@ -616,6 +813,23 @@ public class WifiNetService extends Service implements Handler.Callback{
          * @param ssid note the main thread the socket establish successful or not
          */
         void socketCreated(String ssid);
+        /**
+         * get group base info
+         */
+        String getGroupInfo(int memberId);
+
+        /**
+         * @param ssid the connected wifiAp's ssid
+         */
+        void wifiApConnected(String ssid);
+
+        /**
+         * call after socket connect failed
+         * @param ssid
+         */
+        void socketConnectFailed(String ssid);
+
+        void sendGroupFinished();
     }
 
 }

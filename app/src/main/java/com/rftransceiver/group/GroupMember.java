@@ -1,5 +1,7 @@
 package com.rftransceiver.group;
 
+import android.graphics.Bitmap;
+
 /**
  * Created by rantianhua on 15-5-30.
  */
@@ -9,10 +11,22 @@ public class GroupMember {
     private String name;    //the name of group member
     private String path;    //the path of picture
     private int id; //the member's id in the group
+    private Bitmap bitmap;  //the member's photo
+
 
     public GroupMember(String name,int id) {
         this.id = id;
         this.name = name;
+    }
+
+    public GroupMember(String name,int id,String path) {
+        this(name,id);
+        this.path = path;
+    }
+
+    public GroupMember(String name,int id,Bitmap bitmap) {
+        this(name,id);
+        this.bitmap = bitmap;
     }
 
     public int getId() {
@@ -37,5 +51,13 @@ public class GroupMember {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public Bitmap getBitmap() {
+        return bitmap;
+    }
+
+    public void setBitmap(Bitmap bitmap) {
+        this.bitmap = bitmap;
     }
 }

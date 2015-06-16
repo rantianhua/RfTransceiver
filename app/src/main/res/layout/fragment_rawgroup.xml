@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:custom="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    >
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@color/blue_without_press">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/tv_top_raw_group"
+            android:textColor="@color/white"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:gravity="center"
+            android:textSize="17sp"
+            android:text="@string/wait_gruop_member_in"
+            android:textStyle="bold"
+            />
+
+    </RelativeLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:gravity="center"
+        android:background="@color/blue_with_press"
+        android:text="@string/tip_member_in"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        android:layout_marginTop="50dp"
+        android:id="@+id/tv_tip_info_raw_group"/>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tv_tip_info_raw_group"
+        android:layout_alignBottom="@+id/img_photo_raw_group"
+        android:layout_marginBottom="40dp"
+        android:background="@color/blue_without_press"
+        android:id="@+id/member_layout"/>
+
+    <com.rftransceiver.customviews.ArcView
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:id="@+id/arcview"
+        custom:stroke_width="5dp"
+        custom:stroke_color="@color/white"
+        android:layout_alignStart="@+id/img_photo_raw_group"
+        android:layout_alignEnd="@+id/img_photo_raw_group"
+        android:layout_centerHorizontal="true"
+        android:layout_alignBottom="@+id/img_photo_raw_group"
+        android:layout_marginBottom="40dp"
+        />
+
+    <ImageView
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:id="@+id/img_photo_raw_group"
+        android:layout_above="@+id/btn_sure_raw_group"
+        android:layout_marginBottom="15dp"
+        android:layout_centerHorizontal="true"
+        android:scaleType="centerCrop"
+        android:background="@drawable/member_info_bg"
+        />
+    
+    <Button
+        android:layout_width="200dp"
+        android:layout_height="40dp"
+        android:id="@+id/btn_sure_raw_group"
+        android:background="@drawable/tv_sure"
+        android:textColor="@color/white"
+        android:textSize="17sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:text="@string/sure"
+        android:layout_centerHorizontal="true"
+        android:layout_above="@+id/btn_cancel_raw_group"
+        android:layout_marginBottom="15dp"
+        />
+
+    <Button
+        android:layout_width="200dp"
+        android:layout_height="40dp"
+        android:id="@+id/btn_cancel_raw_group"
+        android:background="@drawable/tv_cancel"
+        android:textColor="@color/white"
+        android:textSize="17sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:text="@string/cancel"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="15dp"
+        android:layout_centerHorizontal="true"
+        />
+    
+
+</RelativeLayout>

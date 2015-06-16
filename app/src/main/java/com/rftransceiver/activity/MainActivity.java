@@ -56,6 +56,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
     ImageView imgPhoto;
     @InjectView(R.id.tv_menu_name)
     TextView tvName;
+    @InjectView(R.id.tv_menu_create_group)
+    TextView tvCreateGruop;
+    @InjectView(R.id.tv_menu_add_group)
+    TextView tvAddGroup;
+
 
     private final String TAG = getClass().getSimpleName();
 
@@ -226,6 +231,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
         System.loadLibrary("speex");
 
         initView();
+        initEvent();
 
         //open bluetooth and start bluetooth sever
         openBluetooth();
@@ -258,6 +264,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
            initBindDeiveFragment();
             changeFragment(bindDeviceFragment);
         }
+    }
+
+    private void  initEvent(){
+        tvAddGroup.setOnClickListener(this);
+        tvCreateGruop.setOnClickListener(this);
     }
 
     /**
@@ -422,14 +433,14 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     private void createGroup() {
-        Intent intent = new Intent(this,MyWifiActivity.class);
-        intent.putExtra(MyWifiActivity.ACTION,MyWifiActivity.CREATE_GROUP);
+        Intent intent = new Intent(this,GroupActivity.class);
+        intent.putExtra(GroupActivity.ACTION_MODE,0);
         startActivity(intent);
     }
 
     private void addGroup() {
-        Intent intent = new Intent(this,MyWifiActivity.class);
-        intent.putExtra(MyWifiActivity.ACTION,MyWifiActivity.ADD_GROUP);
+        Intent intent = new Intent(this,GroupActivity.class);
+        intent.putExtra(GroupActivity.ACTION_MODE,1);
         startActivity(intent);
     }
 
@@ -531,6 +542,15 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
     @Override
     public void onClick(View v) {
+        switch (v.getId()){
+            case R.id.tv_menu_add_group:
+                addGroup();
+                break;
+            case R.id.tv_menu_create_group:
+                createGroup();
+                break;
+        }
+
     }
 
     private void chenckChannel() {

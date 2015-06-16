@@ -15,4 +15,20 @@
         <enum name="circle" value="0"/>
         <enum name="round" value="1"/>
     </attr>
+
+    <declare-styleable name="GroupMemberView">
+        <attr name="image_radiu" format="dimension"/>
+        <attr name="tv_width" format="dimension"/>
+        <attr name="tv_height" format="dimension"/>
+        <attr name="text" format="string"/>
+        <attr name="text_color" format="reference"/>
+        <attr name="text_size" format="dimension"/>
+        <attr name="tv_bg" format="reference"/>
+        <attr name="src" format="reference"/>
+    </declare-styleable>
+
+    <declare-styleable name="ArcView">
+        <attr name="stroke_width" format="dimension"/>
+        <attr name="stroke_color" format="reference"/>
+    </declare-styleable>
 </resources>
