@@ -215,6 +215,8 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
                         JSONObject o = (JSONObject)array.get(i);
                         Log.e("full data",o.toString());
                     }
+                    Toast.makeText(this,"建群完成",Toast.LENGTH_SHORT).show();
+                    finish();
                 }catch (Exception e) {
                     e.printStackTrace();
                 }

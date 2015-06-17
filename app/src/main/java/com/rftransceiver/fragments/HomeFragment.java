@@ -2,9 +2,6 @@ package com.rftransceiver.fragments;
 
 import android.app.Fragment;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -12,21 +9,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.TextView;
+import android.widget.Toast;
 
-import com.brige.blutooth.le.BluetoothLeService;
 import com.rftransceiver.R;
 import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.adapter.ListConversationAdapter;
 import com.rftransceiver.datasets.ConversationData;
-import com.rftransceiver.util.Constants;
-import com.source.DataPacketOptions;
-import com.source.parse.ParseFactory;
-import com.source.sounds.Audio_Reciver;
-import com.source.sounds.Audio_Recorder;
-import com.source.sounds.SoundsEntity;
-import com.source.text.TextEntity;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -44,6 +34,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     Button btnSend;
     @InjectView(R.id.btn_sounds)
     Button btnSounds;
+    @InjectView(R.id.img_home_troggle)
+    ImageView imgTroggle;
 
     /**
      * the reference of callback interface
@@ -81,6 +73,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     private void initEvent() {
         btnSend.setOnClickListener(this);
         btnSounds.setOnClickListener(this);
+        imgTroggle.setOnClickListener(this);
     }
 
     @Override
@@ -89,18 +82,25 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
             case R.id.btn_send:
                 if(writeable) {
                     sendText();
+                }else {
+                    Toast.makeText(getActivity(),"及什么及，蓝牙为准备好",Toast.LENGTH_SHORT).show();
                 }
                 break;
             case R.id.btn_sounds:
                 if(btnSounds.getText().equals(getString(R.string.record_sound))) {
                     if(writeable) {
                         sendSounds();
+                    }else {
+                        Toast.makeText(getActivity(),"及什么及，蓝牙为准备好",Toast.LENGTH_SHORT).show();
                     }
                 }
                 else if(btnSounds.getText().equals(getString(R.string.recording_sound))) {
                     if(callback != null) callback.stopSendSounds();
                     btnSounds.setText(getString(R.string.record_sound));
                 }
+                break;
+            case R.id.img_home_troggle:
+                if(callback != null) callback.toggleMenu();
                 break;
             default:
                 break;
@@ -146,6 +146,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
             text.setContent(data);
             text.setConversationType(ListConversationAdapter.ConversationType.Other);
             conversationAdapter.addData(text);
+            conversationAdapter.notifyDataSetChanged();
         }
     }
 
@@ -196,5 +197,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
          * stop send sounds
          */
         void stopSendSounds();
+
+        /**
+         * call to open or close menu
+         */
+        void toggleMenu();
     }
 }

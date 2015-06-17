@@ -1,58 +1,32 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".MainActivity">
+<?xml version="1.0" encoding="utf-8"?>
+<com.rftransceiver.customviews.LockerView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:lockerview="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content" android:layout_height="match_parent"
+    lockerview:padding_right="100dp"
+    lockerview:content_paddingTop="60dp"
+    android:scrollbars="none"
+    android:background="@drawable/lanchuner_bg"
+    android:id="@+id/lockerview">
 
-    <TextView
+    <LinearLayout
         android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:id="@+id/tv_current_style"
-        />
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:id="@+id/tv_current_channel"
-        android:layout_alignParentEnd="true"
-        android:layout_alignBottom="@+id/tv_current_style"/>
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:id="@+id/frame_menu"
+            >
+            <include layout="@layout/menu_view"/>
+        </FrameLayout>
 
-   <ListView
-       android:layout_width="match_parent"
-       android:layout_height="match_parent"
-       android:id="@+id/listview_conversation"
-       android:layout_above="@+id/linearLayout_text"
-       android:layout_below="@+id/tv_current_style"/>
 
-        <LinearLayout
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/linearLayout_text"
-            android:orientation="horizontal"
-            android:layout_above="@+id/btn_sounds">
+            android:layout_height="match_parent"
+            android:id="@+id/frame_content"/>
 
-            <EditText
-                android:id="@+id/et_send_message"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="3"
-                android:ems="10"
-                />
+    </LinearLayout>
 
-            <Button
-                android:id="@+id/btn_send"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:text="@string/send" />
-
-        </LinearLayout>
-
-    <Button
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:id="@+id/btn_sounds"
-        android:text="@string/record_sound"/>
-</RelativeLayout>
+</com.rftransceiver.customviews.LockerView>

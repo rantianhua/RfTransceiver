@@ -116,11 +116,13 @@ public class Constants {
         CHANNEL_STATE[1] = (byte) 0x04;
     }
 
-    public static final String SP_USER = "user";    //the name of sharedPreference which is to save user's information,
+    public static final String SP_USER = "user";    //the name of sharedPreference which is tojava.lang.String save user's information,
     public static final String NICKNAME = "nickname";
 
     public static final int MSG_GROUP_INFO = 0; //indicate this message is group's base info
 
     public static final String PHOTO_NAME = "/photo.png";
     public static final String PHOTO_PATH = "photo_path";
+    public static final String BIND_DEVICE_ADDRESS = "bind_device_address";
+    public static final String BIND_DEVICE_NAME = "bind_device_name";
 }

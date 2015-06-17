@@ -103,7 +103,6 @@ public class LockerView extends HorizontalScrollView {
         switch (action)
         {
             case MotionEvent.ACTION_DOWN:
-                Log.e("onTouch",menuOpened + "");
                 clickToClose = menuOpened && event.getX() > menuWidth;
                 return true;
             case MotionEvent.ACTION_UP:

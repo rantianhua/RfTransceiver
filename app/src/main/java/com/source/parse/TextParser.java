@@ -1,6 +1,7 @@
 package com.source.parse;
 
 import android.os.Handler;
+import android.util.Log;
 
 import com.rftransceiver.util.Constants;
 import com.source.DataPacketOptions;
@@ -40,6 +41,7 @@ public class TextParser {
     }
 
     private void makeText(byte[] data,int len) {
+        Log.e("makeText", "start to make text");
         if(len > options.getLength() - options.getOffset() -1) {
             return;
         }

@@ -8,7 +8,7 @@
         android:layout_height="50dp"
         android:background="@color/blue_without_press"
         android:paddingStart="16dp"
-        android:paddingEnd="16dp"
+        android:paddingEnd="8dp"
         >
 
         <ImageView
@@ -17,7 +17,8 @@
             android:src="@drawable/home_tag"
             android:layout_centerVertical="true"
             android:layout_alignParentStart="true"
-            android:background="@android:color/transparent"/>
+            android:background="@android:color/transparent"
+            android:id="@+id/img_home_troggle"/>
 
         <TextView
             android:layout_width="wrap_content"
@@ -28,6 +29,35 @@
             android:layout_centerVertical="true"
             android:id="@+id/tv_title_content"/>
 
+        <ImageView
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:id="@+id/img_home_hide"
+            android:background="@android:color/transparent"
+            android:src="@drawable/top_menu_hide"
+            android:layout_centerVertical="true"
+            android:layout_alignParentEnd="true"
+            />
+
+    </RelativeLayout>
+    
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:background="@color/blue_with_press"
+        android:layout_marginTop="50dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_centerHorizontal="true"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:id="@+id/tv_tip_home"
+            />
+
     </RelativeLayout>
 
 
@@ -35,37 +65,134 @@
        android:layout_width="match_parent"
        android:layout_height="match_parent"
        android:id="@+id/listview_conversation"
-       android:layout_above="@+id/linearLayout_text"
-       android:layout_marginTop="50dp"/>
+       android:layout_above="@+id/rl_home_presents"
+       android:layout_marginTop="80dp"
+       />
 
-        <LinearLayout
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:id="@+id/rl_home_presents"
+        android:layout_above="@+id/rl_home_input_message"
+        android:background="@color/blue_with_press">
+
+
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_above="@+id/rl_home_imgs_address"
+        android:id="@+id/rl_home_input_message"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/img_sounds_text"
+            android:layout_centerVertical="true"
+            android:src="@drawable/microphone"
+            android:scaleType="centerCrop"
+            />
+
+        <EditText
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/linearLayout_text"
-            android:orientation="horizontal"
-            android:layout_above="@+id/btn_sounds">
+            android:layout_height="match_parent"
+            android:layout_toEndOf="@+id/img_sounds_text"
+            android:layout_toStartOf="@+id/img_other"
+            android:id="@+id/et_send_message"
+            android:hint="@string/hint_et_sent_text"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="40dp"
+            android:singleLine="true"
+            />
 
-            <EditText
-                android:id="@+id/et_send_message"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="3"
-                android:ems="10"
-                />
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/btn_sounds"
+            android:layout_toEndOf="@+id/img_sounds_text"
+            android:layout_toStartOf="@+id/img_other"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp"
+            android:gravity="center"
+            android:text="@string/record_sound"
+            android:textColor="@color/white"
+            android:background="@drawable/tv_sure"
+            android:visibility="invisible"
+            />
 
-            <Button
-                android:id="@+id/btn_send"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:text="@string/send" />
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/img_other"
+            android:layout_centerVertical="true"
+            android:layout_alignParentEnd="true"
+            android:scaleType="centerCrop"
+            android:src="@drawable/add"
+            />
 
-        </LinearLayout>
 
-    <Button
+        <Button
+            android:layout_width="60dp"
+            android:layout_height="30dp"
+            android:id="@+id/btn_send"
+            android:layout_alignParentEnd="true"
+            android:gravity="center"
+            android:text="@string/send"
+            android:textColor="@color/white"
+            android:background="@drawable/tv_sure"
+            android:layout_centerVertical="true"
+            />
+
+
+    </RelativeLayout>
+
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:id="@+id/rl_home_imgs_address"
         android:layout_alignParentBottom="true"
-        android:id="@+id/btn_sounds"
-        android:text="@string/record_sound"/>
+        android:paddingStart="40dp"
+        android:paddingEnd="40dp"
+        android:paddingBottom="5dp">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="35dp"
+            android:id="@+id/img_home_sounds"
+            android:layout_toStartOf="@+id/view_home_1"
+            android:layout_centerVertical="true"
+            android:src="@drawable/picture"
+            android:scaleType="fitCenter"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:background="@drawable/tv_sure"
+            />
+
+        <View
+            android:layout_width="15dp"
+            android:layout_height="40dp"
+            android:id="@+id/view_home_1"
+            android:layout_centerHorizontal="true"/>
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="35dp"
+            android:id="@+id/img_home_address"
+            android:layout_toEndOf="@+id/view_home_1"
+            android:layout_centerVertical="true"
+            android:background="@drawable/tv_sure"
+            android:src="@drawable/location"
+            android:scaleType="fitCenter"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            />
+
+
+    </RelativeLayout>
+
 </RelativeLayout>

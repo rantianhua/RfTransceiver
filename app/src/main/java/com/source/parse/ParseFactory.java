@@ -41,61 +41,7 @@ public class ParseFactory {
     public ParseFactory() {
         soundsParser = new SoundsParser();
         textParser = new TextParser();
-        //crc = new Crc16Check();
     }
-
-    private void initTemp() {
-//        temp = null;
-//        temp= new byte[Constants.Data_Packet_Length];
-    }
-
-//    public void roughParse(byte[] buff,int length) throws Exception{
-//        for(int i =0; i < length;i++) {
-//            if(error != null) {
-//                initTemp();
-//                temp[index++] =buff[i];
-//                if(buff[i] == (byte) 0xff) {
-//                    //have receive all wrong data
-//                    parseRightDataFromWrong();
-//                }
-//            }else {
-//                if(buff[i] == Constants.Data_Packet_Head && index == 0) {
-//                    //now build a new cache
-//                    initTemp();
-//                    temp[index++] = buff[i];
-//                }else {
-//                    temp[index++] = buff[i];
-//                    if(index == Constants.Data_Packet_Length) {
-//                        //the cache now is full
-//                        //check this cache is right or not
-//                        if(temp[Constants.Data_Packet_Length-1] != Constants.Data_Packet_Tail  &&
-//                                temp[Constants.Data_Packet_Length-1] != Constants.Packet_Channel_Tail) {
-//                            //receive a wrong packet
-//                            error = temp;
-//                        }
-//                        if(error == null) {
-//                            sendToRelativeParser();
-//                        }
-//                        index = 0;
-//                    }
-//                }
-//            }
-//        }
-//    }
-
-//    private void parseRightDataFromWrong() {
-//        //calculate the right data's numbers in error
-//        int right  = Constants.Data_Packet_Length - index;
-//        for(int i = 0; i < index;i ++) {
-//            temp[i+right] = temp[i];
-//        }
-//        for(int i = index;i < Constants.Data_Packet_Length;i ++) {
-//            temp[i] = error[i];
-//        }
-//        sendToRelativeParser(temp);
-//        error = null;
-//        index = 0;
-//    }
 
     public void sendToRelativeParser(byte[] temp) {
         if(temp[Constants.Data_Packet_Length -1] == Constants.Data_Packet_Tail) {
@@ -107,12 +53,7 @@ public class ParseFactory {
                 //text packet
                 textParser.parseText(temp);
             }else {
-                Log.e("receive", "unknow data");
-                for(byte d : temp) {
-                    sb.append(String.format("%#s ",d));
-                }
-                Log.e("error packet",sb.toString());
-                sb.delete(0,sb.length());
+               unKnowData(temp);
             }
         }else if(temp[Constants.Data_Packet_Length -1] == Constants.Instruction_Packet_Tail) {
             switch (temp[1]) {
@@ -131,15 +72,22 @@ public class ParseFactory {
                 case 5:
                     handler.obtainMessage(Constants.MESSAGE_READ,6,-1,null).sendToTarget();
                     break;
+                default:
+                    unKnowData(temp);
+                    break;
             }
         }else {
-            Log.e("receive", "unknow data tail");
-            for(byte d : temp) {
-                sb.append(String.format("%#s ",d));
-            }
-            Log.e("error packet",sb.toString());
-            sb.delete(0,sb.length());
+           unKnowData(temp);
         }
+    }
+
+    private void unKnowData(byte[] data) {
+        Log.e("receive", "unknow data tail");
+        for(byte d : data) {
+            sb.append(String.format("%#s ",d));
+        }
+        Log.e("error packet",sb.toString());
+        sb.delete(0,sb.length());
     }
 
     public void setHandler(Handler han) {

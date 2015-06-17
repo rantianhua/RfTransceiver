@@ -1,8 +1,8 @@
 package com.source.text;
 
-import com.my_interface.SendMessageListener;
 import com.rftransceiver.datasets.MyDataQueue;
 import com.source.DataPacketOptions;
+import com.source.SendMessageListener;
 
 /**
  * Created by Rth on 2015/4/29.
@@ -80,11 +80,6 @@ public class TextEntity implements Runnable{
         while (dataQueue.getSize() > 0) {
             boolean end = dataQueue.getSize() == 1;
             sendListener.sendPacketedData((byte[])dataQueue.get(),end);
-//            try {
-//                Thread.sleep(350);
-//            }catch (Exception e) {
-//                e.printStackTrace();
-//            }
         }
     }
 

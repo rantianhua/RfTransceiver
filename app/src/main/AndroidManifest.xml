@@ -30,9 +30,6 @@
             android:theme="@android:style/Theme.Holo.Light.NoActionBar">
         </activity>
 
-        <activity android:name=".activity.SearchActivity"
-            android:theme="@android:style/Theme.Holo.Light.DarkActionBar"/>
-
         <activity android:name=".activity.LauncherActivity"
             android:theme="@android:style/Theme.Holo.Light.NoActionBar"
             android:windowSoftInputMode="stateHidden|adjustPan">
@@ -47,7 +44,7 @@
         <activity android:name=".activity.GroupActivity" android:theme="@android:style/Theme.Holo.Light.NoActionBar"/>
 
 
-        <service android:name="com.brige.blutooth.le.BluetoothLeService" android:enabled="true"
+        <service android:name="com.brige.blutooth.le.BleService" android:enabled="true"
             />
 
         <service android:name="com.brige.wifi.WifiNetService" android:enabled="true"/>

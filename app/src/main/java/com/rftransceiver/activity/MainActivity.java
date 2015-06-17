@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -19,25 +18,21 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.text.TextUtils;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.brige.blutooth.le.BluetoothLeService;
-import com.my_interface.SendMessageListener;
+import com.brige.blutooth.le.BleService;
 import com.rftransceiver.R;
-import com.rftransceiver.adapter.ListConversationAdapter;
 import com.rftransceiver.customviews.CircleImageDrawable;
-import com.rftransceiver.datasets.ConversationData;
+import com.rftransceiver.customviews.LockerView;
 import com.rftransceiver.fragments.BindDeviceFragment;
 import com.rftransceiver.fragments.HomeFragment;
 import com.rftransceiver.fragments.LoadDialogFragment;
 import com.rftransceiver.util.Constants;
 import com.source.DataPacketOptions;
+import com.source.SendMessageListener;
 import com.source.parse.ParseFactory;
 import com.source.sounds.Audio_Reciver;
 import com.source.sounds.Audio_Recorder;
@@ -49,8 +44,8 @@ import butterknife.InjectView;
 
 
 public class MainActivity extends Activity implements View.OnClickListener,
-        SearchActivity.Connectlistener,SendMessageListener,HomeFragment.CallbackInHomeFragment,
-        BindDeviceFragment.CallbackInBindDeviceFragment{
+        SendMessageListener,HomeFragment.CallbackInHomeFragment,
+        BindDeviceFragment.CallbackInBindDeviceFragment,BleService.CallbackInBle{
 
     @InjectView(R.id.img_menu_photo)
     ImageView imgPhoto;
@@ -60,14 +55,15 @@ public class MainActivity extends Activity implements View.OnClickListener,
     TextView tvCreateGruop;
     @InjectView(R.id.tv_menu_add_group)
     TextView tvAddGroup;
-
+    @InjectView(R.id.lockerview)
+    LockerView lockerView;
 
     private final String TAG = getClass().getSimpleName();
 
     /**
      * the reference of BlueLeService
      */
-    private BluetoothLeService bluetoothLeService;
+    private BleService bluetoothLeService;
     /**
      * true if is receiving data
      */
@@ -143,35 +139,16 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private String deviceName;
 
     /**
-     *  Handles various events fired by the Service.
-        ACTION_GATT_CONNECTED: connected to a GATT server.
-     ACTION_GATT_DISCONNECTED: disconnected from a GATT server.
-     ACTION_GATT_SERVICES_DISCOVERED: discovered GATT services.
-     ACTION_DATA_AVAILABLE: received data from the device.  This can be a result of read
-     or notification operations.
+     * the bounded device's address
      */
-    private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            final String action = intent.getAction();
-            if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
-                if(bindDeviceFragment != null) {
-                    bindDeviceFragment.deviceConnected();
-                    deviceBinded = true;
-                    initHomeFragment();
-                    changeFragment(homeFragment);
-                }
-            } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
-                deviceBinded = false;
-            }else if(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
-                findWriteCharac = true;
-                if(homeFragment != null) {
-                    homeFragment.writeable = true;
-                }
-            }
-        }
-    };
+    private String bindAddress;
 
+    private SharedPreferences sp;
+
+    /**
+     * true if open application add have bounded device before
+     */
+    private boolean needConnectDevice = false;
 
     /**
      * callback when BlueLeService bind or unbind
@@ -180,17 +157,25 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder service) {
-            bluetoothLeService = ((BluetoothLeService.LocalBinder) service).getService();
-            bluetoothLeService.setSendMessageListener(MainActivity.this);
+            bluetoothLeService = ((BleService.LocalBinder) service).getService();
+            bluetoothLeService.setCallback(MainActivity.this);
             if (!bluetoothLeService.initialize()) {
                 showToast("Unable to initialize Bluetooth");
                 finish();
+            }else {
+                if(!bluetoothLeService.isBluetoothEnable()) {
+                    loadDialogFragment = LoadDialogFragment.getInstance("正在打开蓝牙");
+                    loadDialogFragment.show(getFragmentManager(),null);
+                    bluetoothLeService.openBluetooth();
+                }
+                if(needConnectDevice) {
+                    bluetoothLeService.connect(bindAddress);
+                }
             }
         }
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
-            bluetoothLeService.setSendMessageListener(null);
             bluetoothLeService = null;
         }
     };
@@ -227,24 +212,23 @@ public class MainActivity extends Activity implements View.OnClickListener,
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_none);
+        setContentView(R.layout.activity_main);
         System.loadLibrary("speex");
 
         initView();
         initEvent();
 
         //open bluetooth and start bluetooth sever
-        openBluetooth();
         initDataExchangeHandler();
         iniInterphone();
         //bind the ble service
-        bindService(new Intent(this, BluetoothLeService.class), serviceConnectionBle, BIND_AUTO_CREATE);
+        bindService(new Intent(this, BleService.class), serviceConnectionBle, BIND_AUTO_CREATE);
     }
 
     private void initView() {
 
         ButterKnife.inject(this);
-        SharedPreferences sp = getSharedPreferences(Constants.SP_USER,0);
+        sp = getSharedPreferences(Constants.SP_USER,0);
         String name = sp.getString(Constants.NICKNAME,"");
         if(!TextUtils.isEmpty(name)) {
             tvName.setText(name);
@@ -257,12 +241,16 @@ public class MainActivity extends Activity implements View.OnClickListener,
         }
         photoPath = null;
 
-        if(deviceBinded) {
+        bindAddress = sp.getString(Constants.BIND_DEVICE_ADDRESS,null);
+
+        if(bindAddress == null) {
+            //choose device to bind
+            initBindDeiveFragment();
+            changeFragment(bindDeviceFragment);
+        }else {
+            needConnectDevice = true;
             initHomeFragment();
             changeFragment(homeFragment);
-        }else {
-           initBindDeiveFragment();
-            changeFragment(bindDeviceFragment);
         }
     }
 
@@ -432,12 +420,18 @@ public class MainActivity extends Activity implements View.OnClickListener,
         }
     }
 
+    /**
+     * crate group
+     */
     private void createGroup() {
         Intent intent = new Intent(this,GroupActivity.class);
         intent.putExtra(GroupActivity.ACTION_MODE,0);
         startActivity(intent);
     }
 
+    /**
+     * add a group
+     */
     private void addGroup() {
         Intent intent = new Intent(this,GroupActivity.class);
         intent.putExtra(GroupActivity.ACTION_MODE,1);
@@ -467,13 +461,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
         }
     }
 
-    //close a bluetooth connection
-    private void closeConnection() {
-        if(bluetoothLeService != null) {
-            bluetoothLeService.disconnect();
-        }
-    }
-
     private void changeChanel(byte channel) {
         if(!isReceiving && findWriteCharac) {
             Constants.CHANNEL[2] = channel;
@@ -484,7 +471,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
     @Override
     protected void onResume() {
         super.onResume();
-        registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
         registerReceiver(bluetoothSate,
                 new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
     }
@@ -492,7 +478,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
     @Override
     protected void onPause() {
         super.onPause();
-        unregisterReceiver(mGattUpdateReceiver);
         unregisterReceiver(bluetoothSate);
     }
 
@@ -511,33 +496,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
         textEntity = null;
 
         unbindService(serviceConnectionBle);
+        bluetoothLeService.setCallback(null);
+        bluetoothLeService.disconnect();
+        bluetoothLeService.close();
         bluetoothLeService = null;
-    }
 
-    //open the bluetooth
-    private void openBluetooth() {
-        BluetoothAdapter bluetoothAdapter = null;
-        // Initializes a Bluetooth adapter.  For API level 18 and above, get a reference to
-        // BluetoothAdapter through BluetoothManager.
-        try {
-            final BluetoothManager bluetoothManager =
-                    (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-            bluetoothAdapter = bluetoothManager.getAdapter();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        //check this device weather support bluetooth or not
-        //if support then enable the bluetooth
-        if(bluetoothAdapter != null) {
-            if(!bluetoothAdapter.isEnabled()) {
-                loadDialogFragment = LoadDialogFragment.getInstance("正在打开蓝牙");
-                loadDialogFragment.show(getFragmentManager(),null);
-                bluetoothAdapter.enable();
-            }
-        }else {
-            showToast(getString(R.string.device_bluetooth_not_support));
-            //finish();
-        }
     }
 
     @Override
@@ -553,25 +516,31 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
     }
 
+    /**
+     * callback in HomeFragment
+     */
+    @Override
+    public void toggleMenu() {
+        lockerView.toggleMenu();
+    }
+
+    /**
+     * get channel state , if busy ,can't send message
+     */
     private void chenckChannel() {
         if(bluetoothLeService != null){
             bluetoothLeService.writeInstruction(Constants.CHANNEL_STATE);
         }
     }
 
+    /**
+     * send text message to ble
+     */
     private void sendText() {
         if(sendText != null) {
             homeFragment.sendText(sendText);
         }
         textEntity.unpacking(sendText);
-    }
-
-    @Override
-    public void startConnect(BluetoothDevice device) {
-        deviceName = device.getName();
-        if(bluetoothLeService != null) {
-            bluetoothLeService.connect(device.getAddress());
-        }
     }
 
     private void showToast(final String s) {
@@ -584,25 +553,30 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
 
+    /**
+     * call in SendMessageListener
+     * @param data
+     * @param end
+     */
     @Override
     public void sendPacketedData (byte[] data,boolean end){
-        if(data == null) return;
-        if(bluetoothLeService != null) {
-            bluetoothLeService.write(data);
-        }
+        if(data == null || bluetoothLeService == null) return;
+        bluetoothLeService.write(data);
         data = null;
     }
 
-
-
+    /**
+     * callback in BleService
+     * @param data
+     * @param mode other message 0 indicate received correct data
+     *             2 indicates send data failed
+     */
     @Override
     public void sendUnPacketedData(byte[] data,int mode) {
         switch (mode) {
             case 0:
                 //correct data
-                if(data != null) {
-                    parseFactory.sendToRelativeParser(data);
-                }
+                parseFactory.sendToRelativeParser(data);
                 break;
             case 2:
                 //send failed
@@ -611,12 +585,50 @@ public class MainActivity extends Activity implements View.OnClickListener,
         }
     }
 
-    private static IntentFilter makeGattUpdateIntentFilter() {
-        final IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED);
-        intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED);
-        intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
-        return intentFilter;
+    /**
+     * callback in BleService
+     * @param connect true if ble connect,else false
+     */
+    @Override
+    public void bleConnection(boolean connect) {
+        if(connect) {
+            if(bindDeviceFragment != null) {
+                bindDeviceFragment.deviceConnected();
+                initHomeFragment();
+                changeFragment(homeFragment);
+                saveBoundedDevice();
+            }else {
+                if(loadDialogFragment != null && loadDialogFragment.isVisible()) {
+                    loadDialogFragment.dismiss();
+                    loadDialogFragment = null;
+                    showToast("设备连接失败");
+                }
+            }
+        }
+        deviceBinded = connect;
+        needConnectDevice = !connect;
+    }
+
+    /**
+     * save have bounded device
+     */
+    private void saveBoundedDevice() {
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putString(Constants.BIND_DEVICE_ADDRESS,bindAddress);
+        editor.putString(Constants.BIND_DEVICE_NAME,deviceName);
+        editor.apply();
+    }
+
+    /**
+     * callback in BleService
+     * tell activity the characteristic have found and register
+     */
+    @Override
+    public void writeCharacterFind() {
+        findWriteCharac = true;
+        if(homeFragment != null) {
+            homeFragment.writeable = true;
+        }
     }
 
     /**
@@ -647,8 +659,9 @@ public class MainActivity extends Activity implements View.OnClickListener,
     @Override
     public void connectDevice(BluetoothDevice device) {
         deviceName = device.getName();
+        bindAddress = device.getAddress();
         if(bluetoothLeService != null) {
-            bluetoothLeService.connect(device.getAddress());
+            bluetoothLeService.connect(bindAddress);
         }
     }
 }

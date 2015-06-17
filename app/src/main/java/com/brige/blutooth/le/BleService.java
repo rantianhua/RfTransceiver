@@ -29,10 +29,11 @@ import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
+import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 
-import com.my_interface.SendMessageListener;
+import com.rftransceiver.BuildConfig;
 import com.rftransceiver.util.Constants;
 
 import java.util.List;
@@ -42,9 +43,9 @@ import java.util.UUID;
  * Service for managing connection and data communication with a GATT server hosted on a
  * given Bluetooth LE device.
  */
-public class BluetoothLeService extends Service {
+public class BleService extends Service {
 
-    private final static String TAG = BluetoothLeService.class.getSimpleName();
+    private final static String TAG = BleService.class.getSimpleName();
 
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
@@ -56,46 +57,36 @@ public class BluetoothLeService extends Service {
     private static final int STATE_CONNECTING = 1;
     private static final int STATE_CONNECTED = 2;
 
-    public final static String ACTION_GATT_CONNECTED =
-            "com.example.bluetooth.le.ACTION_GATT_CONNECTED";
-    public final static String ACTION_GATT_DISCONNECTED =
-            "com.example.bluetooth.le.ACTION_GATT_DISCONNECTED";
-    public final static String ACTION_GATT_SERVICES_DISCOVERED =
-            "com.example.bluetooth.le.ACTION_GATT_SERVICES_DISCOVERED";
-    public final static String ACTION_DATA_AVAILABLE =
-            "com.example.bluetooth.le.ACTION_DATA_AVAILABLE";
-    public final static String EXTRA_DATA =
-            "com.example.bluetooth.le.EXTRA_DATA";
+//    public final static UUID UUID_HEART_RATE_MEASUREMENT =
+//            UUID.fromString(SampleGattAttributes.HEART_RATE_MEASUREMENT);
 
-    public final static UUID UUID_HEART_RATE_MEASUREMENT =
-            UUID.fromString(SampleGattAttributes.HEART_RATE_MEASUREMENT);
+    /**
+     * write to this characteristic
+     */
+    private  BluetoothGattCharacteristic writeCharacteristic;
 
-    private  BluetoothGattCharacteristic writeCharacteristic;   //the write characteristic
-
+    /**
+     * read data from this characteristic
+     */
     private BluetoothGattCharacteristic notifyCharacter;
 
-    //private Crc16Check crc16Check = new Crc16Check();
-
-    private SendMessageListener sendMessageListener;    //to send data to Main thread
+    private CallbackInBle callback;
 
     // Implements callback methods for GATT events that the app cares about.  For example,
     // connection change and services discovered.
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            String intentAction;
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                intentAction = ACTION_GATT_CONNECTED;
                 mConnectionState = STATE_CONNECTED;
-                broadcastUpdate(intentAction);
+                if(callback != null) callback.bleConnection(true);
                 // Attempts to discover services after successful connection.
                 Log.e(TAG, "Attempting to start service discovery:" +
                         mBluetoothGatt.discoverServices());
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                intentAction = ACTION_GATT_DISCONNECTED;
                 mConnectionState = STATE_DISCONNECTED;
                 Log.e(TAG, "Disconnected from GATT server.");
-                broadcastUpdate(intentAction);
+                if(callback != null) callback.bleConnection(false);
             }
         }
 
@@ -109,24 +100,31 @@ public class BluetoothLeService extends Service {
                     writeCharacteristic = writeServer.getCharacteristic(
                             UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb")
                     );
-                    final int charaProp = writeCharacteristic.getProperties();
+                    BluetoothGattService readServer = mBluetoothGatt.getService(
+                            UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb")
+                    );
+                    notifyCharacter = readServer.getCharacteristic(
+                            UUID.fromString("0000fff5-0000-1000-8000-00805f9b34fb")
+                    );
+                    setCharacteristicNotification(
+                            writeCharacteristic, true);
+                    final int charaProp = notifyCharacter.getProperties();
                     if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
                         // If there is an active notification on a characteristic, clear
                         // it first so it doesn't update the data field on the user interface.
-                        if (notifyCharacter != null) {
-                            setCharacteristicNotification(
-                                    notifyCharacter, false);
-                            notifyCharacter = null;
-                        }
-                        readCharacteristic(writeCharacteristic);
+//                        if (notifyCharacter != null && notifyCharacter != writeCharacteristic) {
+//                            setCharacteristicNotification(
+//                                    notifyCharacter, false);
+//                            notifyCharacter = null;
+//                        }
+                        readCharacteristic(notifyCharacter);
                     }
-                    if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-                        notifyCharacter = writeCharacteristic;
-                        setCharacteristicNotification(
-                                writeCharacteristic, true);
-                    }
+//                    if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+//                        setCharacteristicNotification(
+//                                notifyCharacter, true);
+//                    }
                 }
-                broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
+                if(callback != null) callback.writeCharacterFind();
             } else {
                 Log.e(TAG, "onServicesDiscovered received: " + status);
             }
@@ -137,7 +135,6 @@ public class BluetoothLeService extends Service {
                                          BluetoothGattCharacteristic characteristic,
                                          int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                //broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
                 senMyMessage(characteristic);
             }
         }
@@ -145,99 +142,84 @@ public class BluetoothLeService extends Service {
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             if(status == BluetoothGatt.GATT_SUCCESS) {
-                //Log.e("onCharacteristicWrite","write success");
+                Log.e("onCharacteristicWrite","write success");
+            }else {
+                callback.sendUnPacketedData(null, 2);
             }
         }
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
-            //broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
             senMyMessage(characteristic);
         }
     };
 
-    private byte[] temp = new byte[Constants.Data_Packet_Length];    //packet cache
+    /**
+     * the cache to save read message
+     */
+    private byte[] temp = new byte[Constants.Data_Packet_Length];
     private int index = 0;  //to count the cache's length
 
     private void senMyMessage(BluetoothGattCharacteristic characteristic) {
         // This is special handling for the Heart Rate Measurement profile.  Data parsing is
         // carried out as per profile specifications:
         // http://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.heart_rate_measurement.xml
-        if (UUID_HEART_RATE_MEASUREMENT.equals(characteristic.getUuid())) {
-            int flag = characteristic.getProperties();
-            int format = -1;
-            if ((flag & 0x01) != 0) {
-                format = BluetoothGattCharacteristic.FORMAT_UINT16;
-                Log.e(TAG, "Heart rate format UINT16.");
-            } else {
-                format = BluetoothGattCharacteristic.FORMAT_UINT8;
-                Log.e(TAG, "Heart rate format UINT8.");
+        // For all other profiles, writes the data formatted in HEX.
+        final byte[] data = characteristic.getValue();
+        if (data != null && data.length > 0) {
+            int bytes = data.length;
+            if(bytes < 6) {
+                return;
             }
-            final int heartRate = characteristic.getIntValue(format, 1);
-            Log.e(TAG, String.format("Received heart rate: %d", heartRate));
-        } else {
-            // For all other profiles, writes the data formatted in HEX.
-            final byte[] data = characteristic.getValue();
-            if (data != null && data.length > 0) {
-                int bytes = data.length;
-                Log.e("receive data " ,"length is " + bytes);
-                if(bytes < 6) {
-                    return;
-                }
-                try {
-                    for(int i =0; i < bytes;i++) {
-                        temp[index++] =data[i];
-                        if(index == Constants.Data_Packet_Length) {
-                            //the cache now is full
-                            //check this cache is right or not
-                            index = 0;
-                            sendMessageListener.sendUnPacketedData(temp,0);
-                            temp = null;
-                            temp = new  byte[Constants.Data_Packet_Length];
-                        }
+            Log.e("receive",bytes + "");
+            try {
+                for(int i =0; i < bytes;i++) {
+                    temp[index++] =data[i];
+                    if(index == Constants.Data_Packet_Length) {
+                        //the cache now is full
+                        //check this cache is right or not
+                        index = 0;
+                        callback.sendUnPacketedData(temp, 0);
+                        temp = null;
+                        temp = new  byte[Constants.Data_Packet_Length];
                     }
-                }catch (Exception e) {
-                    e.printStackTrace();
                 }
-
+            }catch (Exception e) {
+                e.printStackTrace();
             }
-        }
-    }
 
-    private void broadcastUpdate(final String action) {
-        final Intent intent = new Intent(action);
-        sendBroadcast(intent);
+        }
     }
 
     public void write(byte[] send) {
+        byte[] sam = new byte[20];
         for(int i =0; i < 3;i++) {
-            byte[] sam = new byte[20];
             System.arraycopy(send,i*20,sam,0,20);
             writeCharacteristic.setValue(sam);
-            sam = null;
-            if(!mBluetoothGatt.writeCharacteristic(writeCharacteristic)) {
-                sendMessageListener.sendUnPacketedData(null,2);
-            }
+            mBluetoothGatt.writeCharacteristic(writeCharacteristic);
         }
         send = null;
+        sam = null;
     }
 
+    /**
+     * write instruction to ble
+     * @param instruction
+     */
     public void writeInstruction(byte[] instruction) {
         writeCharacteristic.setValue(instruction);
-        if(!mBluetoothGatt.writeCharacteristic(writeCharacteristic)) {
-            sendMessageListener.sendUnPacketedData(null,2);
-        }
+        mBluetoothGatt.writeCharacteristic(writeCharacteristic);
     }
 
-    public void setSendMessageListener(SendMessageListener listener) {
-        this.sendMessageListener = null;
-        this.sendMessageListener = listener;
+    public void setCallback(CallbackInBle listener) {
+        this.callback = null;
+        this.callback = listener;
     }
 
     public class LocalBinder extends Binder {
-        public BluetoothLeService getService() {
-            return BluetoothLeService.this;
+        public BleService getService() {
+            return BleService.this;
         }
     }
 
@@ -282,6 +264,17 @@ public class BluetoothLeService extends Service {
         return true;
     }
 
+    public boolean isBluetoothEnable() {
+        return mBluetoothAdapter.isEnabled();
+    }
+
+    /**
+     * open bluetooth
+     */
+    public void openBluetooth() {
+        mBluetoothAdapter.enable();
+    }
+
     /**
      * Connects to the GATT server hosted on the Bluetooth LE device.
      *
@@ -314,7 +307,7 @@ public class BluetoothLeService extends Service {
         // We want to directly connect to the device, so we are setting the autoConnect
         // parameter to false.
         mBluetoothGatt = device.connectGatt(this, false, mGattCallback);
-        Log.d(TAG, "Trying to create a new connection.");
+        Log.e(TAG, "Trying to create a new connection.");
         mBluetoothDeviceAddress = address;
         mConnectionState = STATE_CONNECTING;
         return true;
@@ -328,7 +321,7 @@ public class BluetoothLeService extends Service {
      */
     public void disconnect() {
         if (mBluetoothAdapter == null || mBluetoothGatt == null) {
-            Log.w(TAG, "BluetoothAdapter not initialized");
+            Log.e(TAG, "BluetoothAdapter not initialized");
             return;
         }
         mBluetoothGatt.disconnect();
@@ -355,7 +348,7 @@ public class BluetoothLeService extends Service {
      */
     public void readCharacteristic(BluetoothGattCharacteristic characteristic) {
         if (mBluetoothAdapter == null || mBluetoothGatt == null) {
-            Log.w(TAG, "BluetoothAdapter not initialized");
+            Log.e(TAG, "BluetoothAdapter not initialized");
             return;
         }
         mBluetoothGatt.readCharacteristic(characteristic);
@@ -370,18 +363,10 @@ public class BluetoothLeService extends Service {
     public void setCharacteristicNotification(BluetoothGattCharacteristic characteristic,
                                               boolean enabled) {
         if (mBluetoothAdapter == null || mBluetoothGatt == null) {
-            Log.w(TAG, "BluetoothAdapter not initialized");
+            Log.e(TAG, "BluetoothAdapter not initialized");
             return;
         }
         mBluetoothGatt.setCharacteristicNotification(characteristic, enabled);
-
-        // This is specific to Heart Rate Measurement.
-        if (UUID_HEART_RATE_MEASUREMENT.equals(characteristic.getUuid())) {
-            BluetoothGattDescriptor descriptor = characteristic.getDescriptor(
-                    UUID.fromString(SampleGattAttributes.CLIENT_CHARACTERISTIC_CONFIG));
-            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-            mBluetoothGatt.writeDescriptor(descriptor);
-        }
     }
 
     /**
@@ -393,5 +378,24 @@ public class BluetoothLeService extends Service {
     public List<BluetoothGattService> getSupportedGattServices() {
         if (mBluetoothGatt == null) return null;
         return mBluetoothGatt.getServices();
+    }
+
+    public interface CallbackInBle {
+        /**
+         * call when received data from ble
+         * @param data
+         * @param mode data type
+         */
+        void sendUnPacketedData(byte[] data,int mode);
+
+        /**
+         * call to show ble connect or disconnect
+         */
+        void bleConnection(boolean connect);
+
+        /**
+         * call when find and register the character can write
+         */
+        void writeCharacterFind();
     }
 }

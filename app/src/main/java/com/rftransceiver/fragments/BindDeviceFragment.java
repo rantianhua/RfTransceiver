@@ -229,8 +229,9 @@ public class BindDeviceFragment extends ListFragment {
             }
             loadDialogFragment.show(getFragmentManager(),null);
             connectDevice();
+        }else {
+            super.onActivityResult(requestCode, resultCode, data);
         }
-        super.onActivityResult(requestCode, resultCode, data);
     }
 
     @Override
