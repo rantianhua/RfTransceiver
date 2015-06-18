@@ -40,66 +40,72 @@
             />
 
     </RelativeLayout>
-    
-    <RelativeLayout
+
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="30dp"
+        android:textColor="@color/white"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:id="@+id/tv_tip_home"
+        android:layout_marginTop="50dp"
+        android:alpha="0.6"
+        android:gravity="center"
         android:background="@color/blue_with_press"
-        android:layout_marginTop="50dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:layout_centerHorizontal="true"
-            android:textColor="@color/white"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:id="@+id/tv_tip_home"
-            />
-
-    </RelativeLayout>
-
+        android:visibility="gone"
+        />
 
    <ListView
        android:layout_width="match_parent"
        android:layout_height="match_parent"
        android:id="@+id/listview_conversation"
-       android:layout_above="@+id/rl_home_presents"
+       android:layout_above="@+id/vp_home_expression"
        android:layout_marginTop="80dp"
+       android:listSelector="@android:color/transparent"
+       android:divider="#000000"
        />
 
-    <RelativeLayout
+    <android.support.v4.view.ViewPager
+        android:paddingTop="5dp"
+        android:paddingBottom="25dp"
         android:layout_width="match_parent"
-        android:layout_height="120dp"
-        android:id="@+id/rl_home_presents"
+        android:layout_height="100dp"
+        android:background="@color/blue_with_press"
         android:layout_above="@+id/rl_home_input_message"
-        android:background="@color/blue_with_press">
+        android:id="@+id/vp_home_expression"
+        />
 
-
-
-    </RelativeLayout>
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_centerHorizontal="true"
+        android:layout_alignBottom="@+id/vp_home_expression"
+        android:id="@+id/ll_dots_home"
+        />
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="wrap_content"
         android:layout_above="@+id/rl_home_imgs_address"
         android:id="@+id/rl_home_input_message"
         android:paddingStart="10dp"
-        android:paddingEnd="10dp">
+        android:paddingEnd="10dp"
+        >
 
         <ImageView
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:id="@+id/img_sounds_text"
             android:layout_centerVertical="true"
-            android:src="@drawable/microphone"
+            android:src="@drawable/drawble_sounds_text"
             android:scaleType="centerCrop"
             />
 
         <EditText
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_toEndOf="@+id/img_sounds_text"
             android:layout_toStartOf="@+id/img_other"
             android:id="@+id/et_send_message"
@@ -107,12 +113,12 @@
             android:layout_centerVertical="true"
             android:layout_marginStart="6dp"
             android:layout_marginEnd="40dp"
-            android:singleLine="true"
+            android:gravity="top|start"
             />
 
         <Button
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:id="@+id/btn_sounds"
             android:layout_toEndOf="@+id/img_sounds_text"
             android:layout_toStartOf="@+id/img_other"
@@ -132,7 +138,7 @@
             android:layout_centerVertical="true"
             android:layout_alignParentEnd="true"
             android:scaleType="centerCrop"
-            android:src="@drawable/add"
+            android:src="@drawable/drawable_other_data"
             />
 
 
@@ -146,6 +152,7 @@
             android:textColor="@color/white"
             android:background="@drawable/tv_sure"
             android:layout_centerVertical="true"
+            android:visibility="invisible"
             />
 
 
@@ -155,15 +162,17 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/rl_home_imgs_address"
-        android:layout_alignParentBottom="true"
+        android:layout_above="@+id/view_align_bottom"
         android:paddingStart="40dp"
         android:paddingEnd="40dp"
-        android:paddingBottom="5dp">
+        android:paddingBottom="5dp"
+        android:visibility="gone"
+        >
 
         <ImageView
             android:layout_width="match_parent"
             android:layout_height="35dp"
-            android:id="@+id/img_home_sounds"
+            android:id="@+id/img_home_picture"
             android:layout_toStartOf="@+id/view_home_1"
             android:layout_centerVertical="true"
             android:src="@drawable/picture"
@@ -192,7 +201,13 @@
             android:paddingBottom="5dp"
             />
 
-
     </RelativeLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:id="@+id/view_align_bottom"
+        android:layout_alignParentBottom="true"
+        android:visibility="invisible"/>
 
 </RelativeLayout>

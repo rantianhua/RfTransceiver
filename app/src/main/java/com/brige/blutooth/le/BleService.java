@@ -85,7 +85,6 @@ public class BleService extends Service {
                         mBluetoothGatt.discoverServices());
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 mConnectionState = STATE_DISCONNECTED;
-                Log.e(TAG, "Disconnected from GATT server.");
                 if(callback != null) callback.bleConnection(false);
             }
         }
@@ -119,10 +118,7 @@ public class BleService extends Service {
 //                        }
                         readCharacteristic(notifyCharacter);
                     }
-//                    if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-//                        setCharacteristicNotification(
-//                                notifyCharacter, true);
-//                    }
+
                 }
                 if(callback != null) callback.writeCharacterFind();
             } else {

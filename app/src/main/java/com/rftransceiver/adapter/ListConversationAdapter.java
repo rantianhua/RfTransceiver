@@ -1,14 +1,19 @@
 package com.rftransceiver.adapter;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
+import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.rftransceiver.datasets.ConversationData;
 import com.rftransceiver.R;
+
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,8 +26,14 @@ public class ListConversationAdapter extends BaseAdapter {
     private List<ConversationData> listData = new ArrayList<>();
     private LayoutInflater inflater = null;
 
-    public ListConversationAdapter(Context context) {
+    /**
+     * parse expression data from content
+     */
+    private Html.ImageGetter imageGetter;
+
+    public ListConversationAdapter(Context context,Html.ImageGetter imageGetter) {
         inflater = LayoutInflater.from(context);
+        this.imageGetter = imageGetter;
     }
 
     @Override
@@ -52,17 +63,36 @@ public class ListConversationAdapter extends BaseAdapter {
         if(convertView == null) {
             hodler = new ViewHodler();
             if(data.getConversationType() == ConversationType.Me) {
-                convertView = inflater.inflate(R.layout.list_conversation_left,null);
-                hodler.tvContent = (TextView) convertView.findViewById(R.id.tv_list_left);
-            }else {
                 convertView = inflater.inflate(R.layout.list_conversation_right,null);
                 hodler.tvContent = (TextView) convertView.findViewById(R.id.tv_list_right);
+            }else {
+                convertView = inflater.inflate(R.layout.list_conversation_left,null);
+                hodler.tvContent = (TextView) convertView.findViewById(R.id.tv_list_left);
+                hodler.imgLevel = (ImageView) convertView.findViewById(R.id.img_conversation_level);
+                hodler.imgPhoto = (ImageView) convertView.findViewById(R.id.img_conversation_photo);
+                hodler.tvLevel = (TextView) convertView.findViewById(R.id.tv_conversation_level);
             }
             convertView.setTag(hodler);
         }else {
             hodler = (ViewHodler) convertView.getTag();
         }
-        hodler.tvContent.setText(data.getContent());
+        hodler.tvContent.setText( Html.fromHtml(data.getContent(),
+                imageGetter,null));
+
+        if(data.getConversationType() == ConversationType.Me) {
+
+        }else if(data.getConversationType() == ConversationType.Me.Other) {
+            String instance = data.getInstance();
+            if(instance != null) {
+                hodler.tvLevel.setText(instance);
+            }
+            hodler.imgLevel.setImageResource(data.getLevelId());
+            Drawable drawable = data.getPhotoDrawable();
+            if(drawable != null) {
+                hodler.imgPhoto.setImageDrawable(drawable);
+            }
+        }
+
         return convertView;
     }
 
@@ -72,7 +102,8 @@ public class ListConversationAdapter extends BaseAdapter {
     }
 
     class ViewHodler {
-        TextView tvContent;
+        TextView tvContent,tvLevel;
+        ImageView imgPhoto,imgLevel;
     }
 
     public void addData(ConversationData data) {

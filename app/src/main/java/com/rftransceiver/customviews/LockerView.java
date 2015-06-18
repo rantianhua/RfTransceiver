@@ -174,4 +174,5 @@ public class LockerView extends HorizontalScrollView {
             animator.start();
         }
     }
+
 }

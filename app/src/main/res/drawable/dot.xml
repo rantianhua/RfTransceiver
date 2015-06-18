@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:state_selected="false">
+        <bitmap android:src="@drawable/dot_white"/>
+    </item>
+
+    <item android:state_selected="true">
+        <bitmap android:src="@drawable/dot_blue"/>
+    </item>
+
+</selector>

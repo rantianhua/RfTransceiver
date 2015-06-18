@@ -183,8 +183,8 @@ public class BindDeviceFragment extends ListFragment {
     public void deviceConnected() {
         if(loadDialogFragment != null && loadDialogFragment.isVisible()) {
             loadDialogFragment.dismiss();
-            setCallback(null);
         }
+        setCallback(null);
     }
 
     public void setCallback(CallbackInBindDeviceFragment callback) {

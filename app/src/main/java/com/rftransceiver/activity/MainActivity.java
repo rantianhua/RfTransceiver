@@ -17,7 +17,10 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
+import android.support.v4.widget.DrawerLayout;
 import android.text.TextUtils;
+import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -504,6 +507,16 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if(homeFragment != null) {
+            int touchX = (int)ev.getX();
+            int touchY = (int)ev.getY();
+            homeFragment.isVpTouched(touchX,touchY);
+        }
+        return super.dispatchTouchEvent(ev);
+    }
+
+    @Override
     public void onClick(View v) {
         switch (v.getId()){
             case R.id.tv_menu_add_group:
@@ -513,7 +526,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
                 createGroup();
                 break;
         }
-
     }
 
     /**
@@ -591,18 +603,16 @@ public class MainActivity extends Activity implements View.OnClickListener,
      */
     @Override
     public void bleConnection(boolean connect) {
-        if(connect) {
-            if(bindDeviceFragment != null) {
-                bindDeviceFragment.deviceConnected();
-                initHomeFragment();
-                changeFragment(homeFragment);
-                saveBoundedDevice();
-            }else {
-                if(loadDialogFragment != null && loadDialogFragment.isVisible()) {
-                    loadDialogFragment.dismiss();
-                    loadDialogFragment = null;
-                    showToast("设备连接失败");
-                }
+        if(bindDeviceFragment != null && bindDeviceFragment.isVisible()) {
+            bindDeviceFragment.deviceConnected();
+            initHomeFragment();
+            changeFragment(homeFragment);
+            saveBoundedDevice();
+            bindDeviceFragment = null;
+        }
+        if(!connect) {
+            if(homeFragment != null && homeFragment.isVisible()) {
+                homeFragment.bleLose();
             }
         }
         deviceBinded = connect;
@@ -626,8 +636,9 @@ public class MainActivity extends Activity implements View.OnClickListener,
     @Override
     public void writeCharacterFind() {
         findWriteCharac = true;
-        if(homeFragment != null) {
+        if(homeFragment != null && homeFragment.isVisible()) {
             homeFragment.writeable = true;
+            homeFragment.deviceConnected();
         }
     }
 
@@ -650,6 +661,19 @@ public class MainActivity extends Activity implements View.OnClickListener,
     @Override
     public void stopSendSounds() {
         record.stopRecording();
+    }
+
+    /**
+     * call in HomeFragment
+     * reconnect device
+     */
+    @Override
+    public void reconnectDevice() {
+        if(bindAddress == null) {
+            bindAddress = sp.getString(Constants.BIND_DEVICE_ADDRESS,"");
+        }
+        if(bluetoothLeService == null) return;
+        bluetoothLeService.connect(bindAddress);
     }
 
     /**
