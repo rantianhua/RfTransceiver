@@ -6,9 +6,11 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.graphics.BitmapFactory;
 import android.net.wifi.ScanResult;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Base64;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -213,8 +215,14 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
                     JSONArray array = (JSONArray)object.get("msg");
                     for(int i = 0;i < array.length();i ++) {
                         JSONObject o = (JSONObject)array.get(i);
-                        Log.e("full data",o.toString());
+                        byte[] photo = Base64.decode(o.getString(GroupUtil.PIC),Base64.DEFAULT);
+                        GroupMember member = new GroupMember(o.getString(GroupUtil.NAME),
+                                o.getInt(GroupUtil.GROUP_MEMBER_ID),
+                                BitmapFactory.decodeByteArray(photo,
+                                        0,photo.length));
+                        groupEntity.getMembers().add(member);
                     }
+                    Constants.GROUPENTITY = groupEntity;
                     Toast.makeText(this,"建群完成",Toast.LENGTH_SHORT).show();
                     finish();
                 }catch (Exception e) {
@@ -279,6 +287,7 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
             @Override
             public void run() {
                 Toast.makeText(GroupActivity.this,"建组完成",Toast.LENGTH_SHORT).show();
+                Constants.GROUPENTITY = groupEntity;
                 finish();
             }
         });

@@ -18,7 +18,7 @@
     <string name="sounds_im">实时聊天中&#8230;</string>
     <string name="send">发送</string>
     <string name="clear">清空</string>
-    <string name="reset_scm">单片机复位</string>
+    <string name="reset_scm">复位</string>
     <string name="receive_counts">已接收 %d 字节</string>
     <string name="send_counts">已发送 %d 字节</string>
     <string name="channel_1">频道1</string>
@@ -82,5 +82,8 @@
     <string name="connection_lose">连接已丢失，点击重新连接</string>
     <string name="reconnecting">正在重新连接，请稍候</string>
     <string name="connect_success">连接成功</string>
+    <string name="mute">静音</string>
+    <string name="cancel_mute">解除静音</string>
+    <string name="see_group">查看组</string>
 
 </resources>

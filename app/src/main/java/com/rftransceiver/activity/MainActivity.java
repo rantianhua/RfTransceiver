@@ -17,9 +17,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
-import android.support.v4.widget.DrawerLayout;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
@@ -511,7 +509,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
         if(homeFragment != null) {
             int touchX = (int)ev.getX();
             int touchY = (int)ev.getY();
-            homeFragment.isVpTouched(touchX,touchY);
+            if(homeFragment.checkTouch(touchX, touchY)) {
+                return false;
+            }else {
+                return super.dispatchTouchEvent(ev);
+            }
         }
         return super.dispatchTouchEvent(ev);
     }
@@ -661,6 +663,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
     @Override
     public void stopSendSounds() {
         record.stopRecording();
+    }
+
+    @Override
+    public void resetCms() {
+        resetCms(true);
     }
 
     /**

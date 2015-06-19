@@ -1,5 +1,10 @@
 package com.rftransceiver.fragments;
 
+import android.animation.Animator;
+import android.animation.AnimatorInflater;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
+import android.app.ActivityManager;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -78,6 +83,12 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     ViewPager vp;
     @InjectView(R.id.ll_dots_home)
     LinearLayout llDots;
+    @InjectView(R.id.tv_reset_home)
+    TextView tvReset;
+    @InjectView(R.id.tv_group_info)
+    TextView tvSeeGroup;
+    @InjectView(R.id.tv_mute_home)
+    TextView tvMute;
 
     /**
      * the reference of callback interface
@@ -111,6 +122,12 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
      */
     private Html.ImageGetter imgageGetter;
 
+    /**
+     * the object animation for right menu
+     */
+    private AnimatorSet translateIn,translateOut;
+    private float transOffset;
+
     private Editable.Factory editableFactory = Editable.Factory.getInstance();
 
     @Override
@@ -119,6 +136,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         expressions = new ArrayList<>();
         imgDots = new ArrayList<>();
         initImageGetter();
+        transOffset = getResources().getDisplayMetrics().density * 80 + 0.5f;
     }
 
     private void initExpressions(LayoutInflater inflater) {
@@ -248,6 +266,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         imgAdd.setOnClickListener(this);
         imgPicture.setOnClickListener(this);
         imgAddress.setOnClickListener(this);
+        tvReset.setOnClickListener(this);
+        tvMute.setOnClickListener(this);
+        tvSeeGroup.setOnClickListener(this);
 
         etSendMessage.addTextChangedListener(new TextWatcher() {
             @Override
@@ -302,6 +323,12 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                 break;
             case R.id.img_home_hide:
                 //click hide menu on the top
+                imgHomeHide.setClickable(false);
+                if(tvMute.getVisibility() == View.INVISIBLE) {
+                    showRightMenu();
+                }else {
+                    hideRightMenu();
+                }
                 break;
             case R.id.tv_tip_home:
                 if(tvTip.getText().toString().equals(getString(R.string.connection_lose))) {
@@ -343,9 +370,199 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                 //want to send address
 
                 break;
+            case R.id.tv_mute_home:
+                break;
+            case R.id.tv_group_info:
+
+                break;
+            case R.id.tv_reset_home:
+                hideRightMenu();
+                if(callback != null) {
+                    callback.resetCms();
+                }
+                break;
             default:
                 break;
         }
+    }
+
+    /**
+     * show right menu with translate animation
+     */
+    private void showRightMenu() {
+        initInAnimation();
+        translateIn.start();
+    }
+
+    private void initInAnimation() {
+        if(translateIn != null) return;
+        translateIn = new AnimatorSet();
+        List<Animator> animators = new ArrayList<>();
+        ObjectAnimator transTvResetIn = ObjectAnimator.ofFloat(tvReset,"translationX",transOffset,0.0f);
+        transTvResetIn.setDuration(300);
+        transTvResetIn.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+                tvReset.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animator) {
+
+            }
+        });
+        ObjectAnimator transTvGroupIn = ObjectAnimator.ofFloat(tvSeeGroup,"translationX",transOffset,0.0f);
+        transTvGroupIn.setDuration(300);
+        transTvGroupIn.setStartDelay(150);
+        transTvGroupIn.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+                tvSeeGroup.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animator) {
+
+            }
+        });
+        ObjectAnimator transTvMuteIn = ObjectAnimator.ofFloat(tvMute,"translationX",transOffset,0.0f);
+        transTvMuteIn.setDuration(300);
+        transTvMuteIn.setStartDelay(300);
+        transTvMuteIn.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+                tvMute.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                imgHomeHide.setClickable(true);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animator) {
+
+            }
+        });
+        animators.add(transTvResetIn);
+        animators.add(transTvGroupIn);
+        animators.add(transTvMuteIn);
+        translateIn.playTogether(animators);
+    }
+
+    /**
+     * hide right menu with animation
+     */
+    private void hideRightMenu() {
+        initOutAnimation();
+        translateOut.start();
+    }
+
+    private void initOutAnimation() {
+        if(translateOut != null) return;
+        translateOut = new AnimatorSet();
+        List<Animator> animators = new ArrayList<>();
+        ObjectAnimator transTvResetOut = ObjectAnimator.ofFloat(tvReset,"translationX",transOffset);
+        transTvResetOut.setDuration(300);
+        transTvResetOut.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                tvReset.setVisibility(View.INVISIBLE);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animator) {
+
+            }
+        });
+        ObjectAnimator transTvGroupOut = ObjectAnimator.ofFloat(tvSeeGroup,"translationX",transOffset);
+        transTvGroupOut.setStartDelay(150);
+        transTvGroupOut.setDuration(300);
+        transTvGroupOut.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                tvSeeGroup.setVisibility(View.INVISIBLE);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animator) {
+
+            }
+        });
+        ObjectAnimator transTvMuteOut = ObjectAnimator.ofFloat(tvMute,"translationX",0.0f,transOffset);
+        transTvMuteOut.setDuration(300);
+        transTvMuteOut.setStartDelay(300);
+        transTvMuteOut.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                tvMute.setVisibility(View.INVISIBLE);
+                imgHomeHide.setClickable(true);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animator) {
+
+            }
+        });
+        animators.add(transTvResetOut);
+        animators.add(transTvGroupOut);
+        animators.add(transTvMuteOut);
+        translateOut.playTogether(animators);
     }
 
     public void setCallback(CallbackInHomeFragment callback) {
@@ -445,26 +662,48 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
      * @param touchY
      * @return
      */
-    public void isVpTouched(int touchX, int touchY) {
+    public boolean checkTouch(int touchX, int touchY) {
         Rect rect = new Rect();
+        if(tvMute.getVisibility() == View.VISIBLE) {
+            tvReset.getGlobalVisibleRect(rect);
+            if(rect.contains(touchX,touchY)) return false;
+            tvSeeGroup.getGlobalVisibleRect(rect);
+            if(rect.contains(touchX,touchY)) return false;
+            tvMute.getGlobalVisibleRect(rect);
+            if(rect.contains(touchX,touchY)) return false;
+            hideRightMenu();
+            //do not dispath touch event
+            return true;
+        }
         vp.getGlobalVisibleRect(rect);
         if(rect.contains(touchX,touchY)) {
             //tell parent do not intercept touch event
             vp.getParent().requestDisallowInterceptTouchEvent(true);
         }
+        return false;
     }
 
     /**
      * the connection of ble has cut down
      */
     public void bleLose() {
-        tvTip.setVisibility(View.VISIBLE);
-        tvTip.setText(getString(R.string.connection_lose));
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                tvTip.setVisibility(View.VISIBLE);
+                tvTip.setText(getString(R.string.connection_lose));
+            }
+        });
     }
 
     public void deviceConnected() {
-        tvTip.setText(getString(R.string.connect_success));
-        tvTip.setVisibility(View.GONE);
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                tvTip.setText(getString(R.string.connect_success));
+                tvTip.setVisibility(View.GONE);
+            }
+        });
     }
 
     public interface CallbackInHomeFragment {
@@ -487,6 +726,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
          * call to reconnect device
          */
         void reconnectDevice();
+
+        /**
+         * call to reset cms
+         */
+        void resetCms();
     }
 
     @Override

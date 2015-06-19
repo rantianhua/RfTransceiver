@@ -85,6 +85,12 @@ public class BleService extends Service {
                         mBluetoothGatt.discoverServices());
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 mConnectionState = STATE_DISCONNECTED;
+                if(writeCharacteristic != null) {
+                    setCharacteristicNotification(
+                            writeCharacteristic, false);
+                    writeCharacteristic = null;
+                }
+                notifyCharacter = null;
                 if(callback != null) callback.bleConnection(false);
             }
         }
@@ -92,7 +98,7 @@ public class BleService extends Service {
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                if(writeCharacteristic == null) {
+                if(writeCharacteristic == null || notifyCharacter == null) {
                     BluetoothGattService writeServer = mBluetoothGatt.getService(
                             UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb")
                     );
@@ -109,16 +115,8 @@ public class BleService extends Service {
                             writeCharacteristic, true);
                     final int charaProp = notifyCharacter.getProperties();
                     if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
-                        // If there is an active notification on a characteristic, clear
-                        // it first so it doesn't update the data field on the user interface.
-//                        if (notifyCharacter != null && notifyCharacter != writeCharacteristic) {
-//                            setCharacteristicNotification(
-//                                    notifyCharacter, false);
-//                            notifyCharacter = null;
-//                        }
                         readCharacteristic(notifyCharacter);
                     }
-
                 }
                 if(callback != null) callback.writeCharacterFind();
             } else {

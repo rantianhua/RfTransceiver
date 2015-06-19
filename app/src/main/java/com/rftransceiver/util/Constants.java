@@ -125,4 +125,6 @@ public class Constants {
     public static final String PHOTO_PATH = "photo_path";
     public static final String BIND_DEVICE_ADDRESS = "bind_device_address";
     public static final String BIND_DEVICE_NAME = "bind_device_name";
+
+    public static GroupEntity GROUPENTITY ;
 }
