@@ -30,6 +30,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.Build;
+import android.os.DeadObjectException;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -81,8 +82,7 @@ public class BleService extends Service {
                 mConnectionState = STATE_CONNECTED;
                 if(callback != null) callback.bleConnection(true);
                 // Attempts to discover services after successful connection.
-                Log.e(TAG, "Attempting to start service discovery:" +
-                        mBluetoothGatt.discoverServices());
+                mBluetoothGatt.discoverServices();
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 mConnectionState = STATE_DISCONNECTED;
                 if(writeCharacteristic != null) {
@@ -288,7 +288,6 @@ public class BleService extends Service {
         // Previously connected device.  Try to reconnect.
         if (mBluetoothDeviceAddress != null && address.equals(mBluetoothDeviceAddress)
                 && mBluetoothGatt != null) {
-            Log.d(TAG, "Trying to use an existing mBluetoothGatt for connection.");
             if (mBluetoothGatt.connect()) {
                 mConnectionState = STATE_CONNECTING;
                 return true;
@@ -301,7 +300,6 @@ public class BleService extends Service {
         // We want to directly connect to the device, so we are setting the autoConnect
         // parameter to false.
         mBluetoothGatt = device.connectGatt(this, false, mGattCallback);
-        Log.e(TAG, "Trying to create a new connection.");
         mBluetoothDeviceAddress = address;
         mConnectionState = STATE_CONNECTING;
         return true;

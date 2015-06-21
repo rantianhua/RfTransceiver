@@ -132,6 +132,7 @@ public class LockerView extends HorizontalScrollView {
         }
     }
 
+
     public void openMenu() {
         if(!menuOpened) {
             this.smoothScrollTo(0,0);
@@ -139,6 +140,14 @@ public class LockerView extends HorizontalScrollView {
         }
     }
 
+    public boolean isMenuOpened() {
+        return this.menuOpened;
+    }
+
+    /**
+     * if menu is opened ,then close it
+     * if closed, then open
+     */
     public void toggleMenu() {
         if(menuOpened) {
             closeMenu();

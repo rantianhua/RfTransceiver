@@ -130,6 +130,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
 
     private Editable.Factory editableFactory = Editable.Factory.getInstance();
 
+    private Rect rect = new Rect();
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -663,13 +665,14 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
      * @return
      */
     public boolean checkTouch(int touchX, int touchY) {
-        Rect rect = new Rect();
         if(tvMute.getVisibility() == View.VISIBLE) {
             tvReset.getGlobalVisibleRect(rect);
             if(rect.contains(touchX,touchY)) return false;
             tvSeeGroup.getGlobalVisibleRect(rect);
             if(rect.contains(touchX,touchY)) return false;
             tvMute.getGlobalVisibleRect(rect);
+            if(rect.contains(touchX,touchY)) return false;
+            imgHomeHide.getGlobalVisibleRect(rect);
             if(rect.contains(touchX,touchY)) return false;
             hideRightMenu();
             //do not dispath touch event

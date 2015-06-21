@@ -31,6 +31,7 @@ import com.rftransceiver.customviews.LockerView;
 import com.rftransceiver.fragments.BindDeviceFragment;
 import com.rftransceiver.fragments.HomeFragment;
 import com.rftransceiver.fragments.LoadDialogFragment;
+import com.rftransceiver.fragments.MyDeviceFragment;
 import com.rftransceiver.util.Constants;
 import com.source.DataPacketOptions;
 import com.source.SendMessageListener;
@@ -46,7 +47,8 @@ import butterknife.InjectView;
 
 public class MainActivity extends Activity implements View.OnClickListener,
         SendMessageListener,HomeFragment.CallbackInHomeFragment,
-        BindDeviceFragment.CallbackInBindDeviceFragment,BleService.CallbackInBle{
+        BindDeviceFragment.CallbackInBindDeviceFragment,BleService.CallbackInBle,
+        MyDeviceFragment.CallbackInMyDevice{
 
     @InjectView(R.id.img_menu_photo)
     ImageView imgPhoto;
@@ -58,6 +60,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
     TextView tvAddGroup;
     @InjectView(R.id.lockerview)
     LockerView lockerView;
+    @InjectView(R.id.tv_menu_my_device)
+    TextView tvMyDevice;
+    @InjectView(R.id.tv_menu_interphone)
+    TextView tvInterPhone;
 
     private final String TAG = getClass().getSimpleName();
 
@@ -150,6 +156,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
      * true if open application add have bounded device before
      */
     private boolean needConnectDevice = false;
+
+    public static final int REQUEST_MYDEVICE = 300;
 
     /**
      * callback when BlueLeService bind or unbind
@@ -244,7 +252,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
         bindAddress = sp.getString(Constants.BIND_DEVICE_ADDRESS,null);
 
-        if(bindAddress == null) {
+        if(TextUtils.isEmpty(bindAddress)) {
             //choose device to bind
             initBindDeiveFragment();
             changeFragment(bindDeviceFragment);
@@ -258,6 +266,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private void  initEvent(){
         tvAddGroup.setOnClickListener(this);
         tvCreateGruop.setOnClickListener(this);
+        tvMyDevice.setOnClickListener(this);
+        tvInterPhone.setOnClickListener(this);
     }
 
     /**
@@ -527,6 +537,16 @@ public class MainActivity extends Activity implements View.OnClickListener,
             case R.id.tv_menu_create_group:
                 createGroup();
                 break;
+            case R.id.tv_menu_my_device:
+                startActivityForResult(new Intent(MainActivity.this,
+                        MyDeviceActivity.class),REQUEST_MYDEVICE);
+                break;
+            case R.id.tv_menu_interphone:
+                if(homeFragment != null && homeFragment.isVisible()) return;
+                initHomeFragment();
+                changeFragment(homeFragment);
+                lockerView.toggleMenu();
+                break;
         }
     }
 
@@ -605,7 +625,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
      */
     @Override
     public void bleConnection(boolean connect) {
-        if(bindDeviceFragment != null && bindDeviceFragment.isVisible()) {
+        if(bindDeviceFragment != null) {
             bindDeviceFragment.deviceConnected();
             initHomeFragment();
             changeFragment(homeFragment);
@@ -693,6 +713,40 @@ public class MainActivity extends Activity implements View.OnClickListener,
         bindAddress = device.getAddress();
         if(bluetoothLeService != null) {
             bluetoothLeService.connect(bindAddress);
+        }
+    }
+
+    /**
+     * callback in MyDeviceFragment
+     */
+    @Override
+    public void bindDevice() {
+        initBindDeiveFragment();
+        changeFragment(bindDeviceFragment);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(requestCode == REQUEST_MYDEVICE && resultCode ==Activity.RESULT_OK && data != null) {
+            if(lockerView.isMenuOpened()) {
+                lockerView.closeMenu();
+            }
+            Bundle bundle = data.getExtras();
+            if(bundle.getBoolean(MyDeviceActivity.BINDDEVICE)) {
+                initBindDeiveFragment();
+                changeFragment(bindDeviceFragment);
+            }
+        }else {
+            super.onActivityResult(requestCode, resultCode, data);
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        if(lockerView.isMenuOpened()) {
+            lockerView.closeMenu();
+        }else {
+            super.onBackPressed();
         }
     }
 }

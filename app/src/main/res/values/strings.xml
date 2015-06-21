@@ -85,5 +85,8 @@
     <string name="mute">静音</string>
     <string name="cancel_mute">解除静音</string>
     <string name="see_group">查看组</string>
+    <string name="find_mydevice">查找我的设备</string>
+    <string name="device_version">固定版本</string>
+    <string name="unbind_device">解除绑定</string>
 
 </resources>
