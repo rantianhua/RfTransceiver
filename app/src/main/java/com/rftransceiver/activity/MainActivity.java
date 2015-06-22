@@ -24,6 +24,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.baidu.mapapi.SDKInitializer;
 import com.brige.blutooth.le.BleService;
 import com.rftransceiver.R;
 import com.rftransceiver.customviews.CircleImageDrawable;
@@ -32,7 +33,9 @@ import com.rftransceiver.fragments.BindDeviceFragment;
 import com.rftransceiver.fragments.HomeFragment;
 import com.rftransceiver.fragments.LoadDialogFragment;
 import com.rftransceiver.fragments.MyDeviceFragment;
+import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.util.Constants;
+import com.rftransceiver.util.GroupUtil;
 import com.source.DataPacketOptions;
 import com.source.SendMessageListener;
 import com.source.parse.ParseFactory;
@@ -47,8 +50,8 @@ import butterknife.InjectView;
 
 public class MainActivity extends Activity implements View.OnClickListener,
         SendMessageListener,HomeFragment.CallbackInHomeFragment,
-        BindDeviceFragment.CallbackInBindDeviceFragment,BleService.CallbackInBle,
-        MyDeviceFragment.CallbackInMyDevice{
+        BindDeviceFragment.CallbackInBindDeviceFragment,BleService.CallbackInBle
+        {
 
     @InjectView(R.id.img_menu_photo)
     ImageView imgPhoto;
@@ -78,7 +81,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     /**
      *
      */
-    private boolean findWriteCharac = false;
+    public static volatile boolean findWriteCharac = false;
 
     /**
      * indicate weather the ble device bind or not
@@ -158,6 +161,12 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private boolean needConnectDevice = false;
 
     public static final int REQUEST_MYDEVICE = 300;
+    public static final int REQUEST_GROUP = 301;
+
+    /**
+     * a instance of a GroupEntity
+     */
+    private GroupEntity groupEntity;
 
     /**
      * callback when BlueLeService bind or unbind
@@ -179,6 +188,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                 }
                 if(needConnectDevice) {
                     bluetoothLeService.connect(bindAddress);
+                    needConnectDevice = false;
                 }
             }
         }
@@ -432,21 +442,14 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     /**
-     * crate group
+     * create or add a group
+     * @param mode if is 0,create group
+     *             if is 1 add a group
      */
-    private void createGroup() {
+    private void groupAction(int mode) {
         Intent intent = new Intent(this,GroupActivity.class);
-        intent.putExtra(GroupActivity.ACTION_MODE,0);
-        startActivity(intent);
-    }
-
-    /**
-     * add a group
-     */
-    private void addGroup() {
-        Intent intent = new Intent(this,GroupActivity.class);
-        intent.putExtra(GroupActivity.ACTION_MODE,1);
-        startActivity(intent);
+        intent.putExtra(GroupActivity.ACTION_MODE,mode);
+        startActivityForResult(intent,REQUEST_GROUP);
     }
 
     private void sendAsyncWord() {
@@ -532,10 +535,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
     public void onClick(View v) {
         switch (v.getId()){
             case R.id.tv_menu_add_group:
-                addGroup();
+                groupAction(1);
                 break;
             case R.id.tv_menu_create_group:
-                createGroup();
+                groupAction(0);
                 break;
             case R.id.tv_menu_my_device:
                 startActivityForResult(new Intent(MainActivity.this,
@@ -638,7 +641,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
             }
         }
         deviceBinded = connect;
-        needConnectDevice = !connect;
     }
 
     /**
@@ -659,7 +661,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
     public void writeCharacterFind() {
         findWriteCharac = true;
         if(homeFragment != null && homeFragment.isVisible()) {
-            homeFragment.writeable = true;
             homeFragment.deviceConnected();
         }
     }
@@ -699,7 +700,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
         if(bindAddress == null) {
             bindAddress = sp.getString(Constants.BIND_DEVICE_ADDRESS,"");
         }
-        if(bluetoothLeService == null) return;
+        if(bluetoothLeService == null || deviceBinded) return;
         bluetoothLeService.connect(bindAddress);
     }
 
@@ -716,27 +717,42 @@ public class MainActivity extends Activity implements View.OnClickListener,
         }
     }
 
-    /**
-     * callback in MyDeviceFragment
-     */
-    @Override
-    public void bindDevice() {
-        initBindDeiveFragment();
-        changeFragment(bindDeviceFragment);
-    }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if(requestCode == REQUEST_MYDEVICE && resultCode ==Activity.RESULT_OK && data != null) {
-            if(lockerView.isMenuOpened()) {
-                lockerView.closeMenu();
+            /**
+             * in MyDeviceActivity,need to rebind or unbind device
+             */
+            switch (data.getStringExtra(MyDeviceActivity.EXTRA_INMYDEVICE)) {
+                case MyDeviceActivity.BINDDEVICE:
+                    initBindDeiveFragment();
+                    changeFragment(bindDeviceFragment);
+                    lockerView.closeMenu();
+                    break;
+                case MyDeviceActivity.UNBINDDEVICE:
+                    if(bluetoothLeService != null && deviceBinded) {
+                        bluetoothLeService.disconnect();
+                        deviceBinded = false;
+                    }
+                    break;
             }
+        }else if(requestCode == REQUEST_GROUP && resultCode == Activity.RESULT_OK && data != null) {
+            /**
+             * in GroupActivity,after finish create or add group,send a GroupEntity
+             */
             Bundle bundle = data.getExtras();
-            if(bundle.getBoolean(MyDeviceActivity.BINDDEVICE)) {
-                initBindDeiveFragment();
-                changeFragment(bindDeviceFragment);
+            if(bundle == null) return;
+            groupEntity = bundle.getParcelable(GroupActivity.EXTRA_GROUP);
+            if(groupEntity == null) return;
+            if(homeFragment == null) {
+                initHomeFragment();
+                changeFragment(homeFragment);
             }
-        }else {
+            homeFragment.updateGroup(groupEntity);
+            lockerView.closeMenu();
+            GroupUtil.recycle(groupEntity.getMembers());
+        }
+        else {
             super.onActivityResult(requestCode, resultCode, data);
         }
     }

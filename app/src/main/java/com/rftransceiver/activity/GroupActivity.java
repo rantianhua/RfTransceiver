@@ -9,7 +9,9 @@ import android.content.SharedPreferences;
 import android.graphics.BitmapFactory;
 import android.net.wifi.ScanResult;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.util.Base64;
 import android.util.Log;
 import android.widget.Toast;
@@ -70,6 +72,8 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
      */
     private GroupEntity groupEntity;
 
+    private Handler mainHandler;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,8 +91,8 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
             //create a group
             groupEntity.setAsyncWord(GroupUtil.createAsynWord());
             SharedPreferences sp = getSharedPreferences(Constants.SP_USER,0);
-            groupEntity.setPicFilePath(sp.getString(Constants.PHOTO_PATH,""));
-
+            String path = sp.getString(Constants.PHOTO_PATH,"");
+            groupEntity.setPicFilePath(path);
             if(setGroupNameFragment == null) initSGF();
             changeFragment(setGroupNameFragment);
         }else {
@@ -96,6 +100,12 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
             initRGF(GroupAction.ADD.ordinal(), null);
             changeFragment(rawGroupFragment);
         }
+
+        initMainHandler();
+    }
+
+    private void initMainHandler() {
+        mainHandler = new Handler(Looper.myLooper());
     }
 
     /**
@@ -184,7 +194,7 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
      * @param object read from socket
      */
     @Override
-    public void readData(String type,JSONObject object) {
+    public void readData(String type,final JSONObject object) {
         if(rawGroupFragment == null) return;
         switch (type) {
             case GroupUtil.GROUP_BASEINFO:
@@ -210,26 +220,48 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
             case GroupUtil.CANCEL_CREATE:
                 rawGroupFragment.cancelCreate(object);
                 break;
-            default:
-                try {
-                    JSONArray array = (JSONArray)object.get("msg");
-                    for(int i = 0;i < array.length();i ++) {
-                        JSONObject o = (JSONObject)array.get(i);
-                        byte[] photo = Base64.decode(o.getString(GroupUtil.PIC),Base64.DEFAULT);
-                        GroupMember member = new GroupMember(o.getString(GroupUtil.NAME),
-                                o.getInt(GroupUtil.GROUP_MEMBER_ID),
-                                BitmapFactory.decodeByteArray(photo,
-                                        0,photo.length));
-                        groupEntity.getMembers().add(member);
+            case GroupUtil.GROUP_FULL_INFO:
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            JSONArray array = (JSONArray)object.get("msg");
+                            for(int i = 0;i < array.length();i ++) {
+                                JSONObject o = (JSONObject)array.get(i);
+                                byte[] photo = Base64.decode(o.getString(GroupUtil.PIC),Base64.DEFAULT);
+                                GroupMember member = new GroupMember(o.getString(GroupUtil.NAME),
+                                        o.getInt(GroupUtil.GROUP_MEMBER_ID),
+                                        BitmapFactory.decodeByteArray(photo,
+                                                0,photo.length));
+                                groupEntity.getMembers().add(member);
+                            }
+                            finishGroup();
+                        }catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
-                    Constants.GROUPENTITY = groupEntity;
-                    Toast.makeText(this,"建群完成",Toast.LENGTH_SHORT).show();
-                    finish();
-                }catch (Exception e) {
-                    e.printStackTrace();
-                }
+                });
                 break;
         }
+    }
+
+    /**
+     * send group data to other Activity
+     */
+    private void finishGroup() {
+        String message = null;
+        Intent intent = new Intent();
+        Bundle bundle = new Bundle();
+        bundle.putParcelable(EXTRA_GROUP,groupEntity);
+        intent.putExtras(bundle);
+        setResult(Activity.RESULT_OK,intent);
+        if(groupAction == GroupAction.ADD) {
+            message = "加群完成";
+        }else if(groupAction == GroupAction.CREATE) {
+            message = "建群完成";
+        }
+        Toast.makeText(this,message,Toast.LENGTH_SHORT).show();
+        finish();
     }
 
     /**
@@ -286,9 +318,12 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(GroupActivity.this,"建组完成",Toast.LENGTH_SHORT).show();
-                Constants.GROUPENTITY = groupEntity;
-                finish();
+                SharedPreferences sp = getSharedPreferences(Constants.SP_USER,0);
+                GroupMember member = new GroupMember(sp.getString(Constants.NICKNAME,""),
+                        0,GroupUtil.getSmallBitmap(sp.getString(Constants.PHOTO_PATH,""),
+                        GroupActivity.this));
+                groupEntity.getMembers().add(0,member);
+                finishGroup();
             }
         });
     }
@@ -387,6 +422,9 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
     @Override
     public void addMember(GroupMember member) {
         if(groupEntity != null) {
+            if(groupAction == GroupAction.ADD) {
+                groupEntity.getMembers().clear();
+            }
             groupEntity.getMembers().add(member);
         }
     }
@@ -395,5 +433,7 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
      * the key of ActionGroup
      */
     public static final String ACTION_MODE = "action_mode";
+
+    public static final String EXTRA_GROUP = "groupentity";
 
 }

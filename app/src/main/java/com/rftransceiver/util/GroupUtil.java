@@ -65,15 +65,17 @@ public class GroupUtil {
      * @param path the file path of specific picture
      * @return byte[] data of the picture
      */
-    private static byte[] getPicBytes(String path,Context context) {
+    public static byte[] getPicBytes(String path,Context context) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        getSmallBitmap(path,context).compress(Bitmap.CompressFormat.JPEG,100,outputStream);
+        return outputStream.toByteArray();
+    }
+
+    public static Bitmap getSmallBitmap(String path,Context context) {
         int size = (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
                 30,context.getResources().getDisplayMetrics());
         size = size * size;
-        Bitmap bitmap = ImageUtil.createImageThumbnail(path,size);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG,100,outputStream);
-        bitmap.recycle();
-        return outputStream.toByteArray();
+        return ImageUtil.createImageThumbnail(path,size);
     }
 
 
@@ -95,7 +97,6 @@ public class GroupUtil {
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                 bitmap.compress(Bitmap.CompressFormat.JPEG,100,outputStream);
                 bitmapData = outputStream.toByteArray();
-                bitmap.recycle();
                 object.put(GroupUtil.GROUP_MEMBER_ID,member.getId());
             }else {
                 SharedPreferences sp = context.getSharedPreferences(Constants.SP_USER,0);
@@ -212,16 +213,15 @@ public class GroupUtil {
         return data == null ? null : data.toString();
     }
 
-
-//    /**
-//     * the enum to distinguish different data type
-//     */
-//    public enum WriteDataType {
-//        GROUP_BASEINFO,
-//        MEMBER_BASEINFO,
-//        MEMBER_ID,
-//        REQUEST_GBI
-//    }
+    /**
+     * recycle add unused bitmap
+     * @param list
+     */
+    public static void recycle(List<GroupMember> list) {
+        for(int i = 0; i < list.size();i++) {
+            list.get(i).getBitmap().recycle();
+        }
+    }
 
     public static final String NAME = "name";   //the key of group's or member's name
     public static final String PIC = "pic";     //the key of group owner's or member's picture

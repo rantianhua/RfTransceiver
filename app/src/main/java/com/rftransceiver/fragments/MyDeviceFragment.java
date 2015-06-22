@@ -77,6 +77,8 @@ public class MyDeviceFragment extends Fragment {
      * unbind have bounded device
      */
     private void unbindDevice() {
+        if(callback == null) return;
+        callback.unbindDevice();
         SharedPreferences.Editor editor = sp.edit();
         editor.putString(Constants.BIND_DEVICE_ADDRESS, "");
         editor.apply();
@@ -100,5 +102,6 @@ public class MyDeviceFragment extends Fragment {
 
     public interface CallbackInMyDevice {
         void bindDevice();
+        void unbindDevice();
     }
 }

@@ -7,7 +7,6 @@ import android.os.Bundle;
 import com.rftransceiver.R;
 import com.rftransceiver.fragments.MyDeviceFragment;
 
-import butterknife.InjectView;
 
 /**
  * Created by rantianhua on 15-6-21.
@@ -43,12 +42,30 @@ public class MyDeviceActivity extends Activity implements MyDeviceFragment.Callb
      */
     @Override
     public void bindDevice() {
-        Bundle bundle = new Bundle();
-        bundle.putBoolean(BINDDEVICE,true);
-        sendIntent.putExtras(bundle);
+        sendIntent.putExtra(EXTRA_INMYDEVICE,BINDDEVICE);
         setResult(Activity.RESULT_OK,sendIntent);
         finish();
     }
 
-    public static String BINDDEVICE = "bind_device";
+    /**
+     * callback in MyDeviceFragment
+     */
+    @Override
+    public void unbindDevice() {
+        sendIntent.putExtra(EXTRA_INMYDEVICE,UNBINDDEVICE);
+        setResult(Activity.RESULT_OK,sendIntent);
+    }
+
+    /**
+     * the key of intent extra
+     */
+    public static final String EXTRA_INMYDEVICE = "msg_in_mydevice";
+    /**
+     * to tell MainActivity to bind device
+     */
+    public static final String BINDDEVICE = "bind_device";
+    /**
+     * to tell MainACtivity to unbind device
+     */
+    public static final String UNBINDDEVICE = "unbind_device";
 }

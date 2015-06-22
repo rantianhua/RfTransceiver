@@ -36,6 +36,8 @@ import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.util.CommonAdapter;
 import com.rftransceiver.util.CommonViewHolder;
 
+import org.w3c.dom.Text;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -50,6 +52,8 @@ public class BindDeviceFragment extends ListFragment {
 
     @InjectView(R.id.pb_search_devices)
     ProgressBar pbSearching;
+    @InjectView(R.id.tv_handle_bind_device)
+    TextView tvHandle;
 
     private BluetoothAdapter adapter;
     /**
@@ -103,7 +107,7 @@ public class BindDeviceFragment extends ListFragment {
      */
     private BluetoothDevice waitConnectDevice;
 
-    private DevicePwdDialogFragment pwdDialogFragment;
+    private String textSure,textResearch;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -112,16 +116,24 @@ public class BindDeviceFragment extends ListFragment {
                 (BluetoothManager) getActivity().getSystemService(Context.BLUETOOTH_SERVICE);
         adapter = bluetoothManager.getAdapter();
         devices = new ArrayList<>();
+        textResearch = getString(R.string.restart_search);
+        textSure = getString(R.string.sure);
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        if(pbSearching.getVisibility() == View.INVISIBLE) {
+            startSearch();
+        }
     }
 
     @Override
     public void onPause() {
         super.onPause();
+        if(pbSearching.getVisibility() == View.VISIBLE) {
+            cancelSearch();
+        }
     }
 
     @Nullable
@@ -129,7 +141,6 @@ public class BindDeviceFragment extends ListFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_bind_device,container,false);
         initView(v);
-        startSearch();
         return v;
     }
 
@@ -150,6 +161,20 @@ public class BindDeviceFragment extends ListFragment {
                 helper.setText(R.id.tv_device_name_list,item.getName());
             }
         });
+        tvHandle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(tvHandle.getText().toString().equals(textResearch)) {
+                    startSearch();
+                }else if(tvHandle.getText().toString().equals(textSure)) {
+                    if(loadDialogFragment == null) {
+                        loadDialogFragment = LoadDialogFragment.getInstance("正在绑定");
+                    }
+                    loadDialogFragment.show(getFragmentManager(),null);
+                    connectDevice();
+                }
+            }
+        });
     }
 
     @Override
@@ -157,14 +182,12 @@ public class BindDeviceFragment extends ListFragment {
         if(selectedView != null) {
             selectedView.setSelected(false);
         }
-        cancelSearch();
+        if(pbSearching.getVisibility() == View.VISIBLE) {
+            cancelSearch();
+        }
+        tvHandle.setText(textSure);
         selectedView = v.findViewById(R.id.tv_device_name_list);
         selectedView.setSelected(true);
-        if(pwdDialogFragment == null) {
-            pwdDialogFragment = new DevicePwdDialogFragment();
-            pwdDialogFragment.setTargetFragment(this,REQUEST_PWD);
-        }
-        pwdDialogFragment.show(getFragmentManager(),null);
         waitConnectDevice = devices.get(position);
     }
 
@@ -194,6 +217,7 @@ public class BindDeviceFragment extends ListFragment {
     //search bluetooth device
     public void searchDevices() {
         pbSearching.setVisibility(View.VISIBLE);
+        tvHandle.setVisibility(View.INVISIBLE);
         new Handler(Looper.myLooper()).postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -205,6 +229,8 @@ public class BindDeviceFragment extends ListFragment {
 
     private void cancelSearch() {
         pbSearching.setVisibility(View.INVISIBLE);
+        tvHandle.setVisibility(View.VISIBLE);
+        tvHandle.setText(textResearch);
         adapter.stopLeScan(leScanCallback);
         if(devices != null && devices.size() == 0) {
             Toast.makeText(getActivity(),"没有查找到任何设备",Toast.LENGTH_SHORT).show();
@@ -220,27 +246,11 @@ public class BindDeviceFragment extends ListFragment {
     }
 
     @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(requestCode == REQUEST_PWD && resultCode == Activity.RESULT_OK && data != null) {
-            pasaword = data.getStringExtra(DevicePwdDialogFragment.EXTRA_PWD);
-            pwdDialogFragment.dismiss();
-            if(loadDialogFragment == null) {
-                loadDialogFragment = LoadDialogFragment.getInstance("正在绑定");
-            }
-            loadDialogFragment.show(getFragmentManager(),null);
-            connectDevice();
-        }else {
-            super.onActivityResult(requestCode, resultCode, data);
-        }
-    }
-
-    @Override
     public void onDestroy() {
         super.onDestroy();
         devices = null;
         loadDialogFragment =null;
         setCallback(null);
-        pwdDialogFragment = null;
     }
 
     /**

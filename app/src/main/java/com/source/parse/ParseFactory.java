@@ -84,10 +84,8 @@ public class ParseFactory {
     private void unKnowData(byte[] data) {
         Log.e("receive", "unknow data tail");
         for(byte d : data) {
-            sb.append(String.format("%#s ",d));
+            Log.e("error packet",d+"");
         }
-        Log.e("error packet",sb.toString());
-        sb.delete(0,sb.length());
     }
 
     public void setHandler(Handler han) {

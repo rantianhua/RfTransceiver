@@ -159,7 +159,6 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
 
     private HashMap<String,Integer> subIds;
 
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -476,9 +475,6 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
      * @param ssid
      */
     private void finalConnect(String ssid) {
-        Log.e("final ssid ",ssid);
-        Log.e("final connectedSsid ",connectedSsid);
-        Log.e("final socketedSsid ",socketedSsid);
         if(callback == null) return;
         if(ssid.equals(connectedSsid)) {
             //Ap has connected
@@ -559,6 +555,10 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.btn_sure_raw_group:
+                if(memberViews.size() == 0) {
+                    Toast.makeText(getActivity(),"请等待成员加入或取消建组",Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 if(callback == null) return;
                 callback.finishCreateGruop();
                 break;

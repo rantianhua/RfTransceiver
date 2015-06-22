@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@color/dark_blue"
+        android:id="@+id/rl_top_location">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="5dp"
+            android:textSize="20sp"
+            android:textColor="@color/white"
+            android:text="@string/location"
+            android:gravity="center"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="16dp"/>
+
+        <Button
+            android:layout_width="60dp"
+            android:layout_height="35dp"
+            android:id="@+id/btn_send_location"
+            android:gravity="center"
+            android:background="@drawable/tv_sure"
+            android:textColor="@color/white"
+            android:layout_centerVertical="true"
+            android:layout_alignParentEnd="true"
+            android:layout_marginEnd="16dp"
+            android:text="@string/send"
+            android:textSize="18sp"
+            />
+
+    </RelativeLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="250dp"
+        android:id="@+id/frame_container_mapview_location"
+        android:layout_below="@+id/rl_top_location"
+        >
+        <com.baidu.mapapi.map.MapView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/mapview_location"/>
+    </FrameLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/frame_container_mapview_location"
+        android:id="@+id/frame_container_result_location"
+        >
+
+        <ListView
+            android:id="@+id/listview_location_result"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            />
+
+    </FrameLayout>
+
+</RelativeLayout>

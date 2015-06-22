@@ -1,5 +1,7 @@
 package com.rftransceiver.group;
 
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -8,7 +10,7 @@ import java.util.List;
 /**
  * Created by rantianhua on 15-5-30.
  */
-public class GroupEntity {
+public class GroupEntity implements Parcelable{
 
     private String name;    //the group's name
 
@@ -67,6 +69,10 @@ public class GroupEntity {
         this.tempId = tempId;
     }
 
+    public void setMembers(List<GroupMember> members) {
+        this.members = members;
+    }
+
     /**
      * remove member by member id
      * @param cancelId
@@ -79,5 +85,40 @@ public class GroupEntity {
                 break;
             }
         }
+    }
+
+    public GroupEntity(Parcel parcel) {
+        members = new ArrayList<>();
+        name = parcel.readString();
+        asyncWord = parcel.createByteArray();
+        picFilePath = parcel.readString();
+        tempId = parcel.readInt();
+        parcel.readTypedList(members,GroupMember.CREATOR);
+    }
+
+    public static final Creator<GroupEntity> CREATOR = new Creator<GroupEntity>() {
+        @Override
+        public GroupEntity createFromParcel(Parcel parcel) {
+            return new GroupEntity(parcel);
+        }
+
+        @Override
+        public GroupEntity[] newArray(int i) {
+            return new GroupEntity[i];
+        }
+    };
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel parcel, int i) {
+        parcel.writeString(this.name);
+        parcel.writeByteArray(this.asyncWord);
+        parcel.writeString(this.picFilePath);
+        parcel.writeInt(this.tempId);
+        parcel.writeTypedList(this.members);
     }
 }

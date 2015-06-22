@@ -7,6 +7,7 @@ import android.animation.ObjectAnimator;
 import android.app.ActivityManager;
 import android.app.Fragment;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
@@ -36,13 +37,17 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.rftransceiver.R;
+import com.rftransceiver.activity.LocationActivity;
 import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.adapter.ListConversationAdapter;
 import com.rftransceiver.datasets.ConversationData;
+import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.util.CommonAdapter;
 import com.rftransceiver.util.CommonViewHolder;
 import com.rftransceiver.util.ExpressionUtil;
 
+
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,6 +94,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     TextView tvSeeGroup;
     @InjectView(R.id.tv_mute_home)
     TextView tvMute;
+    @InjectView(R.id.tv_title_content)
+    TextView tvTitle;
 
     /**
      * the reference of callback interface
@@ -96,11 +103,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     private CallbackInHomeFragment callback;
 
     private ListConversationAdapter conversationAdapter = null; //the adapter of listView
-
-    /**
-     *  after characteristic is registered, can send data by ble
-     */
-    public  boolean writeable = false;
 
     /**
      * save all gridView filled with expressions
@@ -157,6 +159,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                     //get expression's id
                     int epId = ExpressionUtil.epDatas.get(currentEpIndex).get(i);
                     insertExpression(epId,etSendMessage);
+                    if(btnSounds.getVisibility() == View.VISIBLE) {
+                        btnSounds.setVisibility(View.INVISIBLE);
+                        etSendMessage.setVisibility(View.VISIBLE);
+                    }
                 }
             });
             expressions.add(gridView);
@@ -301,7 +307,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         switch (view.getId()) {
             case R.id.btn_send:
                 //Log.e("onClick",filterFromHtml(etSendMessage.getText().toString()));
-                if(writeable) {
+                if(MainActivity.findWriteCharac) {
                     sendText();
                 }else {
                     bleLose();
@@ -309,7 +315,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                 break;
             case R.id.btn_sounds:
                 if(btnSounds.getText().equals(getString(R.string.record_sound))) {
-                    if(writeable) {
+                    if(MainActivity.findWriteCharac) {
                         sendSounds();
                     }else {
                         bleLose();
@@ -370,7 +376,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                 break;
             case R.id.img_home_address:
                 //want to send address
-
+                Intent intent = new Intent();
+                intent.setClass(getActivity(),LocationActivity.class);
+                startActivity(intent);
                 break;
             case R.id.tv_mute_home:
                 break;
@@ -707,6 +715,19 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                 tvTip.setVisibility(View.GONE);
             }
         });
+    }
+
+    /**
+     * update the group of talk
+     * @param groupEntity
+     */
+    public void updateGroup(GroupEntity groupEntity) {
+        String name = groupEntity.getName();
+        if(TextUtils.isEmpty(name)) {
+            name = groupEntity.getMembers().get(0).getName();
+        }
+        tvTitle.setText(name
+                +"(" + groupEntity.getMembers().size() + "人" + ")");
     }
 
     public interface CallbackInHomeFragment {

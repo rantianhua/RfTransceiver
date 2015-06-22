@@ -1,14 +1,20 @@
 package com.rftransceiver.group;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
+import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.util.Log;
 
 import com.rftransceiver.customviews.CircleImageDrawable;
+import com.rftransceiver.util.GroupUtil;
 
 /**
  * Created by rantianhua on 15-5-30.
  */
-public class GroupMember {
+public class GroupMember implements Parcelable{
 
 
     private String name;    //the name of group member
@@ -17,6 +23,9 @@ public class GroupMember {
     private Drawable drawable;  //the member's photo
     private Bitmap bitmap;
 
+    public GroupMember() {
+
+    }
 
     public GroupMember(String name,int id) {
         this.id = id;
@@ -29,9 +38,8 @@ public class GroupMember {
     }
 
     public GroupMember(String name,int id,Bitmap bitmap) {
-        this(name,id);
+        this(name, id);
         setBitmap(bitmap);
-        setDrawable(bitmap);
     }
 
     public int getId() {
@@ -72,5 +80,47 @@ public class GroupMember {
 
     public void setBitmap(Bitmap bitmap) {
         this.bitmap = bitmap;
+        setDrawable(bitmap);
     }
+
+    public static final Creator<GroupMember> CREATOR = new Creator<GroupMember>() {
+        @Override
+        public GroupMember createFromParcel(Parcel parcel) {
+            GroupMember member = new GroupMember();
+            member.setId(parcel.readInt());
+            member.setName(parcel.readString());
+            member.setPath(parcel.readString());
+            member.setBitmap((Bitmap)parcel.readBundle().getParcelable(BITMAP));
+            return member;
+        }
+
+        @Override
+        public GroupMember[] newArray(int i) {
+            return new GroupMember[i];
+        }
+    };
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel parcel, int i) {
+        parcel.writeInt(id);
+        parcel.writeString(name);
+        parcel.writeString(path);
+        Bundle bundle = new Bundle();
+        if(bitmap == null) {
+            Log.e("writeToParcel", "bitmap is null");
+        }
+        if(bitmap.isRecycled()) {
+            Log.e("writeToParcel", "bitmap is recycled");
+        }
+        bundle.putParcelable(BITMAP,bitmap);
+        parcel.writeBundle(bundle);
+    }
+
+    public static final String BITMAP = "bitmap";
+
 }

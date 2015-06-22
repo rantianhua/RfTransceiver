@@ -5,10 +5,8 @@
     <string name="hello_world">Hello world!</string>
     <string name="action_close_device">断开连接</string>
     <string name="action_connect_device">连接设备</string>
-    <string name="searching_bluetooth">正在搜索设备&#8230;.</string>
     <string name="cancel_discovery">取消搜索</string>
-    <string name="start_search">搜索设备</string>
-    <string name="open_bluetooth">开启蓝牙</string>
+    <string name="restart_search">重新搜索</string>
     <string name="look_devices">连接设备</string>
     <string name="record_sound">开始录音</string>
     <string name="recording_sound">录音中&#8230;,点击停止</string>
@@ -88,5 +86,6 @@
     <string name="find_mydevice">查找我的设备</string>
     <string name="device_version">固定版本</string>
     <string name="unbind_device">解除绑定</string>
+    <string name="location">位置</string>
 
 </resources>

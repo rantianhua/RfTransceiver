@@ -73,6 +73,8 @@ public class BleService extends Service {
 
     private CallbackInBle callback;
 
+    private boolean findCharacter = false;
+
     // Implements callback methods for GATT events that the app cares about.  For example,
     // connection change and services discovered.
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
@@ -88,9 +90,7 @@ public class BleService extends Service {
                 if(writeCharacteristic != null) {
                     setCharacteristicNotification(
                             writeCharacteristic, false);
-                    writeCharacteristic = null;
                 }
-                notifyCharacter = null;
                 if(callback != null) callback.bleConnection(false);
             }
         }
@@ -98,7 +98,7 @@ public class BleService extends Service {
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                if(writeCharacteristic == null || notifyCharacter == null) {
+                if(!findCharacter) {
                     BluetoothGattService writeServer = mBluetoothGatt.getService(
                             UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb")
                     );
@@ -111,12 +111,13 @@ public class BleService extends Service {
                     notifyCharacter = readServer.getCharacteristic(
                             UUID.fromString("0000fff5-0000-1000-8000-00805f9b34fb")
                     );
-                    setCharacteristicNotification(
-                            writeCharacteristic, true);
-                    final int charaProp = notifyCharacter.getProperties();
-                    if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
-                        readCharacteristic(notifyCharacter);
-                    }
+                    findCharacter = true;
+                }
+                setCharacteristicNotification(
+                        writeCharacteristic, true);
+                final int charaProp = notifyCharacter.getProperties();
+                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
+                    readCharacteristic(notifyCharacter);
                 }
                 if(callback != null) callback.writeCharacterFind();
             } else {
@@ -202,6 +203,10 @@ public class BleService extends Service {
      * @param instruction
      */
     public void writeInstruction(byte[] instruction) {
+        if(writeCharacteristic == null) {
+            callback.bleConnection(false);
+            return;
+        }
         writeCharacteristic.setValue(instruction);
         mBluetoothGatt.writeCharacteristic(writeCharacteristic);
     }
@@ -280,20 +285,20 @@ public class BleService extends Service {
      *         callback.
      */
     public boolean connect(final String address) {
-        if (mBluetoothAdapter == null || address == null) {
-            Log.w(TAG, "BluetoothAdapter not initialized or unspecified address.");
+        if (mBluetoothAdapter == null || address == null || mConnectionState != STATE_DISCONNECTED) {
             return false;
         }
 
         // Previously connected device.  Try to reconnect.
         if (mBluetoothDeviceAddress != null && address.equals(mBluetoothDeviceAddress)
                 && mBluetoothGatt != null) {
-            if (mBluetoothGatt.connect()) {
-                mConnectionState = STATE_CONNECTING;
-                return true;
-            } else {
-                return false;
-            }
+//            if (mBluetoothGatt.connect()) {
+//                mConnectionState = STATE_CONNECTING;
+//                return true;
+//            } else {
+//                return false;
+//            }
+            mBluetoothGatt.disconnect();
         }
 
         final BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
