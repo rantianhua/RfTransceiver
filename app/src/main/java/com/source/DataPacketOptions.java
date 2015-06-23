@@ -19,12 +19,12 @@ public class DataPacketOptions {
     /**
      * the packet head
      */
-    private byte head = (byte) 0x01;
+    private byte head = Constants.Data_Packet_Head;
 
     /**
      * the packet tail
      */
-    private byte tail = (byte) 0xff;
+    private byte tail = Constants.Data_Packet_Tail;
 
     /**
      * the index of the mark of data type,default is 1
