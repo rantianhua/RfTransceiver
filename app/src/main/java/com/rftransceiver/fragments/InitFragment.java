@@ -19,8 +19,10 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.rftransceiver.R;
+import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.customviews.CircleImageDrawable;
 import com.rftransceiver.util.Constants;
 
@@ -91,7 +93,14 @@ public class InitFragment extends Fragment implements View.OnClickListener{
         switch (view.getId()) {
             case R.id.btn_init_ok:
                 String nickname = etNickName.getText().toString();
-                if(TextUtils.isEmpty(nickname) || TextUtils.isEmpty(photoPath)) return;
+                if(TextUtils.isEmpty(nickname)) {
+                    Toast.makeText(getActivity(),"请输入昵称",Toast.LENGTH_SHORT).show();
+                    return;
+                }
+//                if(TextUtils.isEmpty(photoPath)) {
+//                    Toast.makeText(getActivity(),"请设置头像",Toast.LENGTH_SHORT).show();
+//                    return;
+//                }
                 saveBaseInfo(nickname);
                 etNickName.setText("");
                 break;
@@ -126,11 +135,10 @@ public class InitFragment extends Fragment implements View.OnClickListener{
     private void saveBaseInfo(String nickname) {
         SharedPreferences.Editor editor = getActivity().getSharedPreferences(Constants.SP_USER,0).edit();
         editor.putString(Constants.NICKNAME,nickname);
-        editor.putString(Constants.PHOTO_PATH,photoPath);
+        //editor.putString(Constants.PHOTO_PATH,photoPath);
         editor.apply();
-
-        BindDeviceFragment fragment = new BindDeviceFragment();
-        changeFragment(fragment);
+        startActivity(new Intent(getActivity(), MainActivity.class));
+        getActivity().finish();
     }
 
     /**

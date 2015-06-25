@@ -637,7 +637,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
         }
         if(!connect) {
             if(homeFragment != null && homeFragment.isVisible()) {
-                homeFragment.bleLose();
+                //homeFragment.bleLose();
+                showToast("设备未连接或连接丢失");
             }
         }
         deviceBinded = connect;

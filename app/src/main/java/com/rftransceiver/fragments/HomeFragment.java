@@ -307,19 +307,21 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         switch (view.getId()) {
             case R.id.btn_send:
                 //Log.e("onClick",filterFromHtml(etSendMessage.getText().toString()));
-                if(MainActivity.findWriteCharac) {
-                    sendText();
-                }else {
-                    bleLose();
-                }
+//                if(MainActivity.findWriteCharac) {
+//                    sendText();
+//                }else {
+//                    bleLose();
+//                }
+                sendText();
                 break;
             case R.id.btn_sounds:
                 if(btnSounds.getText().equals(getString(R.string.record_sound))) {
-                    if(MainActivity.findWriteCharac) {
-                        sendSounds();
-                    }else {
-                        bleLose();
-                    }
+//                    if(MainActivity.findWriteCharac) {
+//                        sendSounds();
+//                    }else {
+//                        bleLose();
+//                    }
+                    sendSounds();
                 }
                 else if(btnSounds.getText().equals(getString(R.string.recording_sound))) {
                     if(callback != null) callback.stopSendSounds();
@@ -697,15 +699,15 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     /**
      * the connection of ble has cut down
      */
-    public void bleLose() {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                tvTip.setVisibility(View.VISIBLE);
-                tvTip.setText(getString(R.string.connection_lose));
-            }
-        });
-    }
+//    public void bleLose() {
+//        getActivity().runOnUiThread(new Runnable() {
+//            @Override
+//            public void run() {
+//                tvTip.setVisibility(View.VISIBLE);
+//                tvTip.setText(getString(R.string.connection_lose));
+//            }
+//        });
+//    }
 
     public void deviceConnected() {
         getActivity().runOnUiThread(new Runnable() {

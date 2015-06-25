@@ -1,6 +1,7 @@
 package com.rftransceiver.adapter;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.widget.ImageView;
 
 import com.rftransceiver.R;
@@ -30,6 +31,7 @@ public class ImagesAdapter extends CommonAdapter {
             imageView.setBackgroundColor(mContext.getResources().getColor(R.color.take_pic));
             helper.setImageResource(R.id.img_grid_images,R.drawable.camera);
         }else {
+            if(item instanceof String && TextUtils.isEmpty((String)item)) return;
             helper.setImageByUrl(R.id.img_grid_images, dirPath + "/" + item);
         }
     }

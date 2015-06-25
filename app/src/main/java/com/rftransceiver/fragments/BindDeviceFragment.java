@@ -252,9 +252,4 @@ public class BindDeviceFragment extends ListFragment {
         loadDialogFragment =null;
         setCallback(null);
     }
-
-    /**
-     * the request need by DevicePwdFragment
-     */
-    public static final int REQUEST_PWD = 300;
 }

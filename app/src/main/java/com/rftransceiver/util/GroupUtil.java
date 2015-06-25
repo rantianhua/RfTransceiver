@@ -12,6 +12,7 @@ import com.rftransceiver.group.GroupMember;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
@@ -48,7 +49,7 @@ public class GroupUtil {
             object.put(GROUP_ASYNC_WORD,
                     Base64.encodeToString(groupEntity.getAsyncWord(), Base64.DEFAULT));
             String path = groupEntity.getPicFilePath();
-            if(path != null) {
+            if(!TextUtils.isEmpty(path)) {
                 object.put(PIC,Base64.encodeToString(getPicBytes(path,context), Base64.DEFAULT));
                 path = null;
             }
@@ -102,11 +103,15 @@ public class GroupUtil {
                 SharedPreferences sp = context.getSharedPreferences(Constants.SP_USER,0);
                 memberName = sp.getString(Constants.NICKNAME,"");
                 String photoPath = sp.getString(Constants.PHOTO_PATH,"");
-                bitmapData = getPicBytes(photoPath,context);
+                if(!TextUtils.isEmpty(photoPath)) {
+                    bitmapData = getPicBytes(photoPath,context);
+                }
             }
             object.put(NAME,memberName);
-            object.put(PIC,
-                    Base64.encodeToString(bitmapData,Base64.DEFAULT));
+            if(bitmapData != null) {
+                object.put(PIC,
+                        Base64.encodeToString(bitmapData,Base64.DEFAULT));
+            }
         }catch (Exception e) {
             e.printStackTrace();
         }

@@ -301,12 +301,16 @@ public class BleService extends Service {
             mBluetoothGatt.disconnect();
         }
 
-        final BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
-        // We want to directly connect to the device, so we are setting the autoConnect
-        // parameter to false.
-        mBluetoothGatt = device.connectGatt(this, false, mGattCallback);
-        mBluetoothDeviceAddress = address;
-        mConnectionState = STATE_CONNECTING;
+        try {
+            final BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+            // We want to directly connect to the device, so we are setting the autoConnect
+            // parameter to false.
+            mBluetoothGatt = device.connectGatt(this, false, mGattCallback);
+            mBluetoothDeviceAddress = address;
+            mConnectionState = STATE_CONNECTING;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return true;
     }
 

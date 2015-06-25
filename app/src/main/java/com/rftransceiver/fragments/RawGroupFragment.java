@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.support.annotation.Nullable;
+import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import android.util.TypedValue;
@@ -253,10 +254,12 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
         }
 
         String path = getActivity().getSharedPreferences(Constants.SP_USER,0).getString(Constants.PHOTO_PATH,"");
-        int size = (int)(80 * getResources().getDisplayMetrics().density + 0.5f);
-        Bitmap bitmap = ImageUtil.createImageThumbnail(path,size * size);
-        imgPhoto.setImageDrawable(new CircleImageDrawable(bitmap));
+        if(!TextUtils.isEmpty(path)) {
+            int size = (int)(80 * getResources().getDisplayMetrics().density + 0.5f);
+            Bitmap bitmap = ImageUtil.createImageThumbnail(path,size * size);
+            imgPhoto.setImageDrawable(new CircleImageDrawable(bitmap));
 
+        }
         /**
          * get the random range
          */

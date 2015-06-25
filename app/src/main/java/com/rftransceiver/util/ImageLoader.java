@@ -114,6 +114,7 @@ public class ImageLoader
 					mSemaphore.acquire();
 				} catch (InterruptedException e)
 				{
+                    e.printStackTrace();
 				}
 				Looper.prepare();
 
@@ -128,6 +129,7 @@ public class ImageLoader
 							mPoolSemaphore.acquire();
 						} catch (InterruptedException e)
 						{
+                            e.printStackTrace();
 						}
 					}
 				};
@@ -170,7 +172,7 @@ public class ImageLoader
 		// UI线程
 		if (mHandler == null)
 		{
-			mHandler = new Handler()
+			mHandler = new Handler(Looper.getMainLooper())
 			{
 				@Override
 				public void handleMessage(Message msg)
@@ -242,6 +244,7 @@ public class ImageLoader
 				mSemaphore.acquire();
 		} catch (InterruptedException e)
 		{
+            e.printStackTrace();
 		}
 		mTasks.add(runnable);
         if(mPoolThreadHander != null) {

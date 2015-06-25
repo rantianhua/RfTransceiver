@@ -40,12 +40,7 @@
         android:layout_height="250dp"
         android:id="@+id/frame_container_mapview_location"
         android:layout_below="@+id/rl_top_location"
-        >
-        <com.baidu.mapapi.map.MapView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:id="@+id/mapview_location"/>
-    </FrameLayout>
+        />
 
     <FrameLayout
         android:layout_width="match_parent"
