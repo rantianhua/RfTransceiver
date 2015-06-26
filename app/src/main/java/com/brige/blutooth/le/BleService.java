@@ -292,13 +292,12 @@ public class BleService extends Service {
         // Previously connected device.  Try to reconnect.
         if (mBluetoothDeviceAddress != null && address.equals(mBluetoothDeviceAddress)
                 && mBluetoothGatt != null) {
-//            if (mBluetoothGatt.connect()) {
-//                mConnectionState = STATE_CONNECTING;
-//                return true;
-//            } else {
-//                return false;
-//            }
-            mBluetoothGatt.disconnect();
+            if (mBluetoothGatt.connect()) {
+                mConnectionState = STATE_CONNECTING;
+                return true;
+            } else {
+                return false;
+            }
         }
 
         try {
@@ -310,6 +309,7 @@ public class BleService extends Service {
             mConnectionState = STATE_CONNECTING;
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
         return true;
     }

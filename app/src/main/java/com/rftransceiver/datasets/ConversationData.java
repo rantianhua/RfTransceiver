@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 
 import com.rftransceiver.R;
+import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.adapter.ListConversationAdapter;
 import com.rftransceiver.customviews.CircleImageDrawable;
 
@@ -37,6 +38,13 @@ public class ConversationData {
      * the instance between two persons
      */
     private String instance;
+
+    /**
+     * the address data
+     */
+    private String address;
+
+    private MainActivity.SendAction dataType;
 
     public ConversationData(ListConversationAdapter.ConversationType type,
                             String text) {
@@ -90,5 +98,21 @@ public class ConversationData {
 
     public void setInstance(String instance) {
         this.instance = instance;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public MainActivity.SendAction getDataType() {
+        return dataType;
+    }
+
+    public void setDataType(MainActivity.SendAction dataType) {
+        this.dataType = dataType;
     }
 }

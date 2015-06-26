@@ -30,12 +30,35 @@ public class Constants {
 
     /**
      * the value of Type_Sounds to mark the sounds data
-     *  the value of Type_Text to mark the text data
+     *  the value of Type_Words to mark the words data
+     *  the value of Type_Address to mark the address data
+     *  the value of Type_Image to mark the image data
      */
     public static final byte Type_Sounds = (byte) 0x03;
 
-    public static final byte Type_Text = (byte) 0x02;
+    public static final byte Type_Words = (byte) 0x02;
 
+    public static final byte Type_Address = (byte) 0x04;
+
+    public static final byte Type_Image = (byte) 0x05;
+
+    public static final int READ_SOUNDS = 0;
+
+    public static final int READ_WORDS = 1;
+
+    public static final int READ_ADDRESS = 2;
+
+    public static final int READ_Image = 3;
+
+    public static final int READ_SETASYNCWORD = 4;
+
+    public static final int READ_RSSI = 5;
+
+    public static final int READ_CHANNEL = 6;
+
+    public static final int READ_CHANGE_CHANNEL = 7;
+
+    public static final int READ_ERROR = 8;
     /**
      * the every data packet's length
      */

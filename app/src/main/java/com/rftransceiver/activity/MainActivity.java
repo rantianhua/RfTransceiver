@@ -132,8 +132,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
      */
     private SendAction action = SendAction.NONE;
     public enum SendAction {
-        TEXT,
+        Words,
         SOUNDS,
+        Address,
+        Image,
         NONE
     }
 
@@ -187,7 +189,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
                     bluetoothLeService.openBluetooth();
                 }
                 if(needConnectDevice) {
-                    bluetoothLeService.connect(bindAddress);
+                    if(!bluetoothLeService.connect(bindAddress)) {
+                        if(homeFragment != null) {
+                            homeFragment.connectFailed();
+                        }
+                    }
                     needConnectDevice = false;
                 }
             }
@@ -231,6 +237,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        SDKInitializer.initialize(getApplicationContext());
         setContentView(R.layout.activity_main);
         System.loadLibrary("speex");
 
@@ -347,7 +354,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                 switch (msg.what) {
                     case Constants.MESSAGE_READ:
                         switch (msg.arg1) {
-                            case 0:
+                            case Constants.READ_SOUNDS:
                                 switch (msg.arg2) {
                                     case 0:
                                         //start to receive sounds data
@@ -368,36 +375,40 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                         break;
                                 }
                                 break;
-                            case 1:
+                            case Constants.READ_WORDS:
                                 //receive text data
                                 byte[] data = (byte[]) msg.obj;
+                                if(data == null) return;
                                 if(homeFragment != null) {
                                     homeFragment.receivingData(1,new String(data));
                                 }
                                 break;
-                            case 2:
-//                                switch (msg.arg2) {
-//                                    case 0:
-//                                        updateChannel(getString(R.string.channel_1));
-//                                        break;
-//                                    case 1:
-//                                        updateChannel(getString(R.string.channel_2));
-//                                        break;
-//                                    case 2:
-//                                        updateChannel(getString(R.string.channel_3));
-//                                        break;
-//                                    case 3:
-//                                        updateChannel(getString(R.string.channel_4));
-//                                        break;
-//                                }
+                            case Constants.READ_ADDRESS:
+                                byte[] add = (byte[]) msg.obj;
+                                if(add != null) {
+                                    if(homeFragment != null) {
+                                        homeFragment.receivingData(2,new String(add));
+                                    }
+                                }
                                 break;
-                            case 3:
+                            case Constants.READ_Image:
+                                byte[] image = (byte[]) msg.obj;
+                                if(image != null) {
+                                    if(homeFragment != null) {
+                                        homeFragment.receivingData(3,new String(image));
+                                    }
+                                }
+                                break;
+                            case Constants.READ_CHANGE_CHANNEL:
+
+                                break;
+                            case Constants.READ_SETASYNCWORD:
                                 showToast("设置同步字成功");
                                 break;
-                            case 4:
+                            case Constants.READ_RSSI:
                                 showToast("读到rssi值是：" + msg.arg2);
                                 break;
-                            case 5:
+                            case Constants.READ_CHANNEL:
                                 if (msg.arg2 == 0) {
                                     isReceiving = false;
                                     stopReceiveSounds();
@@ -408,9 +419,15 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                         if(homeFragment != null) {
                                             homeFragment.startSendingSounds();
                                         }
-                                    } else if (action == SendAction.TEXT) {
+                                    } else if (action == SendAction.Words) {
                                         action = SendAction.NONE;
-                                        sendText();
+                                        sendText(DataPacketOptions.TextType.Words);
+                                    }else if(action == SendAction.Address) {
+                                        action = SendAction.NONE;
+                                        sendText(DataPacketOptions.TextType.Address);
+                                    }else if(action == SendAction.Image) {
+                                        action = SendAction.NONE;
+                                        sendText(DataPacketOptions.TextType.Image);
                                     }
                                 } else if (msg.arg2 == 1) {
                                     if (action != SendAction.NONE) {
@@ -418,7 +435,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                     }
                                 }
                                 break;
-                            case 6:
+                            case Constants.READ_ERROR:
                                 resetCms(true);
                                 showToast("接收到错误数据");
                                 break;
@@ -573,11 +590,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
     /**
      * send text message to ble
      */
-    private void sendText() {
+    private void sendText(DataPacketOptions.TextType type) {
         if(sendText != null) {
-            homeFragment.sendText(sendText);
+            textEntity.unpacking(sendText,type);
+            homeFragment.sendText(sendText,type);
         }
-        textEntity.unpacking(sendText);
     }
 
     private void showToast(final String s) {
@@ -752,6 +769,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
             homeFragment.updateGroup(groupEntity);
             lockerView.closeMenu();
             GroupUtil.recycle(groupEntity.getMembers());
+        }else if(requestCode == HomeFragment.REQUEST_LOCATION && resultCode == Activity.RESULT_OK && data != null) {
+            String address = data.getStringExtra(HomeFragment.EXTRA_LOCATION);
+            showToast("dksdjksdskjd");
+            if(TextUtils.isEmpty(address)) return;
+            send(SendAction.Address,address);
         }
         else {
             super.onActivityResult(requestCode, resultCode, data);

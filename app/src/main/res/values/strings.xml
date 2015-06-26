@@ -77,7 +77,6 @@
     <string name="choose_group_in">点击小组加入</string>
     <string name="wait_group_owner_sure">等待群主确认</string>
     <string name="hint_et_sent_text">请写一段消息</string>
-    <string name="connection_lose">连接已丢失，点击重新连接</string>
     <string name="reconnecting">正在重新连接，请稍候</string>
     <string name="connect_success">连接成功</string>
     <string name="mute">静音</string>
@@ -87,5 +86,6 @@
     <string name="device_version">固定版本</string>
     <string name="unbind_device">解除绑定</string>
     <string name="location">位置</string>
+    <string name="connection_failed">连接失败，点击重新连接</string>
 
 </resources>

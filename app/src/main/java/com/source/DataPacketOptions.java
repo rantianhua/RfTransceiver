@@ -63,6 +63,11 @@ public class DataPacketOptions {
      */
     private int memberIdIndex = Constants.Group_Member_Id_index;
 
+    /**
+     * the text type , contain words,image,address
+     */
+    private TextType textType;
+
     public DataPacketOptions(Data_Type_InOptions type,int offset) {
         this.offset = offset;
         setTypeFlag(type);
@@ -122,11 +127,21 @@ public class DataPacketOptions {
         return typeFlag;
     }
 
+    public byte getTypeFlag(TextType textType) {
+        switch (textType){
+            case Words:
+                return Constants.Type_Words;
+            case Address:
+                return Constants.Type_Address;
+            case Image:
+                return Constants.Type_Image;
+        }
+        return Constants.Type_Words;
+    }
+
     public void setTypeFlag(Data_Type_InOptions type) {
         if(type == Data_Type_InOptions.sounds) {
             this.typeFlag = Constants.Type_Sounds;
-        }else if (type == Data_Type_InOptions.text) {
-            this.typeFlag = Constants.Type_Text;
         }
     }
 
@@ -166,11 +181,30 @@ public class DataPacketOptions {
         this.memberIdIndex = memberIdIndex;
     }
 
+    public TextType getTextType() {
+        return textType;
+    }
+
+    public void setTextType(TextType textType) {
+        this.textType = textType;
+    }
+
     /**
      * the enum to distinguish the data type
      */
     public enum Data_Type_InOptions{
-        sounds,
-        text
+        sounds,//sounds data
+        text    //text data,contain words、image、address
     }
+
+    /**
+     * the enum distinguish different text
+     */
+    public enum TextType {
+        Words,
+        Image,
+        Address
+    }
+
+
 }

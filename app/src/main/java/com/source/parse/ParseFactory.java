@@ -46,31 +46,48 @@ public class ParseFactory {
     public void sendToRelativeParser(byte[] temp) {
         if(temp[Constants.Data_Packet_Length -1] == Constants.Data_Packet_Tail) {
             //check the data type and then send to relative parser
-            if(temp[Constants.Packet_Type_flag_Index] == Constants.Type_Sounds) {
-                //sounds packet
-                soundsParser.parseSounds(temp);
-            }else if(Constants.Type_Text == temp[Constants.Packet_Type_flag_Index]) {
-                //text packet
-                textParser.parseText(temp);
-            }else {
-               unKnowData(temp);
+            switch (temp[Constants.Packet_Type_flag_Index]) {
+                case Constants.Type_Sounds:
+                    //sounds packet
+                    soundsParser.parseSounds(temp);
+                    break;
+                case Constants.Type_Words:
+                    //text packet
+                    textParser.parseText(temp, DataPacketOptions.TextType.Words);
+                    break;
+                case Constants.Type_Address:
+                    //text packet
+                    textParser.parseText(temp, DataPacketOptions.TextType.Address);
+                    break;
+                case Constants.Type_Image:
+                    //text packet
+                    textParser.parseText(temp, DataPacketOptions.TextType.Image);
+                    break;
+                default:
+                    unKnowData(temp);
+                    break;
             }
         }else if(temp[Constants.Data_Packet_Length -1] == Constants.Instruction_Packet_Tail) {
             switch (temp[1]) {
                 case 1:
-                    handler.obtainMessage(Constants.MESSAGE_READ,3,-1,null).sendToTarget();
+                    handler.obtainMessage(Constants.MESSAGE_READ,Constants.READ_SETASYNCWORD
+                            ,-1,null).sendToTarget();
                     break;
                 case 2:
-                    handler.obtainMessage(Constants.MESSAGE_READ,2,temp[2],null).sendToTarget();
+                    handler.obtainMessage(Constants.MESSAGE_READ,
+                            Constants.READ_CHANGE_CHANNEL,temp[2],null).sendToTarget();
                     break;
                 case 3:
-                    handler.obtainMessage(Constants.MESSAGE_READ,4,temp[2],null).sendToTarget();
+                    handler.obtainMessage(Constants.MESSAGE_READ,
+                            Constants.READ_RSSI,temp[2],null).sendToTarget();
                     break;
                 case 4:
-                    handler.obtainMessage(Constants.MESSAGE_READ,5,temp[2],temp[3]).sendToTarget();
+                    handler.obtainMessage(Constants.MESSAGE_READ,Constants.READ_CHANNEL
+                            ,temp[2],temp[3]).sendToTarget();
                     break;
                 case 5:
-                    handler.obtainMessage(Constants.MESSAGE_READ,6,-1,null).sendToTarget();
+                    handler.obtainMessage(Constants.MESSAGE_READ,
+                            Constants.READ_ERROR,-1,null).sendToTarget();
                     break;
                 default:
                     unKnowData(temp);

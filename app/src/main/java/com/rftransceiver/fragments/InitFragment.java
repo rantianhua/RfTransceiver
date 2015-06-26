@@ -108,7 +108,7 @@ public class InitFragment extends Fragment implements View.OnClickListener{
                 etNickName.setText("");
                 break;
             case R.id.img_init_camera:
-                changeFragment(new ImagesFragment());
+                changeFragment(ImagesFragment.getInstance(REQUEST_FRAGMENT));
                 break;
             default:
                 break;

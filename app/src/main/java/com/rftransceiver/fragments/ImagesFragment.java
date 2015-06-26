@@ -36,6 +36,7 @@ import com.rftransceiver.customviews.CircleImageDrawable;
 import com.rftransceiver.customviews.ImageDirsPopWindow;
 import com.rftransceiver.datasets.ImageFolderData;
 import com.rftransceiver.util.Constants;
+import com.rftransceiver.util.ImageUtil;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -264,11 +265,21 @@ public class ImagesFragment extends Fragment implements ImageDirsPopWindow.OnPic
         if(getTargetFragment() != null) {
             Intent intent = new Intent();
             intent.putExtra(Constants.PHOTO_PATH,path);
-            getTargetFragment().onActivityResult(InitFragment.REQUEST_FRAGMENT,Activity.RESULT_CANCELED,
+            getTargetFragment().onActivityResult(getArguments().
+                    getInt("request"),Activity.RESULT_CANCELED,
                     intent);
             intent = null;
         }
     }
+
+    public static ImagesFragment getInstance(int request){
+        ImagesFragment fragment = new ImagesFragment();
+        Bundle bundle = new Bundle();
+        bundle.putInt("request",request);
+        fragment.setArguments(bundle);
+        return fragment;
+    }
+
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {

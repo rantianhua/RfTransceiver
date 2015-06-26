@@ -1,5 +1,7 @@
 package com.source.text;
 
+import android.util.Log;
+
 import com.rftransceiver.datasets.MyDataQueue;
 import com.source.DataPacketOptions;
 import com.source.SendMessageListener;
@@ -43,21 +45,31 @@ public class TextEntity implements Runnable{
 
     }
 
-    public void unpacking(String content) {
-        initTemp();
+    public void unpacking(String content,DataPacketOptions.TextType type) {
+        if(type == DataPacketOptions.TextType.Image) {
+            unpacking(content);
+            return;
+        }
+        initTemp(type);
         byte[] text = content.getBytes();
         int len = text.length;
+        int remainder = len % (options.getLength()-1-options.getOffset());
+        int count = len / (options.getLength()-1-options.getOffset());
         for(int i = 0; i < len;i++) {
             temp[index++] = text[i];
             if(index == options.getLength()-1) {
                 index = options.getOffset();
                 //cache full
+                if(remainder == 0 && dataQueue.getSize() == count-1) {
+                    Log.e("unpacking", "the last packet");
+                    temp[options.getRealLenIndex()] = (byte)(index-options.getOffset());
+                }
                 dataQueue.add(temp);
-                initTemp();
+                initTemp(type);
             }
         }
         if(index > options.getOffset()) {
-            //the last packet that length less than 64
+            //the last packet that length less than 60
             temp[options.getRealLenIndex()] = (byte) (index-options.getOffset());
             index = options.getOffset();
             dataQueue.add(temp);
@@ -66,12 +78,85 @@ public class TextEntity implements Runnable{
         new Thread(this).start();
     }
 
-    private void initTemp(){
+    /**
+     * unpack image data
+     * @param content
+     */
+    private volatile boolean addImageData = true;
+    private void unpacking(String content) {
+        initTemp(DataPacketOptions.TextType.Image);
+        byte[] sourceData = content.getBytes();
+        int len = sourceData.length;
+        int realDataLen = (options.getLength()-1-options.getOffset());
+        int remainder = len % realDataLen;
+        int count = len / realDataLen;
+        new Thread(new SendImageData()).start();
+        for(int i = 0;i <= count;i++) {
+            if(i != count) {
+                System.arraycopy(sourceData,i*realDataLen,temp,options.getOffset(),realDataLen);
+                if(remainder == 0) {
+                    //the last packet
+                    temp[options.getRealLenIndex()] = (byte)realDataLen;
+                }
+                dataQueue.add(temp);
+                initTemp(DataPacketOptions.TextType.Image);
+            }else {
+                if(remainder == 0)  break;
+                //the last packet
+                System.arraycopy(sourceData,i*realDataLen,temp,options.getOffset(),remainder);
+                temp[options.getRealLenIndex()] = (byte)remainder;
+                dataQueue.add(temp);
+            }
+        }
+        setAddImageData(false);
+    }
+
+    private synchronized void setAddImageData(boolean add) {
+        addImageData = add;
+    }
+
+    private synchronized boolean getAddImageData() {
+        return addImageData;
+    }
+
+    /**
+     * send images datas
+     */
+    class SendImageData implements Runnable {
+        @Override
+        public void run() {
+            setAddImageData(true);
+            while (getAddImageData()) {
+                byte[] imageData = (byte[])dataQueue.get();
+                if(imageData != null) {
+                    if(sendListener == null) return;
+                    sendListener.sendPacketedData(imageData,false);
+                    try {
+                        Thread.sleep(100);
+                    }catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            int size = dataQueue.getSize();
+            for(int i = 0;i < size;i++) {
+                if(sendListener == null) return;
+                sendListener.sendPacketedData((byte[])dataQueue.get(),false);
+                try {
+                    Thread.sleep(100);
+                }catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private void initTemp(DataPacketOptions.TextType type){
         temp = null;
         temp = new byte[options.getLength()];
         temp[0] = options.getHead();
         temp[options.getLength()-1] = options.getTail();
-        temp[options.getTypeFlagIndex()] = options.getTypeFlag();
+        temp[options.getTypeFlagIndex()] = options.getTypeFlag(type);
         temp[options.getRealLenIndex()] = options.getRealLen();
     }
 
@@ -79,7 +164,13 @@ public class TextEntity implements Runnable{
     public void run() {
         while (dataQueue.getSize() > 0) {
             boolean end = dataQueue.getSize() == 1;
+            if(sendListener == null) return;
             sendListener.sendPacketedData((byte[])dataQueue.get(),end);
+            try {
+                Thread.sleep(40);
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 

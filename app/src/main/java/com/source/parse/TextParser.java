@@ -18,14 +18,14 @@ public class TextParser {
     /**
      * a cache to save text bytes
      */
-    private byte[] textTemp = new byte[1000];
+    private byte[] textTemp = new byte[60 * 1024];
 
     /**
      * the real text bytes's length
      */
     private int length = 0;
 
-    public void parseText(byte[] data) {
+    public void parseText(byte[] data,DataPacketOptions.TextType type) {
         if(data[options.getRealLenIndex()] == options.getRealLen()) {
             makeText(data,options.getLength() - options.getOffset()-1);
         }else {
@@ -33,7 +33,20 @@ public class TextParser {
             makeText(data,data[options.getRealLenIndex()]);
             byte[] sendData = new byte[length];
             System.arraycopy(textTemp,0,sendData,0,length);
-            handler.obtainMessage(Constants.MESSAGE_READ,1,-1,sendData).sendToTarget();
+            int tag = 1;
+            switch (type) {
+                case Words:
+                    tag = Constants.READ_WORDS;
+                    break;
+                case Address:
+                    tag = Constants.READ_ADDRESS;
+                    break;
+                case Image:
+                    tag = Constants.READ_Image;
+                    break;
+            }
+            handler.obtainMessage(Constants.MESSAGE_READ,
+                    tag,-1,sendData).sendToTarget();
             sendData = null;
             length = 0;
         }
@@ -41,8 +54,8 @@ public class TextParser {
     }
 
     private void makeText(byte[] data,int len) {
-        Log.e("makeText", "start to make text");
         if(len > options.getLength() - options.getOffset() -1) {
+            Log.e("make text","un support len");
             return;
         }
         for(int i = options.getOffset();i < len + options.getOffset();i++) {

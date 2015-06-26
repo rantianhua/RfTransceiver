@@ -3,11 +3,11 @@ package com.rftransceiver.fragments;
 import android.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
@@ -17,9 +17,21 @@ import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.MapStatusUpdate;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.model.LatLng;
+import com.baidu.mapapi.search.core.PoiInfo;
+import com.baidu.mapapi.search.core.SearchResult;
+import com.baidu.mapapi.search.geocode.GeoCodeOption;
+import com.baidu.mapapi.search.geocode.GeoCodeResult;
+import com.baidu.mapapi.search.geocode.GeoCoder;
+import com.baidu.mapapi.search.geocode.OnGetGeoCoderResultListener;
+import com.baidu.mapapi.search.geocode.ReverseGeoCodeOption;
+import com.baidu.mapapi.search.geocode.ReverseGeoCodeResult;
 import com.rftransceiver.R;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -38,12 +50,54 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
     private LocationClient locationClient;
     private BaiduMap baiduMap;
 
+    /**
+     * mark is first location or not
+     */
     private boolean isFirstLocate = true;
+
+    /**
+     * geography code
+     */
+    private GeoCoder geocoder;
+
+    /**
+     * the address to be shown
+     * if it is not null ,just show this address in mapview
+     * else locate and poi search
+     */
+    private String address;
+
+    /**
+     * the list of poi info
+     */
+    private List<PoiInfo> poiInfoList;
+
+    /**
+     * current poiInfo
+     */
+    private PoiInfo currentInfo;
+
+
+    /**
+     * interface interactive with other class
+     */
+    private CallbackInMVF callbackInMVF;
+
+    private String city;
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        initLocation();
+        try {
+            address = getArguments().getString("address");
+        }catch (Exception e) {
+            address = null;
+        }
+
+        geocoder = GeoCoder.newInstance();
+        geocoder.setOnGetGeoCodeResultListener(getGeoCoderResultListener);
+
     }
 
     @Nullable
@@ -51,6 +105,14 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_mapview,container,false);
         initView(view);
+
+        if(TextUtils.isEmpty(address)) {
+            if(locationClient == null) initLocation();
+        }else {
+            String[] addresses = address.split("\\|");
+            geocoder.geocode(new GeoCodeOption().address(addresses[0]).city(addresses[1]));
+        }
+
         initEvent();
         return view;
     }
@@ -70,6 +132,8 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
     }
 
     private void initLocation() {
+        poiInfoList = new ArrayList<>();
+        //locate
         locationClient = new LocationClient(getActivity().getApplicationContext());
         locationClient.registerLocationListener(this);
         //the way of location
@@ -104,12 +168,19 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
     @Override
     public void onDestroy() {
         //destroy location
-        locationClient.stop();
+        if(locationClient != null) locationClient.stop();
         //close location layer
         baiduMap.setMyLocationEnabled(false);
         mapView.onDestroy();
         mapView = null;
+        geocoder.destroy();
+        geocoder = null;
         super.onDestroy();
+        if(poiInfoList != null) {
+            poiInfoList.clear();
+            poiInfoList = null;
+        }
+        setCallback(null);
     }
 
     /**
@@ -125,13 +196,70 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
                 .accuracy(bdLocation.getRadius())
                 .latitude(bdLocation.getLatitude())
                 .longitude(bdLocation.getLongitude()).build();
+        if(city == null) city = bdLocation.getCity();
         baiduMap.setMyLocationData(myLocationData);
+        //custom the icon
+        MyLocationConfiguration config = new MyLocationConfiguration(MyLocationConfiguration.LocationMode.NORMAL,
+                true,null);
+        baiduMap.setMyLocationConfigeration(config);
+
         if(isFirstLocate) {
             LatLng ll = new LatLng(bdLocation.getLatitude(),
                     bdLocation.getLongitude());
             MapStatusUpdate u = MapStatusUpdateFactory.newLatLng(ll);
             baiduMap.animateMapStatus(u);
+            if(callbackInMVF == null) return;
+            geocoder.reverseGeoCode(new ReverseGeoCodeOption().location(ll));
         }
+    }
+
+    /**
+     * the listener of geo coder
+     */
+    OnGetGeoCoderResultListener getGeoCoderResultListener = new OnGetGeoCoderResultListener() {
+        @Override
+        public void onGetGeoCodeResult(GeoCodeResult geoCodeResult) {
+            if(geoCodeResult == null || geoCodeResult.error != SearchResult.ERRORNO.NO_ERROR) {
+                Log.e("onGetReverseGeoCodeResult"," 没有检索到结果");
+                return;
+            }
+            LatLng ll = geoCodeResult.getLocation();
+            if(ll == null) return;
+            MapStatusUpdate u = MapStatusUpdateFactory.newLatLng(ll);
+            baiduMap.animateMapStatus(u);
+        }
+
+        @Override
+        public void onGetReverseGeoCodeResult(ReverseGeoCodeResult reverseGeoCodeResult) {
+
+            if(reverseGeoCodeResult == null ||
+                    reverseGeoCodeResult.error != SearchResult.ERRORNO.NO_ERROR) {
+                // no result
+                Log.e("onGetReverseGeoCodeResult"," 没有检索到结果");
+                return;
+            }
+            if(currentInfo == null) {
+                currentInfo = new PoiInfo();
+            }
+            currentInfo.address = reverseGeoCodeResult.getAddress();
+            currentInfo.location = reverseGeoCodeResult.getLocation();
+            currentInfo.name = "[当前位置]";
+            currentInfo.city = city;
+            poiInfoList.clear();
+            poiInfoList.add(currentInfo);
+
+            //add surround position info to list
+            if(reverseGeoCodeResult.getPoiList() != null) {
+                poiInfoList.addAll(reverseGeoCodeResult.getPoiList());
+            }
+            //update adapter
+            if(callbackInMVF == null) return;
+            callbackInMVF.surroundInfo(poiInfoList,city);
+        }
+    };
+
+    public void setCallback(CallbackInMVF callback) {
+        this.callbackInMVF = callback;
     }
 
     /**
@@ -139,5 +267,19 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
      */
     public void requestLocation() {
         locationClient.requestLocation();
+    }
+
+    public static MapViewFragment getInstance(String address) {
+        MapViewFragment fragment = new MapViewFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString("address",address);
+        fragment.setArguments(bundle);
+        return fragment;
+    }
+
+    //public static final String EXTRA_POISEARCH = "poiSearch";
+
+    public interface CallbackInMVF {
+        void surroundInfo(List<PoiInfo> infos,String city);
     }
 }

@@ -57,4 +57,18 @@
         android:layout_marginStart="80dp"
         />
 
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="160dp"
+        android:id="@+id/frame_mapview_left"
+        android:layout_marginStart="75dp"
+        android:layout_centerVertical="true"/>
+
+    <ImageView
+        android:layout_width="@dimen/img_data_width"
+        android:layout_height="@dimen/img_data_height"
+        android:id="@+id/img_data_left"
+        android:layout_centerVertical="true"
+        android:layout_marginStart="75dp"/>
+
 </RelativeLayout>

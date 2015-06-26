@@ -4,11 +4,13 @@ import android.animation.Animator;
 import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
@@ -20,6 +22,7 @@ import android.text.Editable;
 import android.text.Html;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -40,15 +43,20 @@ import com.rftransceiver.R;
 import com.rftransceiver.activity.LocationActivity;
 import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.adapter.ListConversationAdapter;
+import com.rftransceiver.customviews.CircleImageDrawable;
 import com.rftransceiver.datasets.ConversationData;
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.util.CommonAdapter;
 import com.rftransceiver.util.CommonViewHolder;
+import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.ExpressionUtil;
+import com.rftransceiver.util.ImageUtil;
+import com.source.DataPacketOptions;
 
 
 import org.w3c.dom.Text;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -134,6 +142,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
 
     private Rect rect = new Rect();
 
+    private int imgSendSize;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -141,7 +151,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         imgDots = new ArrayList<>();
         initImageGetter();
         transOffset = getResources().getDisplayMetrics().density * 80 + 0.5f;
-    }
+//        imgSendSize = getResources().getDimensionPixelSize(R.dimen.img_data_height)
+//             * getResources().getDimensionPixelSize(R.dimen.img_data_width);
+
+        imgSendSize = 40 * 80;
+     }
 
     private void initExpressions(LayoutInflater inflater) {
         for(int i = 0; i < ExpressionUtil.epDatas.size();i ++) {
@@ -260,7 +274,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     private void initView(View v) {
         ButterKnife.inject(this,v);
 
-        conversationAdapter = new ListConversationAdapter(getActivity(),imgageGetter);
+        conversationAdapter = new ListConversationAdapter(getActivity(),imgageGetter,getFragmentManager());
         listView.setAdapter(conversationAdapter);
     }
 
@@ -306,21 +320,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.btn_send:
-                //Log.e("onClick",filterFromHtml(etSendMessage.getText().toString()));
-//                if(MainActivity.findWriteCharac) {
-//                    sendText();
-//                }else {
-//                    bleLose();
-//                }
                 sendText();
                 break;
             case R.id.btn_sounds:
                 if(btnSounds.getText().equals(getString(R.string.record_sound))) {
-//                    if(MainActivity.findWriteCharac) {
-//                        sendSounds();
-//                    }else {
-//                        bleLose();
-//                    }
                     sendSounds();
                 }
                 else if(btnSounds.getText().equals(getString(R.string.recording_sound))) {
@@ -341,7 +344,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                 }
                 break;
             case R.id.tv_tip_home:
-                if(tvTip.getText().toString().equals(getString(R.string.connection_lose))) {
+                if(tvTip.getText().toString().equals(getString(R.string.connection_failed))) {
                     if(callback != null) {
                         callback.reconnectDevice();
                         tvTip.setText(getString(R.string.reconnecting));
@@ -374,13 +377,18 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                 break;
             case R.id.img_home_picture:
                 //want to send picture
-
+                ImagesFragment imagesFragment = ImagesFragment.getInstance(REQUEST_HOME);
+                imagesFragment.setTargetFragment(HomeFragment.this,REQUEST_HOME);
+                getFragmentManager().beginTransaction().replace(R.id.frame_content,
+                        imagesFragment)
+                        .addToBackStack(null)
+                        .commit();
                 break;
             case R.id.img_home_address:
                 //want to send address
                 Intent intent = new Intent();
                 intent.setClass(getActivity(),LocationActivity.class);
-                startActivity(intent);
+                getActivity().startActivityForResult(intent, REQUEST_LOCATION);
                 break;
             case R.id.tv_mute_home:
                 break;
@@ -592,7 +600,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         message = message.replace("</p>", "");
         if(!TextUtils.isEmpty(message)) {
             if(callback != null) {
-                callback.send(MainActivity.SendAction.TEXT,message);
+                callback.send(MainActivity.SendAction.Words,message);
             }
         }
     }
@@ -609,18 +617,38 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     /**
      * is receiving sounds or text data
      * @param tye 0 is sounds data
-     *            1 is text data
+     *            1 is words data
+     *            2 is address data
+     *            3 is image data
      */
     public void receivingData(int tye,String data) {
-        if(tye == 0) {
-            btnSounds.setText(getString(R.string.sounds_im));
-            btnSounds.setClickable(false);
-        }else if(tye == 1 ){
-            ConversationData other = new ConversationData(ListConversationAdapter.ConversationType.Other,
-                    data, BitmapFactory.decodeResource(getResources(),R.drawable.photo),0,"100m");
-            conversationAdapter.addData(other);
-            conversationAdapter.notifyDataSetChanged();
-            listView.setSelection(conversationAdapter.getCount()-1);
+        switch (tye) {
+            case 0:
+                btnSounds.setText(getString(R.string.sounds_im));
+                btnSounds.setClickable(false);
+                break;
+            case 1:
+                ConversationData other = new ConversationData(ListConversationAdapter.ConversationType.Other,
+                        data, BitmapFactory.decodeResource(getResources(),R.drawable.photo),0,"100m");
+                other.setDataType(MainActivity.SendAction.Words);
+                conversationAdapter.addData(other);
+                listView.setSelection(conversationAdapter.getCount()-1);
+                break;
+            case 2:
+                ConversationData address = new ConversationData(ListConversationAdapter.ConversationType.Other,
+                        null, BitmapFactory.decodeResource(getResources(),R.drawable.photo),0,"100m");
+                address.setAddress(data);
+                address.setDataType(MainActivity.SendAction.Address);
+                conversationAdapter.addData(address);
+                listView.setSelection(conversationAdapter.getCount()-1);
+                break;
+            case 3:
+                ConversationData imgage = new ConversationData(ListConversationAdapter.ConversationType.Other,
+                        data, BitmapFactory.decodeResource(getResources(),R.drawable.photo),0,"100m");
+                imgage.setDataType(MainActivity.SendAction.Image);
+                conversationAdapter.addData(imgage);
+                listView.setSelection(conversationAdapter.getCount()-1);
+                break;
         }
     }
 
@@ -639,15 +667,31 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
      * call if can send text by ble
      * @param sendText the text wait to be send
      */
-    public void sendText(String sendText) {
-        hideSoft();
-        etSendMessage.setText("");
-        ConversationData me = new ConversationData(ListConversationAdapter.ConversationType.Me,
-                sendText);
-        conversationAdapter.addData(me);
-        conversationAdapter.notifyDataSetChanged();
+    public void sendText(String sendText,DataPacketOptions.TextType type) {
+        if(TextUtils.isEmpty(sendText)) return;
+        ConversationData subData = null;
+        switch (type) {
+            case Words:
+                hideSoft();
+                etSendMessage.setText("");
+                subData = new ConversationData(ListConversationAdapter.ConversationType.Me,
+                        sendText);
+                subData.setDataType(MainActivity.SendAction.Words);
+                break;
+            case Address:
+                subData = new ConversationData(ListConversationAdapter.ConversationType.Me,
+                        null);
+                subData.setAddress(sendText);
+                subData.setDataType(MainActivity.SendAction.Address);
+                break;
+            case Image:
+                subData = new ConversationData(ListConversationAdapter.ConversationType.Me,
+                        sendText);
+                subData.setDataType(MainActivity.SendAction.Image);
+                break;
+        }
+        conversationAdapter.addData(subData);
         listView.setSelection(conversationAdapter.getCount()-1);
-        me = null;
     }
 
     private void hideSoft() {
@@ -696,19 +740,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         return false;
     }
 
-    /**
-     * the connection of ble has cut down
-     */
-//    public void bleLose() {
-//        getActivity().runOnUiThread(new Runnable() {
-//            @Override
-//            public void run() {
-//                tvTip.setVisibility(View.VISIBLE);
-//                tvTip.setText(getString(R.string.connection_lose));
-//            }
-//        });
-//    }
-
     public void deviceConnected() {
         getActivity().runOnUiThread(new Runnable() {
             @Override
@@ -730,6 +761,20 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         }
         tvTitle.setText(name
                 +"(" + groupEntity.getMembers().size() + "人" + ")");
+    }
+
+    /**
+     * connect device failed
+     */
+    public void connectFailed() {
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if(tvTip.getText().toString().equals(getString(R.string.reconnecting))) return;
+                tvTip.setVisibility(View.VISIBLE);
+                tvTip.setText(getString(R.string.connection_failed));
+            }
+        });
     }
 
     public interface CallbackInHomeFragment {
@@ -765,4 +810,35 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         expressions = null;
         imgDots = null;
     }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(requestCode == REQUEST_HOME && resultCode == Activity.RESULT_CANCELED && data != null) {
+            getFragmentManager().popBackStackImmediate();
+            String imgPath = data.getStringExtra(Constants.PHOTO_PATH);
+            if(imgPath == null) return;
+            Bitmap bitmap = ImageUtil.createImageThumbnail(imgPath,imgSendSize);
+            if(bitmap == null) return;
+            Log.e("bitmap origin thumple size",bitmap.getByteCount() + "");
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            int options = 100;
+            bitmap.compress(Bitmap.CompressFormat.PNG,options,outputStream);
+            while (outputStream.toByteArray().length / 1024 > 60) {
+                outputStream.reset();
+                options -= 10;
+                Log.e("bitmap origin thumple size", "压缩");
+                bitmap.compress(Bitmap.CompressFormat.PNG,options,outputStream);
+            }
+            String imgData = Base64.encodeToString(outputStream.toByteArray(),Base64.DEFAULT);
+            if(callback != null) {
+                callback.send(MainActivity.SendAction.Image,imgData);
+            }
+        }else {
+            super.onActivityResult(requestCode, resultCode, data);
+        }
+    }
+
+    public static final int REQUEST_LOCATION = 302;
+    public static final int REQUEST_HOME = 303;
+    public static final String EXTRA_LOCATION = "address";
 }
