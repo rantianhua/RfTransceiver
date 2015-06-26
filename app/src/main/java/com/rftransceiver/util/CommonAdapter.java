@@ -60,7 +60,4 @@ public abstract class CommonAdapter<T> extends BaseAdapter
                 position);
 	}
 
-    public List<T> getListDatas(){
-        return this.mDatas;
-    }
 }

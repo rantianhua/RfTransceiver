@@ -55,6 +55,8 @@
 
         <activity android:name=".activity.LocationActivity"/>
 
+        <activity android:name=".activity.SettingActivity"/>
+
 
         <service android:name="com.brige.blutooth.le.BleService" android:enabled="true"
             />

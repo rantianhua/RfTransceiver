@@ -144,6 +144,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
 
     private int imgSendSize;
 
+    private String tipConnectLose,tipReconnecting,tipConnecSuccess;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -155,6 +157,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
 //             * getResources().getDimensionPixelSize(R.dimen.img_data_width);
 
         imgSendSize = 40 * 80;
+        tipConnectLose = getResources().getString(R.string.connection_lose);
+        tipReconnecting = getResources().getString(R.string.reconnecting);
+        tipConnecSuccess = getResources().getString(R.string.connect_success);
      }
 
     private void initExpressions(LayoutInflater inflater) {
@@ -344,10 +349,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                 }
                 break;
             case R.id.tv_tip_home:
-                if(tvTip.getText().toString().equals(getString(R.string.connection_failed))) {
+                if(tvTip.getText().toString().equals(tipConnectLose)) {
                     if(callback != null) {
                         callback.reconnectDevice();
-                        tvTip.setText(getString(R.string.reconnecting));
+                        tvTip.setText(tipReconnecting);
                     }
                 }
                 break;
@@ -740,12 +745,22 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         return false;
     }
 
-    public void deviceConnected() {
+    public void deviceConnected(final boolean connect) {
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                tvTip.setText(getString(R.string.connect_success));
-                tvTip.setVisibility(View.GONE);
+                if(connect) {
+                    if(tvTip.getText().toString().equals(tipReconnecting) && tvTip.getVisibility() ==
+                            View.VISIBLE) {
+                        tvTip.setText(tipConnecSuccess);
+                        tvTip.setVisibility(View.GONE);
+                    }
+                }else {
+                    if(!tvTip.getText().toString().equals(tipReconnecting)) {
+                        tvTip.setText(tipConnectLose);
+                        tvTip.setVisibility(View.VISIBLE);
+                    }
+                }
             }
         });
     }
@@ -761,20 +776,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         }
         tvTitle.setText(name
                 +"(" + groupEntity.getMembers().size() + "人" + ")");
-    }
-
-    /**
-     * connect device failed
-     */
-    public void connectFailed() {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if(tvTip.getText().toString().equals(getString(R.string.reconnecting))) return;
-                tvTip.setVisibility(View.VISIBLE);
-                tvTip.setText(getString(R.string.connection_failed));
-            }
-        });
     }
 
     public interface CallbackInHomeFragment {
@@ -826,7 +827,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
             while (outputStream.toByteArray().length / 1024 > 60) {
                 outputStream.reset();
                 options -= 10;
-                Log.e("bitmap origin thumple size", "压缩");
                 bitmap.compress(Bitmap.CompressFormat.PNG,options,outputStream);
             }
             String imgData = Base64.encodeToString(outputStream.toByteArray(),Base64.DEFAULT);

@@ -17,6 +17,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
+import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.view.MotionEvent;
 import android.view.View;
@@ -32,7 +33,6 @@ import com.rftransceiver.customviews.LockerView;
 import com.rftransceiver.fragments.BindDeviceFragment;
 import com.rftransceiver.fragments.HomeFragment;
 import com.rftransceiver.fragments.LoadDialogFragment;
-import com.rftransceiver.fragments.MyDeviceFragment;
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.GroupUtil;
@@ -67,6 +67,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
     TextView tvMyDevice;
     @InjectView(R.id.tv_menu_interphone)
     TextView tvInterPhone;
+    @InjectView(R.id.img_setting_menu)
+    ImageView imgSetting;
+    @InjectView(R.id.tv_menu_setting)
+    TextView tvSetting;
 
     private final String TAG = getClass().getSimpleName();
 
@@ -74,14 +78,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
      * the reference of BlueLeService
      */
     private BleService bluetoothLeService;
-    /**
-     * true if is receiving data
-     */
-    private volatile boolean isReceiving = false;
-    /**
-     *
-     */
-    public static volatile boolean findWriteCharac = false;
 
     /**
      * indicate weather the ble device bind or not
@@ -139,6 +135,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
         NONE
     }
 
+    private boolean isStoped = false;
+
     /**
      * when in BindDeviceFragment, if the bluetooth is opening this will be true
      * after bluetooth is opened , the BindDevicesFragment will start to search device
@@ -164,6 +162,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
     public static final int REQUEST_MYDEVICE = 300;
     public static final int REQUEST_GROUP = 301;
+    public static final int REQUEST_CHANGECHANNEL = 305;
 
     /**
      * a instance of a GroupEntity
@@ -191,7 +190,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                 if(needConnectDevice) {
                     if(!bluetoothLeService.connect(bindAddress)) {
                         if(homeFragment != null) {
-                            homeFragment.connectFailed();
+                            homeFragment.deviceConnected(false);
                         }
                     }
                     needConnectDevice = false;
@@ -233,6 +232,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
             }
         }
     };
+
+    public static int CURRENT_CHANNEL = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -285,6 +286,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
         tvCreateGruop.setOnClickListener(this);
         tvMyDevice.setOnClickListener(this);
         tvInterPhone.setOnClickListener(this);
+        tvSetting.setOnClickListener(this);
+        imgSetting.setOnClickListener(this);
     }
 
     /**
@@ -358,7 +361,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                 switch (msg.arg2) {
                                     case 0:
                                         //start to receive sounds data
-                                        isReceiving = true;
                                         receiver.startReceiver();
                                         if(homeFragment != null) {
                                             homeFragment.receivingData(0,null);
@@ -400,7 +402,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                 }
                                 break;
                             case Constants.READ_CHANGE_CHANNEL:
-
+                                int channel = msg.arg2;
+                                String[] channels = getResources().getStringArray(R.array.channel);
+                                showToast("信道已修改为"+channels[channel]);
+                                channels = null;
+                                CURRENT_CHANNEL = channel;
                                 break;
                             case Constants.READ_SETASYNCWORD:
                                 showToast("设置同步字成功");
@@ -410,7 +416,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                 break;
                             case Constants.READ_CHANNEL:
                                 if (msg.arg2 == 0) {
-                                    isReceiving = false;
                                     stopReceiveSounds();
                                     if (action == SendAction.SOUNDS) {
                                         //start record
@@ -470,7 +475,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     private void sendAsyncWord() {
-        if(!isReceiving && findWriteCharac) {
+        if(bluetoothLeService != null) {
             Constants.ASYNC_WORD[2] = 9;
             Constants.ASYNC_WORD[3] = 10;
             bluetoothLeService.writeInstruction(Constants.ASYNC_WORD);
@@ -484,19 +489,17 @@ public class MainActivity extends Activity implements View.OnClickListener,
         receiver.clear();
         parseFactory.resetSounds();
         homeFragment.reset();
-        isReceiving = false;
         if(write) {
-            if(!isReceiving && findWriteCharac) {
+            if(bluetoothLeService != null) {
                 bluetoothLeService.writeInstruction(Constants.RESET);
             }
         }
     }
 
     private void changeChanel(byte channel) {
-        if(!isReceiving && findWriteCharac) {
-            Constants.CHANNEL[2] = channel;
-            bluetoothLeService.writeInstruction(Constants.CHANNEL);
-        }
+        if(bluetoothLeService == null) return;
+        Constants.CHANNEL[2] = channel;
+        bluetoothLeService.writeInstruction(Constants.CHANNEL);
     }
 
     @Override
@@ -504,6 +507,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
         super.onResume();
         registerReceiver(bluetoothSate,
                 new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
+        isStoped = false;
     }
 
     @Override
@@ -511,6 +515,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
         super.onPause();
         unregisterReceiver(bluetoothSate);
     }
+
 
     @Override
     protected void onDestroy() {
@@ -532,6 +537,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
         bluetoothLeService.close();
         bluetoothLeService = null;
 
+    }
+    @Override
+    protected void onStop() {
+        isStoped = true;
+        super.onStop();
     }
 
     @Override
@@ -567,6 +577,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
                 changeFragment(homeFragment);
                 lockerView.toggleMenu();
                 break;
+            case R.id.img_setting_menu:
+            case R.id.tv_menu_setting:
+                startActivityForResult(new Intent(MainActivity.this,
+                        SettingActivity.class), REQUEST_CHANGECHANNEL);
+                break;
         }
     }
 
@@ -601,7 +616,16 @@ public class MainActivity extends Activity implements View.OnClickListener,
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(MainActivity.this, s, Toast.LENGTH_SHORT).show();
+                if(isStoped) {
+                    LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(MainActivity.this);
+                    Intent intent = new Intent();
+                    intent.putExtra(Constants.TOAST,s);
+                    localBroadcastManager.sendBroadcast(intent);
+                    intent = null;
+                    localBroadcastManager = null;
+                }else {
+                    Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
@@ -652,11 +676,9 @@ public class MainActivity extends Activity implements View.OnClickListener,
             saveBoundedDevice();
             bindDeviceFragment = null;
         }
-        if(!connect) {
-            if(homeFragment != null && homeFragment.isVisible()) {
-                //homeFragment.bleLose();
-                showToast("设备未连接或连接丢失");
-            }
+        if(homeFragment != null && homeFragment.isVisible()) {
+            //homeFragment.bleLose();
+            homeFragment.deviceConnected(connect);
         }
         deviceBinded = connect;
     }
@@ -676,11 +698,16 @@ public class MainActivity extends Activity implements View.OnClickListener,
      * tell activity the characteristic have found and register
      */
     @Override
-    public void writeCharacterFind() {
-        findWriteCharac = true;
-        if(homeFragment != null && homeFragment.isVisible()) {
-            homeFragment.deviceConnected();
-        }
+    public void deviceNotWork() {
+        showToast("请确保设备正在工作");
+    }
+
+    /**
+     * callback in BleService
+    */
+    @Override
+    public void serviceNotInit() {
+        showToast("连接未初始化，请稍候...");
     }
 
     /**
@@ -719,7 +746,12 @@ public class MainActivity extends Activity implements View.OnClickListener,
             bindAddress = sp.getString(Constants.BIND_DEVICE_ADDRESS,"");
         }
         if(bluetoothLeService == null || deviceBinded) return;
-        bluetoothLeService.connect(bindAddress);
+        if(!bluetoothLeService.connect(bindAddress)) {
+            if(homeFragment != null) {
+                homeFragment.deviceConnected(false);
+            }
+        }
+
     }
 
     /**
@@ -771,9 +803,13 @@ public class MainActivity extends Activity implements View.OnClickListener,
             GroupUtil.recycle(groupEntity.getMembers());
         }else if(requestCode == HomeFragment.REQUEST_LOCATION && resultCode == Activity.RESULT_OK && data != null) {
             String address = data.getStringExtra(HomeFragment.EXTRA_LOCATION);
-            showToast("dksdjksdskjd");
-            if(TextUtils.isEmpty(address)) return;
-            send(SendAction.Address,address);
+            if(!TextUtils.isEmpty(address))
+                send(SendAction.Address,address);
+        }else if(requestCode == REQUEST_CHANGECHANNEL && resultCode == Activity.RESULT_OK
+                && data != null) {
+            int channel = data.getIntExtra(Constants.SELECTED_CHANNEL,-1);
+            if(channel == -1) return;
+            changeChanel((byte)channel);
         }
         else {
             super.onActivityResult(requestCode, resultCode, data);
@@ -788,4 +824,5 @@ public class MainActivity extends Activity implements View.OnClickListener,
             super.onBackPressed();
         }
     }
+
 }

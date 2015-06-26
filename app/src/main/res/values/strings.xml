@@ -15,18 +15,11 @@
     <string name="stop_sounds">停止播放</string>
     <string name="sounds_im">实时聊天中&#8230;</string>
     <string name="send">发送</string>
-    <string name="clear">清空</string>
+    <string name="clear_cache">清除缓存</string>
     <string name="reset_scm">复位</string>
-    <string name="receive_counts">已接收 %d 字节</string>
-    <string name="send_counts">已发送 %d 字节</string>
-    <string name="channel_1">频道1</string>
-    <string name="channel_2">频道2</string>
-    <string name="channel_3">频道3</string>
-    <string name="channel_4">频道4</string>
 
     <string name="connected">已连接%1s</string>
     <string name="disconnected">连接丢失</string>
-    <string name="title_devices">搜索BLE设备</string>
     <string name="not_connect_device">还未连接设备</string>
     <string name="not_support_ble">设备不支持BLE</string>
     <!-- Menu items -->
@@ -43,7 +36,7 @@
     <string name="bluetooth_connecting">正在连接&#8230;</string>
     <string name="bluetooth_connected">已连接设备</string>
     <string name="received_error_packet">接收到错误数据</string>
-    <string name="choose_channel">选择频道</string>
+    <string name="choose_channel">修改信道</string>
     <string name="bluetooth_closed">蓝牙已关闭</string>
     <string name="scan_bluetooth_device">查找蓝牙设备</string>
     <string name="channel_label">当前频道：%1s</string>
@@ -86,6 +79,8 @@
     <string name="device_version">固定版本</string>
     <string name="unbind_device">解除绑定</string>
     <string name="location">位置</string>
-    <string name="connection_failed">连接失败，点击重新连接</string>
+    <string name="connection_lose">连接丢失，请检查设备后点击重新连接</string>
+    <string name="save_sounds_data">保存语音信息</string>
+    <string name="about">关于</string>
 
 </resources>

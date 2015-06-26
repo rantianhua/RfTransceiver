@@ -119,7 +119,6 @@ public class BleService extends Service {
                 if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
                     readCharacteristic(notifyCharacter);
                 }
-                if(callback != null) callback.writeCharacterFind();
             } else {
                 Log.e(TAG, "onServicesDiscovered received: " + status);
             }
@@ -136,9 +135,7 @@ public class BleService extends Service {
 
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            if(status == BluetoothGatt.GATT_SUCCESS) {
-                Log.e("onCharacteristicWrite","write success");
-            }else {
+            if(status != BluetoothGatt.GATT_SUCCESS) {
                 callback.sendUnPacketedData(null, 2);
             }
         }
@@ -188,14 +185,16 @@ public class BleService extends Service {
     }
 
     public void write(byte[] send) {
-        byte[] sam = new byte[20];
-        for(int i =0; i < 3;i++) {
-            System.arraycopy(send,i*20,sam,0,20);
-            writeCharacteristic.setValue(sam);
-            mBluetoothGatt.writeCharacteristic(writeCharacteristic);
+        if(canWrite()) {
+            byte[] sam = new byte[20];
+            for(int i =0; i < 3;i++) {
+                System.arraycopy(send,i*20,sam,0,20);
+                writeCharacteristic.setValue(sam);
+                mBluetoothGatt.writeCharacteristic(writeCharacteristic);
+            }
+            send = null;
+            sam = null;
         }
-        send = null;
-        sam = null;
     }
 
     /**
@@ -203,12 +202,35 @@ public class BleService extends Service {
      * @param instruction
      */
     public void writeInstruction(byte[] instruction) {
-        if(writeCharacteristic == null) {
-            callback.bleConnection(false);
-            return;
+        if(canWrite()) {
+            writeCharacteristic.setValue(instruction);
+            mBluetoothGatt.writeCharacteristic(writeCharacteristic);
         }
-        writeCharacteristic.setValue(instruction);
-        mBluetoothGatt.writeCharacteristic(writeCharacteristic);
+    }
+
+    /**
+     * check not can write data to ble or not
+     * @return
+     */
+    private boolean canWrite() {
+        if(writeCharacteristic == null && callback == null) return false;
+        if(writeCharacteristic == null) {
+            if(mConnectionState == STATE_DISCONNECTED) {
+                callback.bleConnection(false);
+            }else if(mConnectionState == STATE_CONNECTING) {
+                callback.deviceNotWork();
+            }else if(mConnectionState == STATE_CONNECTED) {
+                callback.serviceNotInit();
+            }
+            return false;
+        }else {
+            if(mBluetoothGatt == null) {
+                callback.serviceNotInit();
+                return false;
+            }else {
+               return true;
+            }
+        }
     }
 
     public void setCallback(CallbackInBle listener) {
@@ -338,6 +360,8 @@ public class BleService extends Service {
         }
         mBluetoothGatt.close();
         mBluetoothGatt = null;
+        writeCharacteristic = null;
+        notifyCharacter = null;
     }
 
     /**
@@ -395,8 +419,13 @@ public class BleService extends Service {
         void bleConnection(boolean connect);
 
         /**
-         * call when find and register the character can write
+         * device not work
          */
-        void writeCharacterFind();
+        void deviceNotWork();
+
+        /**
+         * call when ble is not initial
+         */
+        void serviceNotInit();
     }
 }

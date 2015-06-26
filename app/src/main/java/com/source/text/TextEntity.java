@@ -50,11 +50,11 @@ public class TextEntity implements Runnable{
             unpacking(content);
             return;
         }
-        initTemp(type);
         byte[] text = content.getBytes();
         int len = text.length;
         int remainder = len % (options.getLength()-1-options.getOffset());
         int count = len / (options.getLength()-1-options.getOffset());
+        initTemp(type);
         for(int i = 0; i < len;i++) {
             temp[index++] = text[i];
             if(index == options.getLength()-1) {

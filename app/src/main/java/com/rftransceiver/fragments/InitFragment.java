@@ -97,10 +97,10 @@ public class InitFragment extends Fragment implements View.OnClickListener{
                     Toast.makeText(getActivity(),"请输入昵称",Toast.LENGTH_SHORT).show();
                     return;
                 }
-//                if(TextUtils.isEmpty(photoPath)) {
-//                    Toast.makeText(getActivity(),"请设置头像",Toast.LENGTH_SHORT).show();
-//                    return;
-//                }
+                if(TextUtils.isEmpty(photoPath)) {
+                    Toast.makeText(getActivity(),"请设置头像",Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 saveBaseInfo(nickname);
                 etNickName.setText("");
                 break;
@@ -135,7 +135,7 @@ public class InitFragment extends Fragment implements View.OnClickListener{
     private void saveBaseInfo(String nickname) {
         SharedPreferences.Editor editor = getActivity().getSharedPreferences(Constants.SP_USER,0).edit();
         editor.putString(Constants.NICKNAME,nickname);
-        //editor.putString(Constants.PHOTO_PATH,photoPath);
+        editor.putString(Constants.PHOTO_PATH,photoPath);
         editor.apply();
         startActivity(new Intent(getActivity(), MainActivity.class));
         getActivity().finish();

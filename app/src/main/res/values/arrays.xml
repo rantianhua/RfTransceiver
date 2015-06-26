@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="channel">
+        <item>信道一</item>
+        <item>信道二</item>
+        <item>信道三</item>
+        <item>信道四</item>
+    </string-array>
+</resources>
