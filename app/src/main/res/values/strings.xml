@@ -39,7 +39,7 @@
     <string name="choose_channel">修改信道</string>
     <string name="bluetooth_closed">蓝牙已关闭</string>
     <string name="scan_bluetooth_device">查找蓝牙设备</string>
-    <string name="channel_label">当前频道：%1s</string>
+    <string name="channel_label">信道</string>
     <string name="style_label">当前RSSI值：%1d</string>
     <string name="blue_sytle_normal">普通蓝牙</string>
     <string name="blue_sytle_ble">BLE</string>
@@ -82,5 +82,11 @@
     <string name="connection_lose">连接丢失，请检查设备后点击重新连接</string>
     <string name="save_sounds_data">保存语音信息</string>
     <string name="about">关于</string>
+    <string name="back">返回</string>
+    <string name="group_name">组名</string>
+    <string name="add_to_contacts">保存到通讯录</string>
+    <string name="exit_connect">退出连接</string>
+    <string name="clear_chat_record">清除聊天记录</string>
+    <string name="exit_group">退出小组并删除</string>
 
 </resources>

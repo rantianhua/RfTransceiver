@@ -407,11 +407,21 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
             ImageView imageView = (ImageView) view.findViewById(R.id.img_photo);
 
             final String name = object.getString(GroupUtil.NAME);
-            byte[] photo = Base64.decode(object.getString(GroupUtil.PIC),Base64.DEFAULT);
-            final Bitmap bitmap = BitmapFactory.decodeByteArray(photo,0,photo.length);
+            byte[] photo = null;
+            try {
+                 photo = Base64.decode(object.getString(GroupUtil.PIC),Base64.DEFAULT);
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+            final Bitmap bitmap;
+            if(photo != null) {
+                bitmap = BitmapFactory.decodeByteArray(photo,0,photo.length);
+                imageView.setImageDrawable(new CircleImageDrawable(bitmap));
+            }else {
+                bitmap = null;
+            }
 
             tvName.setText(name);
-            imageView.setImageDrawable(new CircleImageDrawable(bitmap));
 
             if(action == GroupActivity.GroupAction.ADD) {
                 view.setTag(connectedSsid);
@@ -420,6 +430,8 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
                 subIds.put(connectedSsid,memberId);
 
                 byte[] asyncWord = Base64.decode(object.getString(GroupUtil.GROUP_ASYNC_WORD),Base64.DEFAULT);
+
+                if(callback != null) callback.setGroupBaseINfo(name,asyncWord);
 
                 final ImageView chooseView = (ImageView) view.findViewById(R.id.img_member_choose);
                 view.setOnClickListener(new View.OnClickListener() {
@@ -435,6 +447,7 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
                         hideOtherViews();
                         finalConnect((String)view.getTag());
                         tvTip.setText(getString(R.string.wait_group_owner_sure));
+
                         callback.addMember(new GroupMember(name,0,bitmap));
                     }
                 });
@@ -640,5 +653,7 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
          * call after all members in
          */
         void finishCreateGruop();
+
+        void setGroupBaseINfo(String name,byte[] asyncWord);
     }
 }

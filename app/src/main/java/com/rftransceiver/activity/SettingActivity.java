@@ -20,6 +20,8 @@ import com.rftransceiver.fragments.ChannelFragment;
 import com.rftransceiver.fragments.SettingFragment;
 import com.rftransceiver.util.Constants;
 
+import java.util.Set;
+
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 
@@ -38,33 +40,6 @@ public class SettingActivity extends Activity {
     private SettingFragment settingFrag;
     private ChannelFragment channelFrag;
 
-    /**
-     * local broadcastReceiver to receive info about change channel
-     */
-    private final BroadcastReceiver localReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if(intent == null) return;
-            if(intent.getAction().equals(Constants.TOAST)) {
-                String message = intent.getStringExtra(Constants.TOAST);
-                if(!TextUtils.isEmpty(message)) {
-                    showToast(message);
-                }
-            }
-        }
-    } ;
-
-    private void showToast(final String message) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(SettingActivity.this,message,Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    private LocalBroadcastManager localBroadcast;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,7 +48,6 @@ public class SettingActivity extends Activity {
         titleSetting = getResources().getString(R.string.setting);
         initView();
         initEvent();
-        localBroadcast = LocalBroadcastManager.getInstance(this);
     }
 
     private void initView() {
@@ -101,6 +75,7 @@ public class SettingActivity extends Activity {
                     intent.putExtra(Constants.SELECTED_CHANNEL,channel);
                     setResult(Activity.RESULT_OK,intent);
                     intent = null;
+                    SettingActivity.this.finish();
                 }
             });
         }
@@ -114,18 +89,6 @@ public class SettingActivity extends Activity {
                 onBackPressed();
             }
         });
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        localBroadcast.registerReceiver(localReceiver,new IntentFilter(Constants.TOAST));
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        localBroadcast.unregisterReceiver(localReceiver);
     }
 
     /**

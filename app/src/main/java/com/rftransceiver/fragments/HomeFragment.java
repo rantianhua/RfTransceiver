@@ -1,15 +1,12 @@
 package com.rftransceiver.fragments;
 
 import android.animation.Animator;
-import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
@@ -37,24 +34,22 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.rftransceiver.R;
 import com.rftransceiver.activity.LocationActivity;
 import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.adapter.ListConversationAdapter;
-import com.rftransceiver.customviews.CircleImageDrawable;
 import com.rftransceiver.datasets.ConversationData;
+import com.rftransceiver.db.DBManager;
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.util.CommonAdapter;
 import com.rftransceiver.util.CommonViewHolder;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.ExpressionUtil;
 import com.rftransceiver.util.ImageUtil;
+import com.rftransceiver.util.PoolThreadUtil;
 import com.source.DataPacketOptions;
 
-
-import org.w3c.dom.Text;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
@@ -62,6 +57,7 @@ import java.util.List;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
+import butterknife.internal.ListenerClass;
 
 /**
  * Created by rantianhua on 15-6-14.
@@ -112,6 +108,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
 
     private ListConversationAdapter conversationAdapter = null; //the adapter of listView
 
+    private List<ConversationData> dataLists;
+
     /**
      * save all gridView filled with expressions
      */
@@ -138,6 +136,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     private AnimatorSet translateIn,translateOut;
     private float transOffset;
 
+    /**
+     * a instance of a GroupEntity
+     */
+    private GroupEntity groupEntity;
+
     private Editable.Factory editableFactory = Editable.Factory.getInstance();
 
     private Rect rect = new Rect();
@@ -145,6 +148,21 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     private int imgSendSize;
 
     private String tipConnectLose,tipReconnecting,tipConnecSuccess;
+
+    /**
+     * to manipulate database
+     */
+    private DBManager dbManager;
+
+    private String homeTitle;
+
+    private enum MenuAction{
+        MUTE,
+        GROUP_INFO,
+        RESET,
+        NONE
+    }
+    private MenuAction menuAction = MenuAction.NONE;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -160,6 +178,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         tipConnectLose = getResources().getString(R.string.connection_lose);
         tipReconnecting = getResources().getString(R.string.reconnecting);
         tipConnecSuccess = getResources().getString(R.string.connect_success);
+        dataLists = new ArrayList<>();
+        dbManager = DBManager.getInstance(getActivity());
      }
 
     private void initExpressions(LayoutInflater inflater) {
@@ -278,9 +298,23 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
 
     private void initView(View v) {
         ButterKnife.inject(this,v);
-
         conversationAdapter = new ListConversationAdapter(getActivity(),imgageGetter,getFragmentManager());
         listView.setAdapter(conversationAdapter);
+        if(!TextUtils.isEmpty(homeTitle)) {
+            tvTitle.setText(homeTitle);
+            homeTitle = null;
+        }
+    }
+
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        if(groupEntity == null) {
+            int preGrop = getActivity().getSharedPreferences(Constants.SP_USER,0).getInt(Constants.PRE_GROUP,-1);
+            if(preGrop != -1) {
+                loadGroup(preGrop);
+            }
+        }
     }
 
     private void initEvent() {
@@ -396,15 +430,16 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                 getActivity().startActivityForResult(intent, REQUEST_LOCATION);
                 break;
             case R.id.tv_mute_home:
+                hideRightMenu();
+                menuAction = MenuAction.MUTE;
                 break;
             case R.id.tv_group_info:
-
+                menuAction = MenuAction.GROUP_INFO;
+                hideRightMenu();
                 break;
             case R.id.tv_reset_home:
+                menuAction = MenuAction.RESET;
                 hideRightMenu();
-                if(callback != null) {
-                    callback.resetCms();
-                }
                 break;
             default:
                 break;
@@ -500,6 +535,13 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         translateIn.playTogether(animators);
     }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+        translateIn = null;
+        translateOut = null;
+    }
+
     /**
      * hide right menu with animation
      */
@@ -572,6 +614,24 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
             public void onAnimationEnd(Animator animator) {
                 tvMute.setVisibility(View.INVISIBLE);
                 imgHomeHide.setClickable(true);
+                switch (menuAction) {
+                    case MUTE:
+                        break;
+                    case GROUP_INFO:
+                        if(groupEntity != null && groupEntity.getMembers().size() > 0) {
+                            getFragmentManager().beginTransaction().replace(R.id.frame_content,
+                                    GroupDetailFragment.getInstance(groupEntity))
+                                    .addToBackStack(null)
+                                    .commit();
+                        }
+                        break;
+                    case RESET:
+                        if(callback != null) {
+                            callback.resetCms();
+                        }
+                        break;
+                }
+                menuAction = MenuAction.NONE;
             }
 
             @Override
@@ -603,6 +663,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         Log.e("sendText",message);
         message = message.replace("<p>","");
         message = message.replace("</p>", "");
+        message = message.replace("</br>", "");
+        message = message.replace("<br>", "");
+        Log.e("sendText",message);
         if(!TextUtils.isEmpty(message)) {
             if(callback != null) {
                 callback.send(MainActivity.SendAction.Words,message);
@@ -627,34 +690,33 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
      *            3 is image data
      */
     public void receivingData(int tye,String data) {
+        ConversationData receiveData = null;
         switch (tye) {
             case 0:
                 btnSounds.setText(getString(R.string.sounds_im));
                 btnSounds.setClickable(false);
+                receiveData = new ConversationData(ListConversationAdapter.ConversationType.LEFT_SOUNDS,
+                        null,BitmapFactory.decodeResource(getResources(),R.drawable.photo),0,"100m");
                 break;
             case 1:
-                ConversationData other = new ConversationData(ListConversationAdapter.ConversationType.Other,
+                receiveData = new ConversationData(ListConversationAdapter.ConversationType.LEFT_TEXT,
                         data, BitmapFactory.decodeResource(getResources(),R.drawable.photo),0,"100m");
-                other.setDataType(MainActivity.SendAction.Words);
-                conversationAdapter.addData(other);
-                listView.setSelection(conversationAdapter.getCount()-1);
                 break;
             case 2:
-                ConversationData address = new ConversationData(ListConversationAdapter.ConversationType.Other,
+                receiveData = new ConversationData(ListConversationAdapter.ConversationType.LEFT_ADDRESS,
                         null, BitmapFactory.decodeResource(getResources(),R.drawable.photo),0,"100m");
-                address.setAddress(data);
-                address.setDataType(MainActivity.SendAction.Address);
-                conversationAdapter.addData(address);
-                listView.setSelection(conversationAdapter.getCount()-1);
+                receiveData.setAddress(data);
                 break;
             case 3:
-                ConversationData imgage = new ConversationData(ListConversationAdapter.ConversationType.Other,
-                        data, BitmapFactory.decodeResource(getResources(),R.drawable.photo),0,"100m");
-                imgage.setDataType(MainActivity.SendAction.Image);
-                conversationAdapter.addData(imgage);
-                listView.setSelection(conversationAdapter.getCount()-1);
+                receiveData = new ConversationData(ListConversationAdapter.ConversationType.LEFT_PIC,
+                        null, BitmapFactory.decodeResource(getResources(),R.drawable.photo),0,"100m");
+                receiveData.setBitmap(data);
                 break;
         }
+        if(receiveData == null) return;
+        dataLists.add(receiveData);
+        conversationAdapter.updateData(dataLists);
+        listView.setSelection(conversationAdapter.getCount()-1);
     }
 
     /**
@@ -679,23 +741,23 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
             case Words:
                 hideSoft();
                 etSendMessage.setText("");
-                subData = new ConversationData(ListConversationAdapter.ConversationType.Me,
+                subData = new ConversationData(ListConversationAdapter.ConversationType.RIGHT_TEXT,
                         sendText);
-                subData.setDataType(MainActivity.SendAction.Words);
                 break;
             case Address:
-                subData = new ConversationData(ListConversationAdapter.ConversationType.Me,
+                subData = new ConversationData(ListConversationAdapter.ConversationType.RIGHT_ADDRESS,
                         null);
                 subData.setAddress(sendText);
-                subData.setDataType(MainActivity.SendAction.Address);
                 break;
             case Image:
-                subData = new ConversationData(ListConversationAdapter.ConversationType.Me,
-                        sendText);
-                subData.setDataType(MainActivity.SendAction.Image);
+                subData = new ConversationData(ListConversationAdapter.ConversationType.RIGHT_PIC,
+                        null);
+                subData.setBitmap(sendText);
                 break;
         }
-        conversationAdapter.addData(subData);
+        if(subData == null) return;
+        dataLists.add(subData);
+        conversationAdapter.updateData(dataLists);
         listView.setSelection(conversationAdapter.getCount()-1);
     }
 
@@ -769,13 +831,22 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
      * update the group of talk
      * @param groupEntity
      */
-    public void updateGroup(GroupEntity groupEntity) {
-        String name = groupEntity.getName();
-        if(TextUtils.isEmpty(name)) {
-            name = groupEntity.getMembers().get(0).getName();
+    public void updateGroup(final GroupEntity groupEntity) {
+        this.groupEntity = groupEntity;
+        if(groupEntity == null) return;
+        final String name = groupEntity.getName();
+        if(tvTitle == null) {
+            homeTitle = name
+                    +"(" + groupEntity.getMembers().size() + "人" + ")";
+        }else {
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    tvTitle.setText(name
+                            +"(" + groupEntity.getMembers().size() + "人" + ")");
+                }
+            });
         }
-        tvTitle.setText(name
-                +"(" + groupEntity.getMembers().size() + "人" + ")");
     }
 
     public interface CallbackInHomeFragment {
@@ -807,9 +878,25 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
 
     @Override
     public void onDestroy() {
+        dbManager = null;
         super.onDestroy();
         expressions = null;
         imgDots = null;
+        dataLists = null;
+    }
+
+
+    /**
+     * select a group from database by gid
+     */
+    private void loadGroup(final int gid) {
+        PoolThreadUtil.getInstance().addTask(new Runnable() {
+            @Override
+            public void run() {
+                Log.e("loadGroup","to load exists group");
+                updateGroup(dbManager.getAgroup(gid));
+            }
+        });
     }
 
     @Override
@@ -820,7 +907,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
             if(imgPath == null) return;
             Bitmap bitmap = ImageUtil.createImageThumbnail(imgPath,imgSendSize);
             if(bitmap == null) return;
-            Log.e("bitmap origin thumple size",bitmap.getByteCount() + "");
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             int options = 100;
             bitmap.compress(Bitmap.CompressFormat.PNG,options,outputStream);

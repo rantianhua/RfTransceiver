@@ -5,6 +5,7 @@ import android.util.Log;
 import com.audio.Speex;
 import com.rftransceiver.datasets.AudioData;
 import com.rftransceiver.datasets.MyDataQueue;
+import com.rftransceiver.util.PoolThreadUtil;
 
 
 public class Audio_Decoder implements Runnable
@@ -14,11 +15,9 @@ public class Audio_Decoder implements Runnable
     private static final int MAX_BUFFER_SIZE = 2048;
     private Speex coder=new Speex();
     private short[] decodedData = new short[1024];
-    public boolean isDecoding=false;
+    public volatile boolean isDecoding=false;
 
-    StringBuilder sb = new StringBuilder();
-
-	private Audio_Decoder() 
+	private Audio_Decoder()
 	{  
 		//实例化解码缓冲区
         this.dataList = MyDataQueue.getInstance(MyDataQueue.DataType.Sound_Decoder);
@@ -27,13 +26,12 @@ public class Audio_Decoder implements Runnable
 	@Override
 	public void run() 
 	{
-        Log.e("Decoder","开启解码");
         Audio_Player player = Audio_Player.getInstance();
-        player.startPlaying();  
-        this.isDecoding = true;
+        player.startPlaying();
+        setIsDecoding(true);
         coder.init();
         int decodeSize = 0;
-        while (isDecoding) {
+        while (getIsDecoding()) {
 
             AudioData encodeData  = (AudioData)dataList.get();
             if(encodeData == null) {
@@ -63,19 +61,18 @@ public class Audio_Decoder implements Runnable
     //开始解码
 	public void startDecoding()
 	{
-		 if (isDecoding) 
+		 if (getIsDecoding())
 		 {  
 	            return;  
 	     }
-        Log.e("Audio_Decoder","start a new decode thread");
-	    new Thread(this).start();
+        PoolThreadUtil.getInstance().addTask(this);
 	}
 
 	//关闭解码器
     public void stopDecoding() 
-    {  
-	        this.isDecoding = false;  
-	}  
+    {
+        setIsDecoding(false);
+	}
 
     //获取单一实例
 	public static Audio_Decoder getInstance() 
@@ -86,4 +83,12 @@ public class Audio_Decoder implements Runnable
         }  
         return decoder;  
 	}
+
+    public synchronized boolean getIsDecoding() {
+        return this.isDecoding;
+    }
+
+    public synchronized void setIsDecoding(boolean decode) {
+        this.isDecoding = decode;
+    }
 }

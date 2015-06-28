@@ -25,6 +25,7 @@ import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.group.GroupMember;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.GroupUtil;
+import com.rftransceiver.util.PoolThreadUtil;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -67,7 +68,7 @@ public class WifiNetService extends Service implements Handler.Callback{
     /**
      * the thread pool to execute mutiClientSocket
      */
-    private ExecutorService pool;
+    private PoolThreadUtil poolThreadUtil;
     private List<WorkRunnabble> works;
 
     public class LocalWifiBinder extends Binder{
@@ -86,7 +87,7 @@ public class WifiNetService extends Service implements Handler.Callback{
 
         SSID = WIFI_HOT_HEADER+Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
 
-        pool = Executors.newFixedThreadPool(10);
+        poolThreadUtil = PoolThreadUtil.getInstance();
         works = new ArrayList<>();
 
     }
@@ -279,7 +280,7 @@ public class WifiNetService extends Service implements Handler.Callback{
      * @param s
      */
     public void writeMemberInfo(final String s) {
-        pool.execute(new Runnable() {
+        poolThreadUtil.addTask(new Runnable() {
             @Override
             public void run() {
                 for (int i = 0; i < works.size(); i++) {
@@ -324,7 +325,7 @@ public class WifiNetService extends Service implements Handler.Callback{
 
     //send group full members to every member
     public void sendFullGroup(final GroupEntity groupEntity) {
-        pool.execute(new Runnable() {
+        poolThreadUtil.addTask(new Runnable() {
             @Override
             public void run() {
                 String groupInfo = GroupUtil.getWriteData(GroupUtil.GROUP_FULL_INFO,
@@ -395,17 +396,7 @@ public class WifiNetService extends Service implements Handler.Callback{
             serverAccept.getLooper().quit();
         }
 
-        pool.shutdown();
-        try {
-            if(!pool.awaitTermination(60, TimeUnit.SECONDS)) {
-                pool.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            pool.shutdownNow();
-        }finally {
-            pool = null;
-        }
+        poolThreadUtil = null;
         wifiReceiver = null;
         manager = null;
     }
@@ -436,7 +427,7 @@ public class WifiNetService extends Service implements Handler.Callback{
             //before connect, close have established connection
             if(works.size() > 0) {
                 final WorkRunnabble preWork = works.get(0);
-                pool.execute(new Runnable() {
+                poolThreadUtil.addTask(new Runnable() {
                     @Override
                     public void run() {
                         preWork.writeMessage(GroupUtil.getWriteData(GroupUtil.CLOSE_SOCKET,
@@ -452,9 +443,9 @@ public class WifiNetService extends Service implements Handler.Callback{
                 socket.connect(new InetSocketAddress(host, port));
                 final WorkRunnabble work = new WorkRunnabble(socket,-1);
                 works.add(work);
-                pool.execute(work);
+                poolThreadUtil.addTask(work);
                 if(!TextUtils.isEmpty(strings[1])) {
-                    pool.execute(new Runnable() {
+                    poolThreadUtil.addTask(new Runnable() {
                         @Override
                         public void run() {
                             work.writeMessage(GroupUtil.getWriteData(GroupUtil.REQUEST_GBI,
@@ -584,13 +575,12 @@ public class WifiNetService extends Service implements Handler.Callback{
                             //start receiving data
                             receving = true;
                             if(bytes < 1024 && data[data.length-1] == Constants.Data_Packet_Tail) {
-                                //callback.readData(sb.toString());
                                 //do parse data in other thread , avoid blocking read data
                                 receving = false;
                                 sb.append(new String(data,1,bytes-2));
                                 final String temp = sb.toString();
                                 sb.delete(0,sb.length());
-                                pool.execute(new Runnable() {
+                                poolThreadUtil.addTask(new Runnable() {
                                     @Override
                                     public void run() {
                                         parseReadData(temp);
@@ -603,10 +593,9 @@ public class WifiNetService extends Service implements Handler.Callback{
                             //end receiving data
                             receving = false;
                             sb.append(new String(data,0,data.length-1));
-                            //callback.readData(sb.toString());
                             //do parse data in other thread , avoid blocking read data
                             final  String temp = sb.toString();
-                            pool.execute(new Runnable() {
+                            poolThreadUtil.addTask(new Runnable() {
                                 @Override
                                 public void run() {
                                     parseReadData(temp);
@@ -674,6 +663,7 @@ public class WifiNetService extends Service implements Handler.Callback{
                         callback.readData(GroupUtil.CANCEL_CREATE,object);
                         break;
                     default:
+                        if(callback == null ) return;
                         callback.readData(GroupUtil.GROUP_FULL_INFO,object);
                         break;
                 }
@@ -769,7 +759,7 @@ public class WifiNetService extends Service implements Handler.Callback{
                     Socket socket  = serverSocket.accept();
                     WorkRunnabble work = new WorkRunnabble(socket,works.size()+1);
                     works.add(work);
-                    pool.execute(work);
+                    poolThreadUtil.addTask(work);
                 }
             }catch (Exception e) {
                 Log.e(TAG,"error in openServerSocket" + e.getMessage(),e);

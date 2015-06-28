@@ -3,11 +3,13 @@ package com.rftransceiver.adapter;
 import android.app.FragmentManager;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.text.Html;
+import android.text.Spannable;
+import android.text.Spanned;
+import android.text.SpannedString;
 import android.text.TextUtils;
-import android.util.Base64;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,10 +22,10 @@ import com.rftransceiver.datasets.ConversationData;
 import com.rftransceiver.R;
 import com.rftransceiver.fragments.MapViewFragment;
 
-import org.w3c.dom.Text;
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Created by Rth on 2015/4/27.
@@ -47,7 +49,7 @@ public class ListConversationAdapter extends BaseAdapter {
 
     @Override
     public int getViewTypeCount() {
-        return 2;
+        return 8;
     }
 
     @Override
@@ -71,103 +73,153 @@ public class ListConversationAdapter extends BaseAdapter {
         ConversationData data = listData.get(position);
         if(convertView == null) {
             hodler = new ViewHodler();
-            if(data.getConversationType() == ConversationType.Me) {
-                convertView = inflater.inflate(R.layout.list_conversation_right,null);
-                hodler.tvContent = (TextView) convertView.findViewById(R.id.tv_list_right);
-                hodler.conrainer = (FrameLayout) convertView.findViewById(R.id.frame_mapview_right);
-                hodler.imgData = (ImageView) convertView.findViewById(R.id.img_data_right);
-            }else {
-                convertView = inflater.inflate(R.layout.list_conversation_left,null);
-                hodler.tvContent = (TextView) convertView.findViewById(R.id.tv_list_left);
-                hodler.imgLevel = (ImageView) convertView.findViewById(R.id.img_conversation_level);
-                hodler.imgPhoto = (ImageView) convertView.findViewById(R.id.img_conversation_photo);
-                hodler.tvLevel = (TextView) convertView.findViewById(R.id.tv_conversation_level);
-                hodler.conrainer = (FrameLayout) convertView.findViewById(R.id.frame_mapview_left);
-                hodler.imgData = (ImageView) convertView.findViewById(R.id.img_data_left);
+            switch (data.getConversationType()) {
+                case LEFT_TEXT:
+                    convertView = inflater.inflate(R.layout.list_left_text,null);
+                    hodler.tvContent = (TextView) convertView.findViewById(R.id.tv_list_left);
+                    hodler.imgPhoto = (ImageView) convertView.findViewById(R.id.img_conversation_photo);
+                    hodler.tvLevel = (TextView) convertView.findViewById(R.id.tv_conversation_level);
+                    hodler.imgLevel = (ImageView) convertView.findViewById(R.id.img_conversation_level);
+                    break;
+                case LEFT_PIC:
+                    convertView = inflater.inflate(R.layout.list_left_pic,null);
+                    hodler.imgData = (ImageView) convertView.findViewById(R.id.img_data_left);
+                    hodler.imgPhoto = (ImageView) convertView.findViewById(R.id.img_conversation_photo);
+                    hodler.tvLevel = (TextView) convertView.findViewById(R.id.tv_conversation_level);
+                    hodler.imgLevel = (ImageView) convertView.findViewById(R.id.img_conversation_level);
+                    break;
+                case LEFT_ADDRESS:
+                    convertView = inflater.inflate(R.layout.list_left_address,null);
+                    hodler.container = (FrameLayout) convertView.findViewById(R.id.frame_mapview_left);
+                    hodler.imgPhoto = (ImageView) convertView.findViewById(R.id.img_conversation_photo);
+                    hodler.tvLevel = (TextView) convertView.findViewById(R.id.tv_conversation_level);
+                    hodler.imgLevel = (ImageView) convertView.findViewById(R.id.img_conversation_level);
+                    break;
+                case LEFT_SOUNDS:
+                    convertView = inflater.inflate(R.layout.list_left_sounds,null);
+                    hodler.tvSounds = (TextView) convertView.findViewById(R.id.tv_left_sounds);
+                    hodler.imgPhoto = (ImageView) convertView.findViewById(R.id.img_conversation_photo);
+                    hodler.tvLevel = (TextView) convertView.findViewById(R.id.tv_conversation_level);
+                    hodler.imgLevel = (ImageView) convertView.findViewById(R.id.img_conversation_level);
+                    break;
+                case RIGHT_TEXT:
+                    convertView = inflater.inflate(R.layout.list_right_text,null);
+                    hodler.tvContent = (TextView)convertView.findViewById(R.id.tv_list_right);
+                    break;
+                case RIGHT_PIC:
+                    convertView = inflater.inflate(R.layout.list_right_pic,null);
+                    hodler.imgData = (ImageView) convertView.findViewById(R.id.img_data_right);
+                    break;
+                case RIGHT_ADDRESS:
+                    convertView = inflater.inflate(R.layout.list_right_address,null);
+                    hodler.container = (FrameLayout) convertView.findViewById(R.id.frame_mapview_right);
+                    break;
+                case RIGHT_SOUNDS:
+                    convertView = inflater.inflate(R.layout.list_right_sounds,null);
+                    hodler.tvSounds = (TextView) convertView.findViewById(R.id.tv_right_sounds);
+                    break;
             }
             convertView.setTag(hodler);
         }else {
             hodler = (ViewHodler) convertView.getTag();
         }
 
-        if(data.getConversationType() == ConversationType.Me) {
-
-        }else if(data.getConversationType() == ConversationType.Other) {
+        if(data.getConversationType().ordinal() <= 3) {
+            if(data.getPhotoDrawable() != null) {
+                hodler.imgPhoto.setImageDrawable(data.getPhotoDrawable());
+            }
             String instance = data.getInstance();
             if(instance != null) {
                 hodler.tvLevel.setText(instance);
             }
             hodler.imgLevel.setImageResource(data.getLevelId());
-            Drawable drawable = data.getPhotoDrawable();
-            if(drawable != null) {
-                hodler.imgPhoto.setImageDrawable(drawable);
-            }
+        }
+        switch (data.getConversationType()) {
+            case RIGHT_TEXT:
+            case LEFT_TEXT:
+                Spanned spannable = Html.fromHtml(data.getContent(),imageGetter,null);
+                hodler.tvContent.setText(spannable);
+                break;
+            case LEFT_PIC:
+            case RIGHT_PIC:
+                if(data.getBitmap() != null) {
+                    hodler.imgData.setImageBitmap(data.getBitmap());
+                }
+                break;
+            case LEFT_ADDRESS:
+            case RIGHT_ADDRESS:
+                if(data.getAddress() != null) {
+                    Object object = hodler.container.getTag();
+                    MapViewFragment fragment = null;
+                    if(object == null) {
+                        fragment = MapViewFragment.getInstance(data.getAddress());
+                        hodler.container.setTag(fragment);
+                    }else {
+                        fragment = (MapViewFragment) object;
+                    }
+                    fm.beginTransaction().replace(hodler.container.getId(),fragment).commit();
+                }
+                break;
+            case LEFT_SOUNDS:
+            case RIGHT_SOUNDS:
+                break;
         }
 
-        switch (data.getDataType()) {
-            case Words:
-                hodler.tvContent.setVisibility(View.VISIBLE);
-                hodler.conrainer.setVisibility(View.GONE);
-                hodler.imgData.setVisibility(View.GONE);
-                String words = data.getContent();
-                if(!TextUtils.isEmpty(words)) {
-                    hodler.tvContent.setText( Html.fromHtml(data.getContent(),
-                            imageGetter,null));
-                }
-                break;
-            case Address:
-                hodler.tvContent.setVisibility(View.GONE);
-                hodler.imgData.setVisibility(View.GONE);
-                hodler.conrainer.setVisibility(View.VISIBLE);
-                String address = data.getAddress();
-                if(!TextUtils.isEmpty(address)) {
-                    //show mapView
-                    MapViewFragment fragment = MapViewFragment.getInstance(address);
-                    fm.beginTransaction().replace(hodler.conrainer.getId(),fragment).commit();
-                }
-                break;
-            case Image:
-                hodler.imgData.setVisibility(View.VISIBLE);
-                hodler.tvContent.setVisibility(View.GONE);
-                hodler.conrainer.setVisibility(View.GONE);
-                String imgData = data.getContent();
-                if(!TextUtils.isEmpty(imgData)) {
-                    byte[] imgs = Base64.decode(imgData,Base64.DEFAULT);
-                    Bitmap bitmap = BitmapFactory.decodeByteArray(imgs,0,imgs.length);
-                    hodler.imgData.setImageBitmap(bitmap);
-                }
-                break;
-        }
         return convertView;
     }
 
-    public void clear() {
-        listData.clear();
+    /**
+     * update data source
+     * @param dataLists
+     */
+    public void updateData(List<ConversationData> dataLists) {
+        this.listData.clear();
+        this.listData.addAll(dataLists);
         notifyDataSetChanged();
     }
 
     class ViewHodler {
-        TextView tvContent,tvLevel;
+        TextView tvContent,tvLevel,tvSounds;
         ImageView imgPhoto,imgLevel,imgData;
-        FrameLayout conrainer;
+        FrameLayout container;
     }
 
     public void addData(ConversationData data) {
         listData.add(data);
-        notifyDataSetChanged();
     }
 
     public enum ConversationType{
-        Me,
-        Other
+        LEFT_TEXT,
+        LEFT_PIC,
+        LEFT_ADDRESS,
+        LEFT_SOUNDS,
+        RIGHT_TEXT,
+        RIGHT_PIC,
+        RIGHT_ADDRESS,
+        RIGHT_SOUNDS
     }
 
     @Override
     public int getItemViewType(int position) {
-        if (listData.get(position).getConversationType() == ConversationType.Me) {
-            return 0;
-        }else {
-            return 1;
+        switch (listData.get(position).getConversationType()) {
+            case LEFT_TEXT:
+                return 0;
+            case LEFT_PIC:
+                return 1;
+            case LEFT_ADDRESS:
+                return 2;
+            case LEFT_SOUNDS:
+                return 3;
+            case RIGHT_TEXT:
+                return 4;
+            case RIGHT_PIC:
+                return 5;
+            case RIGHT_ADDRESS:
+                return 6;
+            case RIGHT_SOUNDS:
+                return 7;
+            default:
+                return 0;
         }
     }
 }

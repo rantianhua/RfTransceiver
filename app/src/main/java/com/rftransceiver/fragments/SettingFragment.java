@@ -17,6 +17,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.rftransceiver.R;
+import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.customviews.CircleImageDrawable;
 import com.rftransceiver.util.Constants;
 
@@ -44,6 +45,8 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
     TextView cacheSize;
     @InjectView(R.id.tv_about)
     TextView tvAbout;
+    @InjectView(R.id.tv_current_channel)
+    TextView tvCurrentChannel;
 
     private CallbackInSF callbackInSF;
 
@@ -70,6 +73,10 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
         if(!TextUtils.isEmpty(name)) {
             tvName.setText(name);
         }
+
+        String[] channels = getResources().getStringArray(R.array.channel);
+        tvCurrentChannel.setText(channels[MainActivity.CURRENT_CHANNEL]);
+        channels = null;
     }
 
     public void setCallbackInSF ( CallbackInSF callbackInSF) {
@@ -124,6 +131,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
         if(requestCode == REQUEST_CHANNEL && resultCode == Activity.RESULT_OK && data != null) {
             //receive a request to change channel
             if(callbackInSF != null) {
+                getFragmentManager().popBackStackImmediate();
                 callbackInSF.changeChannel(data.getIntExtra(Constants.SELECTED_CHANNEL,-1));
             }
         }else {

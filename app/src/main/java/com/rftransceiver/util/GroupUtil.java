@@ -95,9 +95,11 @@ public class GroupUtil {
                 GroupMember member = (GroupMember) o;
                 memberName = member.getName();
                 Bitmap bitmap = member.getBitmap();
-                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                bitmap.compress(Bitmap.CompressFormat.JPEG,100,outputStream);
-                bitmapData = outputStream.toByteArray();
+                if(bitmap != null) {
+                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                    bitmap.compress(Bitmap.CompressFormat.JPEG,100,outputStream);
+                    bitmapData = outputStream.toByteArray();
+                }
                 object.put(GroupUtil.GROUP_MEMBER_ID,member.getId());
             }else {
                 SharedPreferences sp = context.getSharedPreferences(Constants.SP_USER,0);
@@ -224,7 +226,10 @@ public class GroupUtil {
      */
     public static void recycle(List<GroupMember> list) {
         for(int i = 0; i < list.size();i++) {
-            list.get(i).getBitmap().recycle();
+            Bitmap bitmap = list.get(i).getBitmap();
+            if(bitmap != null) {
+                bitmap.recycle();
+            }
         }
     }
 

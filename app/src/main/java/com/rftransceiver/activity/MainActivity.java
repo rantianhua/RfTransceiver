@@ -30,12 +30,14 @@ import com.brige.blutooth.le.BleService;
 import com.rftransceiver.R;
 import com.rftransceiver.customviews.CircleImageDrawable;
 import com.rftransceiver.customviews.LockerView;
+import com.rftransceiver.db.DBManager;
 import com.rftransceiver.fragments.BindDeviceFragment;
 import com.rftransceiver.fragments.HomeFragment;
 import com.rftransceiver.fragments.LoadDialogFragment;
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.GroupUtil;
+import com.rftransceiver.util.PoolThreadUtil;
 import com.source.DataPacketOptions;
 import com.source.SendMessageListener;
 import com.source.parse.ParseFactory;
@@ -135,8 +137,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
         NONE
     }
 
-    private boolean isStoped = false;
-
     /**
      * when in BindDeviceFragment, if the bluetooth is opening this will be true
      * after bluetooth is opened , the BindDevicesFragment will start to search device
@@ -163,11 +163,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
     public static final int REQUEST_MYDEVICE = 300;
     public static final int REQUEST_GROUP = 301;
     public static final int REQUEST_CHANGECHANNEL = 305;
-
-    /**
-     * a instance of a GroupEntity
-     */
-    private GroupEntity groupEntity;
 
     /**
      * callback when BlueLeService bind or unbind
@@ -238,7 +233,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        SDKInitializer.initialize(getApplicationContext());
+        try {
+            SDKInitializer.initialize(getApplicationContext());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         setContentView(R.layout.activity_main);
         System.loadLibrary("speex");
 
@@ -507,7 +506,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
         super.onResume();
         registerReceiver(bluetoothSate,
                 new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
-        isStoped = false;
     }
 
     @Override
@@ -519,6 +517,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
     @Override
     protected void onDestroy() {
+        PoolThreadUtil.getInstance().close();
         super.onDestroy();
         parseFactory = null;
 
@@ -537,11 +536,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
         bluetoothLeService.close();
         bluetoothLeService = null;
 
-    }
-    @Override
-    protected void onStop() {
-        isStoped = true;
-        super.onStop();
+        DBManager.close();
+
     }
 
     @Override
@@ -616,16 +612,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if(isStoped) {
-                    LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(MainActivity.this);
-                    Intent intent = new Intent();
-                    intent.putExtra(Constants.TOAST,s);
-                    localBroadcastManager.sendBroadcast(intent);
-                    intent = null;
-                    localBroadcastManager = null;
-                }else {
-                    Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT).show();
-                }
+                Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -792,7 +779,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
              */
             Bundle bundle = data.getExtras();
             if(bundle == null) return;
-            groupEntity = bundle.getParcelable(GroupActivity.EXTRA_GROUP);
+            GroupEntity groupEntity = bundle.getParcelable(GroupActivity.EXTRA_GROUP);
             if(groupEntity == null) return;
             if(homeFragment == null) {
                 initHomeFragment();

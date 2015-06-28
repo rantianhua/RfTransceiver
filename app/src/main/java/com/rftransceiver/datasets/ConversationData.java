@@ -1,7 +1,10 @@
 package com.rftransceiver.datasets;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
+import android.text.TextUtils;
+import android.util.Base64;
 
 import com.rftransceiver.R;
 import com.rftransceiver.activity.MainActivity;
@@ -44,7 +47,10 @@ public class ConversationData {
      */
     private String address;
 
-    private MainActivity.SendAction dataType;
+    /**
+     * picture data
+     */
+    private Bitmap bitmap;
 
     public ConversationData(ListConversationAdapter.ConversationType type,
                             String text) {
@@ -108,11 +114,14 @@ public class ConversationData {
         this.address = address;
     }
 
-    public MainActivity.SendAction getDataType() {
-        return dataType;
+    public void setBitmap(String bitmapData) {
+        if(!TextUtils.isEmpty(bitmapData)) {
+            byte[] imgs = Base64.decode(bitmapData, Base64.DEFAULT);
+            this.bitmap  = BitmapFactory.decodeByteArray(imgs, 0, imgs.length);
+        }
     }
 
-    public void setDataType(MainActivity.SendAction dataType) {
-        this.dataType = dataType;
+    public Bitmap getBitmap() {
+        return bitmap;
     }
 }

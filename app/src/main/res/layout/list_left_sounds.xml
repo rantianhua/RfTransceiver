@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:paddingStart="15dp"
+    android:paddingEnd="40dp"
+    android:paddingTop="10dp"
+    android:paddingBottom="10dp"
+    >
+
+    <include layout="@layout/view_conversation_person"
+        android:id="@+id/include_person_left_sounds"
+        android:layout_width="70dp"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/tv_conversation_bg"
+        android:layout_centerVertical="true"
+        android:layout_toEndOf="@+id/include_person_left_sounds"
+        android:layout_marginStart="10dp"
+        android:padding="5dp"
+        android:gravity="center"
+        android:id="@+id/tv_left_sounds"
+        android:textColor="@color/white"
+        android:text="[语音]"
+        />
+
+</RelativeLayout>

@@ -3,6 +3,7 @@ package com.source.text;
 import android.util.Log;
 
 import com.rftransceiver.datasets.MyDataQueue;
+import com.rftransceiver.util.PoolThreadUtil;
 import com.source.DataPacketOptions;
 import com.source.SendMessageListener;
 
@@ -75,7 +76,7 @@ public class TextEntity implements Runnable{
             dataQueue.add(temp);
         }
         //start to send data
-        new Thread(this).start();
+        PoolThreadUtil.getInstance().addTask(this);
     }
 
     /**
@@ -90,7 +91,7 @@ public class TextEntity implements Runnable{
         int realDataLen = (options.getLength()-1-options.getOffset());
         int remainder = len % realDataLen;
         int count = len / realDataLen;
-        new Thread(new SendImageData()).start();
+        PoolThreadUtil.getInstance().addTask(new SendImageData());
         for(int i = 0;i <= count;i++) {
             if(i != count) {
                 System.arraycopy(sourceData,i*realDataLen,temp,options.getOffset(),realDataLen);

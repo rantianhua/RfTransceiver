@@ -4,6 +4,8 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 
+import com.rftransceiver.util.PoolThreadUtil;
+
 //¼��PCM������
 //��Ҫ����Ȩ�� <uses-permission android:name="android.permission.RECORD_AUDIO" />
 //��Ҫ�޸�Audio_Sender��ķ������ݲ���
@@ -11,7 +13,7 @@ import android.media.MediaRecorder;
 public class Audio_Recorder  implements Runnable
 {
 
-    private volatile boolean isRecording = false;   //¼����־
+    private boolean isRecording = false;   //¼����־
     private AudioRecord audioRecord;    
     
     //¼�Ʋ���ѡ��
@@ -49,8 +51,8 @@ public class Audio_Recorder  implements Runnable
                     channelConfig, audioFormat, audioBufSize);  
         }
         //start to record data
-        new Thread(this).start();
-    }  
+        PoolThreadUtil.getInstance().addTask(this);
+    }
     
     public void run() 
     {
@@ -62,12 +64,12 @@ public class Audio_Recorder  implements Runnable
 		}
         catch (IllegalStateException e) 
         {
-        	this.isRecording = false; 
+            setRecording(false);
         	return;
 		}
-      
-        this.isRecording = true;
-        while (isRecording) 
+
+        setRecording(true);
+        while (isRecording())
         {  
             bufferRead = audioRecord.read(samples, 0, bufferSize);  
             if (bufferRead > 0) 
@@ -86,10 +88,18 @@ public class Audio_Recorder  implements Runnable
         audioRecord.stop();
         encoder.stopEncoding();
     }
-    
-    public void stopRecording() 
+
+    public synchronized boolean isRecording() {
+        return isRecording;
+    }
+
+    public synchronized void setRecording(boolean isRecording) {
+        this.isRecording = isRecording;
+    }
+
+    public void stopRecording()
     {  
-        this.isRecording = false;  
+        setRecording(false);
     }
 
     public void setSoundsEntity(SoundsEntity soundsEntity) {

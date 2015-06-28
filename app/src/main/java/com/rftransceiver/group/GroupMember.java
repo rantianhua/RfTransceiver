@@ -71,6 +71,7 @@ public class GroupMember implements Parcelable{
     }
 
     public void setDrawable(Bitmap bitmap) {
+        if(bitmap == null) return;
         this.drawable = new CircleImageDrawable(bitmap);
     }
 
@@ -90,7 +91,16 @@ public class GroupMember implements Parcelable{
             member.setId(parcel.readInt());
             member.setName(parcel.readString());
             member.setPath(parcel.readString());
-            member.setBitmap((Bitmap)parcel.readBundle().getParcelable(BITMAP));
+            Bundle bundle = parcel.readBundle();
+            Bitmap bp = null;
+            try{
+                bp = bundle.getParcelable(BITMAP);
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+            if(bp != null) {
+                member.setBitmap(bp);
+            }
             return member;
         }
 
@@ -111,13 +121,9 @@ public class GroupMember implements Parcelable{
         parcel.writeString(name);
         parcel.writeString(path);
         Bundle bundle = new Bundle();
-        if(bitmap == null) {
-            Log.e("writeToParcel", "bitmap is null");
+        if(bitmap != null) {
+            bundle.putParcelable(BITMAP,bitmap);
         }
-        if(bitmap.isRecycled()) {
-            Log.e("writeToParcel", "bitmap is recycled");
-        }
-        bundle.putParcelable(BITMAP,bitmap);
         parcel.writeBundle(bundle);
     }
 

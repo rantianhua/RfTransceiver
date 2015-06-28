@@ -95,7 +95,11 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
             address = null;
         }
 
-        geocoder = GeoCoder.newInstance();
+        try {
+            geocoder = GeoCoder.newInstance();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         geocoder.setOnGetGeoCodeResultListener(getGeoCoderResultListener);
 
     }
@@ -110,7 +114,9 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
             if(locationClient == null) initLocation();
         }else {
             String[] addresses = address.split("\\|");
-            geocoder.geocode(new GeoCodeOption().address(addresses[0]).city(addresses[1]));
+            if(addresses.length > 1) {
+                geocoder.geocode(new GeoCodeOption().address(addresses[0]).city(addresses[1]));
+            }
         }
 
         initEvent();

@@ -2,6 +2,7 @@ package com.source.sounds;
 
 import com.audio.Speex;
 import com.rftransceiver.datasets.AudioData;
+import com.rftransceiver.util.PoolThreadUtil;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -44,17 +45,17 @@ public class Audio_Encoder implements Runnable
 	  
 	    public void startEncoding()
 	    {  
-	        if (isEncoding)
+	        if (getIsEncodong())
 	        {  	          
 	            return;  
-	        }  
-	        new Thread(this).start();  
+	        }
+            PoolThreadUtil.getInstance().addTask(this);
 	    }  
 	  
 	    public void stopEncoding()
-	    {  
-	        this.isEncoding = false;  
-	    }  
+	    {
+            setEncoding(false);
+	    }
 	  
 	    public void run() 
 	    {  
@@ -74,12 +75,12 @@ public class Audio_Encoder implements Runnable
 			} 
 	        catch (Exception e) 
 	        {
-				 isEncoding=false;
+				 setEncoding(false);
 				 return;
 			}
 
-	        isEncoding = true;  
-	        while (isEncoding)
+            setEncoding(true);
+	        while (getIsEncodong())
 	        {  
 	        	//no data to handle
 	            if (dataList.size() == 0)
@@ -107,6 +108,19 @@ public class Audio_Encoder implements Runnable
 	        }  
 	        sender.stopSending();
 	    }
+
+    /**
+     * synchronized setter ans getter so that different thread can read isEncoding
+     * correctly
+     * @param encode
+     */
+    public synchronized void setEncoding(boolean encode) {
+        this.isEncoding = encode;
+    }
+
+    public synchronized boolean getIsEncodong() {
+        return this.isEncoding;
+    }
 
     public void setSoundsEntity(SoundsEntity soundsEntity) {
         this.sender =  null;

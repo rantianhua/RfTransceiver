@@ -6,24 +6,28 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.wifi.ScanResult;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.support.v4.util.Pools;
 import android.util.Base64;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.brige.wifi.WifiNetService;
 import com.rftransceiver.R;
+import com.rftransceiver.db.DBManager;
 import com.rftransceiver.fragments.RawGroupFragment;
 import com.rftransceiver.fragments.SetGroupNameFragment;
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.group.GroupMember;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.GroupUtil;
+import com.rftransceiver.util.PoolThreadUtil;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -228,17 +232,24 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
                             JSONArray array = (JSONArray)object.get("msg");
                             for(int i = 0;i < array.length();i ++) {
                                 JSONObject o = (JSONObject)array.get(i);
-                                byte[] photo = Base64.decode(o.getString(GroupUtil.PIC),Base64.DEFAULT);
+                                byte[] photo = null;
+                                Bitmap bitmap = null;
+                                try{
+                                    photo = Base64.decode(o.getString(GroupUtil.PIC),Base64.DEFAULT);
+                                    bitmap = BitmapFactory.decodeByteArray(photo,
+                                            0,photo.length);
+                                }catch (Exception e) {
+                                    e.printStackTrace();
+                                }
                                 GroupMember member = new GroupMember(o.getString(GroupUtil.NAME),
                                         o.getInt(GroupUtil.GROUP_MEMBER_ID),
-                                        BitmapFactory.decodeByteArray(photo,
-                                                0,photo.length));
+                                        bitmap);
                                 groupEntity.getMembers().add(member);
                             }
-                            finishGroup();
                         }catch (Exception e) {
                             e.printStackTrace();
                         }
+                        finishGroup();
                     }
                 });
                 break;
@@ -256,12 +267,30 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
         intent.putExtras(bundle);
         setResult(Activity.RESULT_OK,intent);
         if(groupAction == GroupAction.ADD) {
-            message = "加群完成";
+            message = "加组完成";
         }else if(groupAction == GroupAction.CREATE) {
-            message = "建群完成";
+            message = "建组完成";
         }
         Toast.makeText(this,message,Toast.LENGTH_SHORT).show();
+        saveGroup();
         finish();
+    }
+
+    /**
+     * save group info to database
+     */
+    private void saveGroup() {
+        final DBManager dbManager = DBManager.getInstance(this);
+        try {
+            PoolThreadUtil.getInstance().addTask(new Runnable() {
+                @Override
+                public void run() {
+                    dbManager.saveGroup(groupEntity);
+                }
+            });
+        }catch (Exception e) {
+            Log.e("saveGroup","error in saveGroup",e);
+        }
     }
 
     /**
@@ -413,6 +442,19 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
         if(service == null) return;
         service.writeMemberInfo(GroupUtil.getWriteData(GroupUtil.MEMBER_BASEINFO,
                 null,this));
+    }
+
+    /**
+     * callback in RawGroupFragment
+     * @param name
+     * @param asyncWord
+     */
+    @Override
+    public void setGroupBaseINfo(String name, byte[] asyncWord) {
+        if(groupEntity != null ) {
+            groupEntity.setName(name);
+            groupEntity.setAsyncWord(asyncWord);
+        }
     }
 
     /**

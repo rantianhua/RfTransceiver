@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:paddingStart="15dp"
+    android:paddingEnd="40dp"
+    android:paddingTop="10dp"
+    android:paddingBottom="10dp"
+    >
+
+    <include layout="@layout/view_conversation_person"
+        android:id="@+id/include_person_left_address"
+        android:layout_width="70dp"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"/>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:id="@+id/frame_mapview_left"
+        android:layout_marginStart="75dp"
+        android:layout_centerVertical="true"
+        android:background="@drawable/frame_map_bg"
+        android:padding="1dp"/>
+
+</RelativeLayout>

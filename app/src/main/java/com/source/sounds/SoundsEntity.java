@@ -4,6 +4,7 @@ package com.source.sounds;
 import com.rftransceiver.datasets.AudioData;
 import com.rftransceiver.datasets.MyDataQueue;
 import com.rftransceiver.util.Constants;
+import com.rftransceiver.util.PoolThreadUtil;
 import com.source.DataPacketOptions;
 import com.source.SendMessageListener;
 
@@ -11,7 +12,7 @@ import com.source.SendMessageListener;
 public class SoundsEntity implements Runnable
 {
 	private volatile  boolean isSendering = false;  //mark is sendering sounds
-    private boolean isRunning = false;  //mark the thread is running，only control by this thread
+    private boolean isRunning = false;  //mark the thread is running，
 	private MyDataQueue dataQueue;  //sounds data cache
 
     private DataPacketOptions options;
@@ -27,12 +28,13 @@ public class SoundsEntity implements Runnable
 	
 	public void startSending() 
 	{
-        isRunning = true;
-        isSendering = true;
+        setRunning(true);
+        setSendering(true);
         try {
-            new Thread(this).start();
+            PoolThreadUtil.getInstance().addTask(this);
         } catch (Exception e) {
-            e.printStackTrace();
+            setSendering(false);
+            setRunning(false);
         }
     }
 
@@ -51,7 +53,7 @@ public class SoundsEntity implements Runnable
 	//stop send
 	public void stopSending() 
 	{
-		this.isSendering = false;  
+        setSendering(false);
 	}
 	
 	public void run()
@@ -63,9 +65,9 @@ public class SoundsEntity implements Runnable
           * every encode sounds packet's length is ten ,soundsPacket record a sounds sending packet have how much encode sounds packets
           */
             int soundsPackets = (options.getLength()-options.getOffset()-1) / Constants.Small_Sounds_Packet_Length;
-	        while (isRunning)
+	        while (isRunning())
 	        {
-                if(isSendering) { //now the cache length is dynamic
+                if(isSendering()) { //now the cache length is dynamic
                     if(dataQueue.getSize() > 5) {
                         for(int i = 0; i < 4;i++) {
                             AudioData restData = (AudioData)dataQueue.get();
@@ -91,7 +93,7 @@ public class SoundsEntity implements Runnable
                     int restCountsInDataQueue = dataQueue.getSize();
                     int restCountsIntemp = (index-options.getOffset()) / Constants.Small_Sounds_Packet_Length;
                     if(restCountsInDataQueue == 0) {
-                        isRunning = false;
+                        setRunning(false);
                     }
                     for(int i = 0;i < restCountsInDataQueue;i++) {
                         AudioData restData = (AudioData)dataQueue.get();
@@ -102,7 +104,7 @@ public class SoundsEntity implements Runnable
                                 if((restCountsInDataQueue+restCountsIntemp) % soundsPackets == 0 && i == restCountsInDataQueue-1) {
                                     temp[options.getRealLenIndex()] = (byte) (index-options.getOffset());
                                     sendListener.sendPacketedData(temp,true);
-                                    isRunning = false;  //shutdown this thread
+                                    setRunning(false);  //shutdown this thread
                                     sum = 0;    //ready to count next send
                                 }else {
                                     sendListener.sendPacketedData(temp,false);
@@ -117,13 +119,29 @@ public class SoundsEntity implements Runnable
                         //now temp is the last packet
                         temp[options.getRealLenIndex()] = (byte) (index-options.getOffset());
                         sendListener.sendPacketedData(temp,true);
-                        isRunning = false;  //shutdown this thread
+                        setRunning(false);  //shutdown this thread
                         sum = 0;    //ready to count next send
                         index = options.getOffset();
                     }
                 }
 	        }
 	 }
+
+    public synchronized boolean isSendering() {
+        return isSendering;
+    }
+
+    public synchronized void setSendering(boolean isSendering) {
+        this.isSendering = isSendering;
+    }
+
+    public synchronized boolean isRunning() {
+        return isRunning;
+    }
+
+    public synchronized void setRunning(boolean isRunning) {
+        this.isRunning = isRunning;
+    }
 
     private void initTemp() {
         temp = null;

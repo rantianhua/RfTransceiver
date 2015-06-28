@@ -150,4 +150,5 @@ public class Constants {
     public static final String BIND_DEVICE_NAME = "bind_device_name";
     public static final String SELECTED_CHANNEL = "selected_channel";
 
+    public static final String PRE_GROUP = "pre_group";
 }

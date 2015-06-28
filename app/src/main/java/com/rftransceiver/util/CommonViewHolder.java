@@ -2,6 +2,7 @@ package com.rftransceiver.util;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
@@ -108,10 +109,21 @@ public class CommonViewHolder
 	 */
 	public CommonViewHolder setImageBitmap(int viewId, Bitmap bm)
 	{
-		ImageView view = getView(viewId);
-		view.setImageBitmap(bm);
+        if (bm != null) {
+            ImageView view = getView(viewId);
+            view.setImageBitmap(bm);
+        }
 		return this;
 	}
+
+    public CommonViewHolder setImageDrawable(int viewId, Drawable drawable)
+    {
+        if(drawable != null) {
+            ImageView view = getView(viewId);
+            view.setImageDrawable(drawable);
+        }
+        return this;
+    }
 
 	/**
 	 * 为ImageView设置图片

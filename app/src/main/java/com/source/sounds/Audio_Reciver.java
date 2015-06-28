@@ -3,6 +3,7 @@ package com.source.sounds;
 
 import com.rftransceiver.datasets.MyDataQueue;
 import com.rftransceiver.datasets.AudioData;
+import com.rftransceiver.util.PoolThreadUtil;
 
 public class Audio_Reciver implements Runnable
 {
@@ -19,8 +20,8 @@ public class Audio_Reciver implements Runnable
 
 	 public void startReceiver()
 	 {
-         if(!isReceiving) {
-             new Thread(this).start();
+         if(!isReceiving()) {
+             PoolThreadUtil.getInstance().addTask(this);
          }
 	 }
 
@@ -30,9 +31,8 @@ public class Audio_Reciver implements Runnable
         Audio_Decoder decoder = Audio_Decoder.getInstance();
         decoder.startDecoding();
 
-        this.isReceiving = true;
-
-        while(isReceiving) {
+        setReceiving(true);
+        while(isReceiving()) {
 
             AudioData data = (AudioData)dataQueue.get();
             if(data == null) {
@@ -47,14 +47,23 @@ public class Audio_Reciver implements Runnable
     }
 
     public void stopReceiver() {
-        //停止接收线程
-        isReceiving = false;
+        //stop receive
+        setReceiving(false);
     }
 
-    public boolean isReceive() {
+    public synchronized boolean isReceiving() {
         return isReceiving;
     }
 
+    public synchronized void setReceiving(boolean isReceiving) {
+        this.isReceiving = isReceiving;
+    }
+
+    /**
+     * add sounds data to dataQueue to play
+     * @param data
+     * @param size
+     */
     public void cacheData(byte[] data,int size) {
         AudioData receviceData = new AudioData();
         receviceData.setSize(size);

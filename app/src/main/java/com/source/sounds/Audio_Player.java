@@ -5,6 +5,7 @@ import android.media.AudioManager;
 import android.media.AudioTrack;
 
 import com.rftransceiver.datasets.AudioData;
+import com.rftransceiver.util.PoolThreadUtil;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -13,8 +14,6 @@ import java.util.List;
 
 
 
-//���Ž�����PCM������
-//һ�������޸ı���
 public class Audio_Player implements Runnable
 {
 		private static Audio_Player player;  
@@ -24,21 +23,18 @@ public class Audio_Player implements Runnable
 		private AudioData playData;  
 		private boolean isPlaying = false;  
 		
-		////��������
-	    private static final int sampleRate = 8000; 	    
+	    private static final int sampleRate = 8000;
 	   
 		private static final int channelConfig = AudioFormat.CHANNEL_CONFIGURATION_MONO;  
 	    private static final int audioFormat = AudioFormat.ENCODING_PCM_16BIT;
 	  
 		private Audio_Player() 
 		{
-            //ͬ�����߳�����
-	        dataList = Collections.synchronizedList(new LinkedList<AudioData>());  
+	        dataList = Collections.synchronizedList(new LinkedList<AudioData>());
 	    }
 
 
 
-    //��ȡ�������ʵ������
 		public static Audio_Player getInstance()
 	    {  
 		        if (player == null) 
@@ -48,8 +44,12 @@ public class Audio_Player implements Runnable
 		        return player;  
 	    }
 
-    // ���ս�����PCM����
-		public void addData(short[] decodedData2, int size) 
+    /**
+     * add data to dataList
+     * @param decodedData2
+     * @param size
+     */
+		public void addData(short[] decodedData2, int size)
 		{  
 	        AudioData decodedData = new AudioData();  
 	        decodedData.setSize(size);  
@@ -60,8 +60,7 @@ public class Audio_Player implements Runnable
 	        dataList.add(decodedData);  
 	    }
 
-    //����������
-		private boolean initAudioTrack() 
+		private boolean initAudioTrack()
 		{  
 	        int bufferSize = AudioTrack.getMinBufferSize(sampleRate,  
 	                channelConfig, audioFormat);  
@@ -79,17 +78,14 @@ public class Audio_Player implements Runnable
 				// TODO: handle exception
 			}
 
-            // ���ò�������
 	        audioTrack.setStereoVolume(1.0f, 1.0f);
-            //��������
-	        audioTrack.play();  
+	        audioTrack.play();
 	        return true;  
 	    }  
 		
 		
 		private void playFromList()
 		{
-            //ȡ����������ݽ��в���
 	        while (dataList.size() > 0 && isPlaying)
 	        {  
 	            playData = dataList.remove(0);  
@@ -97,36 +93,43 @@ public class Audio_Player implements Runnable
 	        }  
 	    }
 
-    //��������
-		public void startPlaying() 
+		public void startPlaying()
 		{  
-	        if (isPlaying) 
+	        if (getIsPlaying())
 	        {  
 	            return;  
-	        }  
-	        new Thread(this).start();  
+	        }
+            PoolThreadUtil.getInstance().addTask(this);
 	    }
 
 
+    /**
+     * ensure read and write isPlaying correctly in different thread
+     * @param play
+     */
+    public synchronized void setIsPlaying(boolean play) {
+        this.isPlaying = play;
+    }
+
+    public synchronized boolean getIsPlaying() {
+        return this.isPlaying;
+    }
 
 
-    //ֹͣ����
-		public void stopPlaying() 
+		public void stopPlaying()
         {  
-            this.isPlaying = false;  
+            setIsPlaying(false);
         }
 
 
-    //�߳�����ִ��
-		public void run() 
+		public void run()
 		{
-			this.isPlaying = true;  
-	          
+	        setIsPlaying(true);
 	        if (!initAudioTrack()) 
 	        {              
 	            return;  
 	        }  
-	        while (isPlaying)
+	        while (getIsPlaying())
 	        {  
 	            if (dataList.size() > 0) 
 	            {  
@@ -145,8 +148,7 @@ public class Audio_Player implements Runnable
 	        }  
 	        if (this.audioTrack != null)
 	        {
-                //ֹͣ����
-	            if (this.audioTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) 
+	            if (this.audioTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING)
 	            {  
 	                this.audioTrack.stop();  
 	                this.audioTrack.release();  
