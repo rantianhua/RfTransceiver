@@ -29,7 +29,7 @@ android {
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile files('libs/butterknife-6.0.0.jar')
-    compile 'com.android.support:appcompat-v7:22.1.1'
     compile files('libs/baidumapapi_v3_5_0.jar')
     compile files('libs/BaiduLBS_Android.jar')
+    compile 'com.android.support:appcompat-v7:22.2.0'
 }

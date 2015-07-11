@@ -240,8 +240,10 @@ public class ImageLoader
 		try
 		{
 			// 请求信号量，防止mPoolThreadHander为null
-			if (mPoolThreadHander == null)
-				mSemaphore.acquire();
+			if (mPoolThreadHander == null) {
+				Thread.currentThread();
+				Thread.sleep(20);
+			}
 		} catch (InterruptedException e)
 		{
             e.printStackTrace();

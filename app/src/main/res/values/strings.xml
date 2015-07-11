@@ -8,15 +8,11 @@
     <string name="cancel_discovery">取消搜索</string>
     <string name="restart_search">重新搜索</string>
     <string name="look_devices">连接设备</string>
-    <string name="record_sound">开始录音</string>
-    <string name="recording_sound">录音中&#8230;,点击停止</string>
-    <string name="receiving_sounds">正在接收&#8230;</string>
-    <string name="play_sounds">播放录音</string>
-    <string name="stop_sounds">停止播放</string>
-    <string name="sounds_im">实时聊天中&#8230;</string>
     <string name="send">发送</string>
     <string name="clear_cache">清除缓存</string>
     <string name="reset_scm">复位</string>
+    <string name="touch_send_sounds">按住 说话</string>
+    <string name="loose_stop_sounds">松开 停止</string>
 
     <string name="connected">已连接%1s</string>
     <string name="disconnected">连接丢失</string>

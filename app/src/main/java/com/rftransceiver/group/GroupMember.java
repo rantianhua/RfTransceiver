@@ -39,7 +39,9 @@ public class GroupMember implements Parcelable{
 
     public GroupMember(String name,int id,Bitmap bitmap) {
         this(name, id);
-        setBitmap(bitmap);
+        if(bitmap != null) {
+            setBitmap(bitmap);
+        }
     }
 
     public int getId() {
@@ -73,6 +75,10 @@ public class GroupMember implements Parcelable{
     public void setDrawable(Bitmap bitmap) {
         if(bitmap == null) return;
         this.drawable = new CircleImageDrawable(bitmap);
+    }
+
+    public void setDrawable(Drawable drawable) {
+        this.drawable = drawable;
     }
 
     public Bitmap getBitmap() {

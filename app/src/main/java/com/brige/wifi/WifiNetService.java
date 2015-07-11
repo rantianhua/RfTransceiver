@@ -149,6 +149,9 @@ public class WifiNetService extends Service implements Handler.Callback{
     }
 
     public void startWifi() {
+        if(isWifiApEnabled()) {
+            closeWifiAp();
+        }
         if(!manager.isWifiEnabled()) {
             manager.setWifiEnabled(true);
         }

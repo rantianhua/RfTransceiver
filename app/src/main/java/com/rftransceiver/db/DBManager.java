@@ -74,8 +74,8 @@ public class DBManager {
         db.beginTransaction();
         try {
             //save group base info
-            db.execSQL("INSERT INTO " + DatabaseHelper.TABLE_GROUP + " VALUES(null,?,?)",
-                    new Object[]{name,asyncWord});
+            db.execSQL("INSERT INTO " + DatabaseHelper.TABLE_GROUP + " VALUES(null,?,?,?)",
+                    new Object[]{name,asyncWord,groupEntity.getTempId()});
             //get the latest primary key in group table
             int gid = -1;
             Cursor cursor = db.rawQuery("select last_insert_rowid() from " + DatabaseHelper.TABLE_GROUP,
@@ -154,16 +154,20 @@ public class DBManager {
             Cursor cursor = db.rawQuery("select * from " + DatabaseHelper.TABLE_GROUP +
                 " where _gid=" + gid,null);
             String name = null,async = null;
+            int myId = -1;
             if(cursor != null && cursor.moveToFirst()) {
                 name = cursor.getString(cursor.getColumnIndex("_gname"));
                 async = cursor.getString(cursor.getColumnIndex("_syncword"));
+                myId = cursor.getInt(cursor.getColumnIndex("_myId"));
                 cursor.close();
             }
             if(!TextUtils.isEmpty(name) && !TextUtils.isEmpty(async)) {
                 byte[] asyncword = Base64.decode(async,Base64.DEFAULT);
                 groupEntity = new GroupEntity(name,asyncword);
             }
-
+            if(myId != -1) {
+                groupEntity.setTempId(myId);
+            }
             if(groupEntity != null) {
                 //find all members
                 String sql = "select * from " + DatabaseHelper.TABLE_MEMBER

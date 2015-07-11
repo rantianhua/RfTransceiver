@@ -63,7 +63,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         StringBuilder sb = new StringBuilder();
         sb.append("CREATE TABLE ").append(TABLE_GROUP).append("(")
             .append("_gid INTEGER PRIMARY KEY AUTOINCREMENT, ")
-                .append("_gname TEXT NOT NULL, ").append("_syncword TEXT NOT NULL")
+                .append("_gname TEXT NOT NULL, ").append("_syncword TEXT NOT NULL, ")
+                .append("_myId INTEGER")
                 .append(");");
         sqLiteDatabase.execSQL(sb.toString());
         sb.delete(0,sb.length());

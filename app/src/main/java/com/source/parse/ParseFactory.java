@@ -44,7 +44,7 @@ public class ParseFactory {
     }
 
     public void sendToRelativeParser(byte[] temp) {
-        if(temp[Constants.Data_Packet_Length -1] == Constants.Data_Packet_Tail) {
+        if(temp[Constants.Data_Packet_Length-1] == Constants.Data_Packet_Tail) {
             //check the data type and then send to relative parser
             switch (temp[Constants.Packet_Type_flag_Index]) {
                 case Constants.Type_Sounds:
@@ -67,7 +67,7 @@ public class ParseFactory {
                     unKnowData(temp);
                     break;
             }
-        }else if(temp[Constants.Data_Packet_Length -1] == Constants.Instruction_Packet_Tail) {
+        }else if(temp[Constants.Data_Packet_Length-1] == Constants.Instruction_Packet_Tail) {
             switch (temp[1]) {
                 case 1:
                     handler.obtainMessage(Constants.MESSAGE_READ,Constants.READ_SETASYNCWORD
@@ -99,10 +99,7 @@ public class ParseFactory {
     }
 
     private void unKnowData(byte[] data) {
-        Log.e("receive", "unknow data tail");
-        for(byte d : data) {
-            Log.e("error packet",d+"");
-        }
+        Log.e("receive", "unknow data tail"+data[Constants.Data_Packet_Length-1]);
     }
 
     public void setHandler(Handler han) {

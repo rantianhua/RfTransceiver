@@ -137,6 +137,7 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
 
     }
 
+
     private void initLocation() {
         poiInfoList = new ArrayList<>();
         //locate
@@ -163,6 +164,7 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
     public void onResume() {
         mapView.onResume();
         super.onResume();
+        locationClient.requestLocation();
     }
 
     @Override
@@ -210,6 +212,7 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
         baiduMap.setMyLocationConfigeration(config);
 
         if(isFirstLocate) {
+            isFirstLocate = false;
             LatLng ll = new LatLng(bdLocation.getLatitude(),
                     bdLocation.getLongitude());
             MapStatusUpdate u = MapStatusUpdateFactory.newLatLng(ll);
@@ -226,7 +229,7 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
         @Override
         public void onGetGeoCodeResult(GeoCodeResult geoCodeResult) {
             if(geoCodeResult == null || geoCodeResult.error != SearchResult.ERRORNO.NO_ERROR) {
-                Log.e("onGetReverseGeoCodeResult"," 没有检索到结果");
+                Log.e("onGetReverseGeo"," 没有检索到结果");
                 return;
             }
             LatLng ll = geoCodeResult.getLocation();
@@ -241,7 +244,7 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
             if(reverseGeoCodeResult == null ||
                     reverseGeoCodeResult.error != SearchResult.ERRORNO.NO_ERROR) {
                 // no result
-                Log.e("onGetReverseGeoCodeResult"," 没有检索到结果");
+                Log.e("onGetReverseGe"," 没有检索到结果");
                 return;
             }
             if(currentInfo == null) {

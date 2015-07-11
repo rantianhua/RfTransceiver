@@ -30,6 +30,7 @@ public class TextParser {
             makeText(data,options.getLength() - options.getOffset()-1);
         }else {
             //this is the last packet
+            int memberId = data[Constants.Group_Member_Id_index];
             makeText(data,data[options.getRealLenIndex()]);
             byte[] sendData = new byte[length];
             System.arraycopy(textTemp,0,sendData,0,length);
@@ -46,7 +47,7 @@ public class TextParser {
                     break;
             }
             handler.obtainMessage(Constants.MESSAGE_READ,
-                    tag,-1,sendData).sendToTarget();
+                    tag,memberId,sendData).sendToTarget();
             sendData = null;
             length = 0;
         }
@@ -55,7 +56,7 @@ public class TextParser {
 
     private void makeText(byte[] data,int len) {
         if(len > options.getLength() - options.getOffset() -1) {
-            Log.e("make text","un support len");
+            length = 0;
             return;
         }
         for(int i = options.getOffset();i < len + options.getOffset();i++) {

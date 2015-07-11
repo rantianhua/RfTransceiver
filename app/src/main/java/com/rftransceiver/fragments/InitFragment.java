@@ -6,9 +6,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.text.Editable;
+import android.text.InputFilter;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -37,13 +39,13 @@ public class InitFragment extends Fragment implements View.OnClickListener{
 
     @InjectView(R.id.img_init_camera)
     ImageView camera;
-    @InjectView(R.id.ibn_init_cancel)
-    ImageButton ibnCancel;
+    @InjectView(R.id.img_cancel_input)
+    ImageView ibnCancel;
     @InjectView(R.id.btn_init_ok)
     Button btnOk;
-    @InjectView(R.id.et_init_nickname)
+    @InjectView(R.id.et_limit_input)
     EditText etNickName;
-    @InjectView(R.id.tv_init_counter)
+    @InjectView(R.id.tv_input_length)
     TextView tvCounter;
 
     private final int etSize = 10;
@@ -64,8 +66,15 @@ public class InitFragment extends Fragment implements View.OnClickListener{
         camera.setOnClickListener(this);
         ibnCancel.setOnClickListener(this);
         btnOk.setOnClickListener(this);
+
+        ibnCancel.setImageResource(R.drawable.cancel);
+        etNickName.setFilters(new InputFilter[]{new InputFilter.LengthFilter(etSize)});
+        etNickName.setTextColor(Color.WHITE);
+        etNickName.setHint(R.string.hint_et_nickname);
         etNickName.addTextChangedListener(watcher);
-        tvCounter.setText(0+"/"+etSize);
+
+        tvCounter.setText(0 + "/" + etSize);
+        tvCounter.setTextColor(Color.WHITE);
     }
 
     /**
@@ -104,7 +113,7 @@ public class InitFragment extends Fragment implements View.OnClickListener{
                 saveBaseInfo(nickname);
                 etNickName.setText("");
                 break;
-            case R.id.ibn_init_cancel:
+            case R.id.img_cancel_input:
                 etNickName.setText("");
                 break;
             case R.id.img_init_camera:

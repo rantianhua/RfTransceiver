@@ -34,11 +34,13 @@ public class SoundsParser {
     private DataPacketOptions options;
 
     StringBuilder sb = new StringBuilder();
+    private int memberId;
 
     public void parseSounds(byte[] data) {
 
         if(!startNoteToUi) {
-            handler.obtainMessage(Constants.MESSAGE_READ,0,0,null).sendToTarget();
+            memberId = data[Constants.Group_Member_Id_index];
+            handler.obtainMessage(Constants.MESSAGE_READ,0,0,memberId).sendToTarget();
             startNoteToUi  = true;
         }
         //check weather this packet is last packet or not
@@ -47,10 +49,17 @@ public class SoundsParser {
         }else {
             //this is the last packet
             unPackData(data,data[Constants.Packet_real_data_index]);
-            handler.obtainMessage(Constants.MESSAGE_READ,0,1,null).sendToTarget();
-            startNoteToUi = false;
-            soundsIndex = 0;
+            parseEnd();
         }
+    }
+
+    /**
+     * stop to parse sounds data
+     */
+    private void parseEnd() {
+        handler.obtainMessage(Constants.MESSAGE_READ,0,1,memberId).sendToTarget();
+        startNoteToUi = false;
+        soundsIndex = 0;
     }
 
     private void unPackData(byte[] data,int len) {
@@ -69,8 +78,8 @@ public class SoundsParser {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
             Log.e("unPackSoundsData","the len is "+ len);
+            parseEnd();
         }
     }
 

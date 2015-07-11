@@ -60,8 +60,10 @@ public class ConversationData {
 
     public ConversationData(ListConversationAdapter.ConversationType type,
                             String text,Bitmap bitmap,int levelId,String instance) {
-        this(type,text);
-        setPhotoDrawable(bitmap);
+        this(type, text);
+        if(bitmap != null) {
+            setPhotoDrawable(bitmap);
+        }
         setLevelId(levelId);
         setInstance(instance);
     }
@@ -87,7 +89,13 @@ public class ConversationData {
     }
 
     public void setPhotoDrawable(Bitmap bitmap) {
-        this.photoDrawable = new CircleImageDrawable(bitmap);
+        if(bitmap != null) {
+            this.photoDrawable = new CircleImageDrawable(bitmap);
+        }
+    }
+
+    public void setPhotoDrawable(Drawable drawable) {
+        this.photoDrawable = drawable;
     }
 
     public int getLevelId() {

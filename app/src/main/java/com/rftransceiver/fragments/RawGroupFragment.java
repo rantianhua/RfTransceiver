@@ -1,15 +1,18 @@
 package com.rftransceiver.fragments;
 
 import android.app.Fragment;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.media.Image;
 import android.net.wifi.ScanResult;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.provider.Telephony;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Base64;
@@ -20,6 +23,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.Button;
+import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -32,9 +36,12 @@ import com.rftransceiver.customviews.ArcView;
 import com.rftransceiver.customviews.CircleImageDrawable;
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.group.GroupMember;
+import com.rftransceiver.util.CommonAdapter;
+import com.rftransceiver.util.CommonViewHolder;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.GroupUtil;
 import com.rftransceiver.util.ImageUtil;
+import com.rftransceiver.util.PoolThreadUtil;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -52,7 +59,7 @@ import butterknife.InjectView;
 /**
  * Created by rantianhua on 15-6-15.
  */
-public class RawGroupFragment extends Fragment implements View.OnClickListener{
+public class RawGroupFragment extends Fragment implements View.OnClickListener,Handler.Callback{
 
     @InjectView(R.id.tv_top_raw_group)
     TextView tvTitle;
@@ -72,6 +79,10 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
     ArcView arcView2;
     @InjectView(R.id.arcview3)
     ArcView arcView3;
+    @InjectView(R.id.img_group_owner)
+    ImageView imgOwner;
+    @InjectView(R.id.grid_members_raw)
+    GridView gridMembers;
 
     /**
      * CREATE indicate is creating group
@@ -88,8 +99,6 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
      * the timer to get searched wifi device
      */
     private Timer resultTimer;
-
-    private Handler handler;
 
     /**
      * save searched result
@@ -136,11 +145,6 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
     private int memberId = 1;
 
     /**
-     * save member views in memberLayout
-     */
-    private List<View> memberViews;
-
-    /**
      * have connected wifiAp's ssid
      */
     private String connectedSsid;
@@ -156,9 +160,13 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
      */
     private boolean needWriteMember = false;
 
+    private List<GroupMember> listMembers;
+
     private boolean stopScan = false;
 
     private HashMap<String,Integer> subIds;
+
+    private static Handler handler;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -167,48 +175,14 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
                 GroupActivity.GroupAction.CREATE : GroupActivity.GroupAction.ADD;
         if(action == GroupActivity.GroupAction.CREATE) {
             groupName = getArguments().getString(GROUP_NAME);
+            if(callback != null) {
+
+            }
         }
 
-        handler = new Handler(Looper.getMainLooper()) {
-            @Override
-            public void handleMessage(Message msg) {
-                super.handleMessage(msg);
-                switch (msg.what) {
-                    case ADD_DATA:
-                        //add a wifi hot to list
-                        ScanResult result = (ScanResult)msg.obj;
-                        if(result == null) return;
-                        scanResults.add(result);
-                        connectWifi();
-                        break;
-                    case RECEIVED_A_GROUP:
-                        isConnecting = false;
-                        addGroupInUI((JSONObject)msg.obj);
-                        if(!getStopScan()) {
-                            count ++;
-                            connectWifi();
-                        }
-                        break;
-                    case CANCEL_ADD_GROUP:
-                        int id = msg.arg1;
-                        for(int i = 0;i < memberViews.size();i++) {
-                            if((int)memberViews.get(i).getTag() == id) {
-                                memberLayout.removeView(memberViews.get(i));
-                                break;
-                            }
-                        }
-                        break;
-                    case CANCEL_CREATE_GROUP:
-                        String ssid = (String)msg.obj;
-                        if(ssid != null && ssid.equals(socketedSsid)) {
-                            Toast.makeText(getActivity(),"群主已取消",Toast.LENGTH_SHORT).show();
-                            getActivity().finish();
-                        }
-                        break;
-                }
-            }
-        };
-        memberViews = new ArrayList<>();
+        handler = new Handler(Looper.getMainLooper(),RawGroupFragment.this);
+
+        listMembers = new ArrayList<>();
         scanResults = new ArrayList<>();
         subIds = new HashMap<>();
         memberWidth = (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
@@ -233,7 +207,7 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_rawgroup,container,false);
+        View view = inflater.inflate(R.layout.fragment_rawgroup, container, false);
         initView(view);
         initEvent();
         this.inflater = inflater;
@@ -241,25 +215,52 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
     }
 
     private void initView(View view) {
-        ButterKnife.inject(this,view);
+        ButterKnife.inject(this, view);
+        final String path = getActivity().getSharedPreferences(Constants.SP_USER, 0).getString(Constants.PHOTO_PATH, "");
+        if(!TextUtils.isEmpty(path)) {
+            PoolThreadUtil.getInstance().addTask(new Runnable() {
+                @Override
+                public void run() {
+                    int size = (int) (80 * getResources().getDisplayMetrics().density + 0.5f);
+                    Bitmap bitmap = ImageUtil.createImageThumbnail(path, size * size);
+                    if(bitmap != null) {
+                        handler.obtainMessage(GET_BITMAP,-1,-1,bitmap).sendToTarget();
+                        bitmap = null;
+                    }
+                }
+            });
+        }
         if(action == GroupActivity.GroupAction.CREATE) {
             //creating group
             tvTitle.setText(getString(R.string.wait_gruop_member_in));
             tvTip.setText(getString(R.string.tip_member_in,groupName));
+            gridMembers.setAdapter(new CommonAdapter<GroupMember>(getActivity(),listMembers,
+                    R.layout.grid_item_members) {
+                @Override
+                public void convert(CommonViewHolder helper, GroupMember item) {
+                    String name = item.getName();
+                    if(!TextUtils.isEmpty(name)) {
+                        helper.setText(R.id.tv_member_name,name);
+                        name = null;
+                    }
+                    Drawable drawable = item.getDrawable();
+                    if(drawable != null) {
+                        helper.setImageDrawable(R.id.img_member_photo,drawable);
+                        drawable = null;
+                    }
+                }
+            });
         }else {
             //adding group
+            btnSure.setVisibility(View.GONE);
+            imgOwner.setVisibility(View.GONE);
+            gridMembers.setVisibility(View.GONE);
             tvTitle.setText(getString(R.string.search_nearby_group));
             tvTip.setText(getString(R.string.choose_group_in));
-            btnSure.setVisibility(View.GONE);
-        }
-
-        String path = getActivity().getSharedPreferences(Constants.SP_USER,0).getString(Constants.PHOTO_PATH,"");
-        if(!TextUtils.isEmpty(path)) {
-            int size = (int)(80 * getResources().getDisplayMetrics().density + 0.5f);
-            Bitmap bitmap = ImageUtil.createImageThumbnail(path,size * size);
-            imgPhoto.setImageDrawable(new CircleImageDrawable(bitmap));
 
         }
+
+
         /**
          * get the random range
          */
@@ -358,7 +359,7 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
         super.onDestroy();
         setCallback(null);
         scanResults = null;
-        memberViews = null;
+        listMembers = null;
     }
 
     /**
@@ -398,33 +399,40 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
             /**
              * init the view to show searched info
              */
-            View view = inflater.inflate(R.layout.member_view, null);
-            RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(memberWidth,memberHeight);
-            layoutParams.leftMargin = random.nextInt(randomRangeX) + 5;
-            layoutParams.topMargin = random.nextInt(randomRangeY) + 5;
-            view.setLayoutParams(layoutParams);
-            TextView tvName = (TextView) view.findViewById(R.id.tv_name);
-            ImageView imageView = (ImageView) view.findViewById(R.id.img_photo);
-
             final String name = object.getString(GroupUtil.NAME);
             byte[] photo = null;
             try {
-                 photo = Base64.decode(object.getString(GroupUtil.PIC),Base64.DEFAULT);
+                photo = Base64.decode(object.getString(GroupUtil.PIC),Base64.DEFAULT);
             }catch (Exception e) {
                 e.printStackTrace();
             }
             final Bitmap bitmap;
             if(photo != null) {
                 bitmap = BitmapFactory.decodeByteArray(photo,0,photo.length);
-                imageView.setImageDrawable(new CircleImageDrawable(bitmap));
             }else {
                 bitmap = null;
             }
 
-            tvName.setText(name);
-
             if(action == GroupActivity.GroupAction.ADD) {
+                View view = inflater.inflate(R.layout.member_view, null);
+                RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(memberWidth,memberHeight);
+                layoutParams.leftMargin = random.nextInt(randomRangeX) + 5;
+                layoutParams.topMargin = random.nextInt(randomRangeY) + 10;
+                view.setLayoutParams(layoutParams);
+                TextView tvName = (TextView) view.findViewById(R.id.tv_name);
+                ImageView imageView = (ImageView) view.findViewById(R.id.img_photo);
+
+                tvName.setText(name);
                 view.setTag(connectedSsid);
+
+                Drawable drawable = null;
+                if(bitmap != null) {
+                    drawable = new CircleImageDrawable(bitmap);
+                }
+                if(drawable != null) {
+                    imageView.setImageDrawable(drawable);
+                    drawable = null;
+                }
 
                 memberId = object.getInt(GroupUtil.GROUP_MEMBER_ID);
                 subIds.put(connectedSsid,memberId);
@@ -445,19 +453,24 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
                         }
                         chooseView.setVisibility(View.VISIBLE);
                         hideOtherViews();
+                        memberId = subIds.get(view.getTag());
                         finalConnect((String)view.getTag());
                         tvTip.setText(getString(R.string.wait_group_owner_sure));
-
-                        callback.addMember(new GroupMember(name,0,bitmap));
                     }
                 });
+                memberLayout.addView(view);
             }else {
                 memberId = object.getInt(GroupUtil.GROUP_MEMBER_ID);
-                view.setTag(memberId);
-                callback.addMember(new GroupMember(name,memberId,bitmap));
+                GroupMember member = new GroupMember(name,memberId,bitmap);
+                listMembers.add(member);
+
+                CommonAdapter adapter = (CommonAdapter)gridMembers.getAdapter();
+                adapter.notifyDataSetChanged();
+
+                if(callback != null) {
+                    callback.addMember(member);
+                }
             }
-            memberViews.add(view);
-            memberLayout.addView(view);
         }catch (Exception e) {
             Log.e("addGroupInUi", "error in get base info from received JsonObject", e);
         }finally {
@@ -472,6 +485,17 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
 
     private synchronized boolean getStopScan() {
         return this.stopScan;
+    }
+
+    /**
+     *
+     * @return myId in the group
+     */
+    public int getMyId() {
+        if(action == GroupActivity.GroupAction.CREATE) {
+            return 0;
+        }
+        return memberId;
     }
 
     /**
@@ -528,8 +552,8 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
      * hide unused view in memberLayout
      */
     private void hideOtherViews() {
-        for(int i = 0;i < memberViews.size();i++) {
-            View view = memberViews.get(i);
+        for(int i = 0;i < memberLayout.getChildCount();i ++) {
+            View view = memberLayout.getChildAt(i);
             ImageView chooseView = (ImageView)view.findViewById(R.id.img_member_choose);
             if(chooseView.getVisibility() == View.INVISIBLE) {
                 memberLayout.removeView(view);
@@ -553,7 +577,7 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
      *
      * @param action 0 indicates is creating group
      *               1 indicates is adding group
-      * @param name group's name
+     * @param name group's name
      * @return the instance of RawGroupFragment
      */
     public static RawGroupFragment getInstance(int action,String name) {
@@ -571,7 +595,7 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.btn_sure_raw_group:
-                if(memberViews.size() == 0) {
+                if(listMembers.size() == 0) {
                     Toast.makeText(getActivity(),"请等待成员加入或取消建组",Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -605,12 +629,75 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener{
         getActivity().finish();
     }
 
+    @Override
+    public boolean handleMessage(Message message) {
+        switch (message.what) {
+            case ADD_DATA:
+                //add a wifi hot to list
+                ScanResult result = (ScanResult)message.obj;
+                if(result == null) return false;
+                scanResults.add(result);
+                connectWifi();
+                break;
+            case RECEIVED_A_GROUP:
+                isConnecting = false;
+                addGroupInUI((JSONObject)message.obj);
+                if(!getStopScan()) {
+                    count ++;
+                    connectWifi();
+                }
+                break;
+            case CANCEL_ADD_GROUP:
+                int id = message.arg1;
+                for(int i = 0;i < listMembers.size();i++) {
+                    if((int)listMembers.get(i).getId() == id) {
+                        listMembers.remove(i);
+                        break;
+                    }
+                }
+                CommonAdapter adapter = (CommonAdapter)gridMembers.getAdapter();
+                adapter.notifyDataSetChanged();
+                break;
+            case CANCEL_CREATE_GROUP:
+                String ssid = (String)message.obj;
+                if(ssid != null && ssid.equals(socketedSsid)) {
+                    Toast.makeText(getActivity(),"群主已取消",Toast.LENGTH_SHORT).show();
+                    getActivity().finish();
+                }
+                break;
+            case GET_BITMAP:
+                Bitmap bitmap = (Bitmap)message.obj;
+                if(bitmap != null) {
+                    Drawable drawable = new CircleImageDrawable(bitmap);
+                    if(drawable != null) {
+                        imgPhoto.setImageDrawable(drawable);
+                    }
+                    if(action == GroupActivity.GroupAction.CREATE && callback != null) {
+                        if(drawable != null) imgOwner.setImageDrawable(drawable);
+                        SharedPreferences sp = getActivity().getSharedPreferences(Constants.SP_USER,0);
+                        String name = sp.getString(Constants.NICKNAME, "");
+                        GroupMember member = new GroupMember(name,0,bitmap);
+                        callback.addMember(member);
+                        name = null;
+                        sp = null;
+                    }
+                    drawable = null;
+                    bitmap = null;
+                }
+                break;
+            default:
+                return false;
+        }
+        return true;
+    }
+
     public static final String ACTION_MODE = "action";
     public static final String GROUP_NAME = "name";
     private final int ADD_DATA = 0;   //notify that have receive a wifi device
     private final int RECEIVED_A_GROUP = 1;   //notify that have receive a group info
     private final int CANCEL_ADD_GROUP = 2;   //notify that have receive a group info
-    private final int CANCEL_CREATE_GROUP = 3;
+    private final int CANCEL_CREATE_GROUP = 3;  //cancel create group
+    private final int GET_BITMAP = 4;   //get bitmap of user photo by url
 
     public interface CallBackInRawGroup {
         /**

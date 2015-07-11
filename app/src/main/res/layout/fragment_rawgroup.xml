@@ -21,17 +21,15 @@
             android:text="@string/wait_gruop_member_in"
             android:textStyle="bold"
             />
-
     </RelativeLayout>
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
         android:gravity="center"
         android:background="@color/blue_with_press"
-        android:text="@string/tip_member_in"
         android:textColor="@color/white"
         android:textStyle="bold"
         android:layout_marginTop="50dp"
@@ -45,6 +43,33 @@
         android:layout_marginBottom="40dp"
         android:background="@color/blue_without_press"
         android:id="@+id/member_layout"/>
+
+    <GridView
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_marginStart="60dp"
+        android:layout_marginEnd="60dp"
+        android:background="#90232112"
+        android:layout_alignTop="@+id/member_layout"
+        android:layout_marginTop="50dp"
+        android:numColumns="3"
+        android:paddingStart="30dp"
+        android:paddingEnd="10dp"
+        android:id="@+id/grid_members_raw"
+        android:horizontalSpacing="5dp"
+        android:verticalSpacing="5dp"
+        android:gravity="center"
+        />
+
+    <ImageView
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:id="@+id/img_group_owner"
+        android:layout_alignTop="@+id/grid_members_raw"
+        android:layout_alignStart="@+id/grid_members_raw"
+        android:layout_marginTop="-30dp"
+        android:layout_marginStart="-30dp"
+        />
 
     <com.rftransceiver.customviews.ArcView
         android:layout_width="85dp"

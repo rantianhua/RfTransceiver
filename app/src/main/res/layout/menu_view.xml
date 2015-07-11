@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/transparent"
-    >
+    android:background="@android:color/black">
 
     <ScrollView
         android:layout_width="match_parent" android:layout_height="match_parent"
@@ -61,27 +61,27 @@
                 />
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="20dp"
-                android:layout_below="@+id/line_menu_1"
-                android:layout_marginTop="10dp"
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_alignBottom="@+id/line_menu_2"
                 android:layout_toStartOf="@+id/line_menu_2"
-                android:layout_marginEnd="30dp"
-                android:textColor="@color/white"
                 android:text="@string/create_group"
+                android:textColor="@color/white"
                 android:id="@+id/tv_menu_create_group"
+                android:gravity="center"
+                android:background="@drawable/click_with_color"
                 />
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="20dp"
-                android:layout_below="@+id/line_menu_1"
-                android:layout_marginTop="10dp"
-                android:layout_toEndOf="@+id/line_menu_2"
-                android:layout_marginStart="30dp"
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_alignBottom="@+id/line_menu_2"
                 android:textColor="@color/white"
                 android:text="@string/add_group"
                 android:id="@+id/tv_menu_add_group"
+                android:layout_toEndOf="@+id/line_menu_2"
+                android:gravity="center"
+                android:background="@drawable/click_with_color"
                 />
 
             <View
@@ -100,20 +100,20 @@
                 android:scaleType="centerCrop"
                 android:src="@drawable/walkie_talkie"
                 android:layout_alignBottom="@+id/tv_menu_interphone"
-                android:layout_marginBottom="10dp"/>
+                android:layout_marginBottom="18dp"/>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
-                android:gravity="start|bottom"
+                android:gravity="start|center_vertical"
                 android:id="@+id/tv_menu_interphone"
                 android:layout_below="@+id/line_menu_3"
-                android:layout_marginTop="15dp"
+                android:layout_marginTop="20dp"
                 android:textColor="@color/white"
                 android:text="@string/interphone"
                 android:paddingStart="40dp"
                 android:paddingEnd="0dp"
-                android:paddingBottom="10dp"
+                android:background="@drawable/click_with_color"
                 />
 
             <View
@@ -130,19 +130,18 @@
                 android:scaleType="centerCrop"
                 android:src="@drawable/contacts"
                 android:layout_alignBottom="@+id/tv_menu_contacts"
-                android:layout_marginBottom="10dp"/>
+                android:layout_marginBottom="20dp"/>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
-                android:gravity="bottom|start"
+                android:gravity="start|center_vertical"
                 android:id="@+id/tv_menu_contacts"
                 android:layout_below="@+id/line_menu_4"
                 android:textColor="@color/white"
                 android:text="@string/contacts"
                 android:paddingStart="40dp"
                 android:paddingEnd="0dp"
-                android:paddingBottom="10dp"
                 />
 
             <View
@@ -159,19 +158,19 @@
                 android:scaleType="centerCrop"
                 android:src="@drawable/me"
                 android:layout_alignBottom="@+id/tv_menu_my_device"
-                android:layout_marginBottom="10dp"/>
+                android:layout_marginBottom="18dp"/>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
-                android:gravity="bottom|start"
+                android:gravity="center_vertical|start"
                 android:id="@+id/tv_menu_my_device"
                 android:layout_below="@+id/line_menu_5"
                 android:textColor="@color/white"
                 android:text="@string/my_device"
                 android:paddingStart="40dp"
                 android:paddingEnd="0dp"
-                android:paddingBottom="10dp"
+                android:background="@drawable/click_with_color"
                 />
 
             <View
@@ -197,45 +196,50 @@
         android:background="@android:color/transparent">
 
         <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:id="@+id/img_setting_menu"
             android:layout_centerVertical="true"
+            android:padding="10dp"
             android:src="@drawable/setting"
-            android:scaleType="centerCrop"
             />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/img_setting_menu"
+            android:layout_alignBottom="@+id/img_setting_menu"
+            android:gravity="center"
             android:id="@+id/tv_menu_setting"
-            android:textColor="@color/white"
+            android:textColor="@color/white_with_gray"
             android:text="@string/setting"
-            android:layout_toEndOf="@+id/img_setting_menu"
-            android:layout_marginStart="10dp"
             android:layout_centerVertical="true"
+            android:paddingStart="48dp"
+            android:paddingEnd="5dp"
             />
 
         <TextView
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:id="@+id/tv_menu_exit"
-            android:textColor="@color/red"
+            android:textColor="@color/red_with_white"
             android:text="@string/exit"
+            android:gravity="center"
             android:layout_centerVertical="true"
             android:layout_alignParentEnd="true"
             android:textStyle="bold"
+            android:paddingStart="48dp"
+            android:paddingEnd="0dp"
             />
 
         <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:id="@+id/img_exit_menu"
             android:layout_centerVertical="true"
             android:src="@drawable/exit"
-            android:scaleType="centerCrop"
-            android:layout_toStartOf="@+id/tv_menu_exit"
-            android:layout_marginEnd="10dp"
+            android:padding="10dp"
+            android:layout_alignStart="@+id/tv_menu_exit"
             />
 
     </RelativeLayout>

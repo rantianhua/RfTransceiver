@@ -78,29 +78,29 @@ public class ListConversationAdapter extends BaseAdapter {
                     convertView = inflater.inflate(R.layout.list_left_text,null);
                     hodler.tvContent = (TextView) convertView.findViewById(R.id.tv_list_left);
                     hodler.imgPhoto = (ImageView) convertView.findViewById(R.id.img_conversation_photo);
-                    hodler.tvLevel = (TextView) convertView.findViewById(R.id.tv_conversation_level);
-                    hodler.imgLevel = (ImageView) convertView.findViewById(R.id.img_conversation_level);
+//                    hodler.tvLevel = (TextView) convertView.findViewById(R.id.tv_conversation_level);
+//                    hodler.imgLevel = (ImageView) convertView.findViewById(R.id.img_conversation_level);
                     break;
                 case LEFT_PIC:
                     convertView = inflater.inflate(R.layout.list_left_pic,null);
                     hodler.imgData = (ImageView) convertView.findViewById(R.id.img_data_left);
                     hodler.imgPhoto = (ImageView) convertView.findViewById(R.id.img_conversation_photo);
-                    hodler.tvLevel = (TextView) convertView.findViewById(R.id.tv_conversation_level);
-                    hodler.imgLevel = (ImageView) convertView.findViewById(R.id.img_conversation_level);
+//                    hodler.tvLevel = (TextView) convertView.findViewById(R.id.tv_conversation_level);
+//                    hodler.imgLevel = (ImageView) convertView.findViewById(R.id.img_conversation_level);
                     break;
                 case LEFT_ADDRESS:
                     convertView = inflater.inflate(R.layout.list_left_address,null);
                     hodler.container = (FrameLayout) convertView.findViewById(R.id.frame_mapview_left);
                     hodler.imgPhoto = (ImageView) convertView.findViewById(R.id.img_conversation_photo);
-                    hodler.tvLevel = (TextView) convertView.findViewById(R.id.tv_conversation_level);
-                    hodler.imgLevel = (ImageView) convertView.findViewById(R.id.img_conversation_level);
+//                    hodler.tvLevel = (TextView) convertView.findViewById(R.id.tv_conversation_level);
+//                    hodler.imgLevel = (ImageView) convertView.findViewById(R.id.img_conversation_level);
                     break;
                 case LEFT_SOUNDS:
                     convertView = inflater.inflate(R.layout.list_left_sounds,null);
                     hodler.tvSounds = (TextView) convertView.findViewById(R.id.tv_left_sounds);
                     hodler.imgPhoto = (ImageView) convertView.findViewById(R.id.img_conversation_photo);
-                    hodler.tvLevel = (TextView) convertView.findViewById(R.id.tv_conversation_level);
-                    hodler.imgLevel = (ImageView) convertView.findViewById(R.id.img_conversation_level);
+//                    hodler.tvLevel = (TextView) convertView.findViewById(R.id.tv_conversation_level);
+//                    hodler.imgLevel = (ImageView) convertView.findViewById(R.id.img_conversation_level);
                     break;
                 case RIGHT_TEXT:
                     convertView = inflater.inflate(R.layout.list_right_text,null);
@@ -128,11 +128,11 @@ public class ListConversationAdapter extends BaseAdapter {
             if(data.getPhotoDrawable() != null) {
                 hodler.imgPhoto.setImageDrawable(data.getPhotoDrawable());
             }
-            String instance = data.getInstance();
-            if(instance != null) {
-                hodler.tvLevel.setText(instance);
-            }
-            hodler.imgLevel.setImageResource(data.getLevelId());
+//            String instance = data.getInstance();
+//            if(instance != null) {
+//                hodler.tvLevel.setText(instance);
+//            }
+//            hodler.imgLevel.setImageResource(data.getLevelId());
         }
         switch (data.getConversationType()) {
             case RIGHT_TEXT:
@@ -179,8 +179,8 @@ public class ListConversationAdapter extends BaseAdapter {
     }
 
     class ViewHodler {
-        TextView tvContent,tvLevel,tvSounds;
-        ImageView imgPhoto,imgLevel,imgData;
+        TextView tvContent,tvSounds;
+        ImageView imgPhoto,imgData;
         FrameLayout container;
     }
 

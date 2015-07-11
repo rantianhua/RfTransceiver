@@ -94,9 +94,6 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
         if(groupAction == GroupAction.CREATE) {
             //create a group
             groupEntity.setAsyncWord(GroupUtil.createAsynWord());
-            SharedPreferences sp = getSharedPreferences(Constants.SP_USER,0);
-            String path = sp.getString(Constants.PHOTO_PATH,"");
-            groupEntity.setPicFilePath(path);
             if(setGroupNameFragment == null) initSGF();
             changeFragment(setGroupNameFragment);
         }else {
@@ -151,6 +148,9 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
         setGroupNameFragment = null;
         initRGF(GroupAction.CREATE.ordinal(),name);
         changeFragment(rawGroupFragment);
+        if(service != null) {
+            service.startWifiAp();
+        }
     }
 
     @Override
@@ -159,9 +159,7 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
             WifiNetService.LocalWifiBinder binder = (WifiNetService.LocalWifiBinder)iBinder;
             service = binder.getService();
             service.setCallBack(this);
-            if(groupAction == GroupAction.CREATE) {
-                service.startWifiAp();
-            }else if(groupAction == GroupAction.ADD) {
+            if(groupAction == GroupAction.ADD) {
                 service.startWifi();
             }
         }
@@ -263,6 +261,7 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
         String message = null;
         Intent intent = new Intent();
         Bundle bundle = new Bundle();
+        groupEntity.setTempId(rawGroupFragment.getMyId());
         bundle.putParcelable(EXTRA_GROUP,groupEntity);
         intent.putExtras(bundle);
         setResult(Activity.RESULT_OK,intent);
@@ -347,11 +346,6 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                SharedPreferences sp = getSharedPreferences(Constants.SP_USER,0);
-                GroupMember member = new GroupMember(sp.getString(Constants.NICKNAME,""),
-                        0,GroupUtil.getSmallBitmap(sp.getString(Constants.PHOTO_PATH,""),
-                        GroupActivity.this));
-                groupEntity.getMembers().add(0,member);
                 finishGroup();
             }
         });
@@ -464,9 +458,6 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
     @Override
     public void addMember(GroupMember member) {
         if(groupEntity != null) {
-            if(groupAction == GroupAction.ADD) {
-                groupEntity.getMembers().clear();
-            }
             groupEntity.getMembers().add(member);
         }
     }

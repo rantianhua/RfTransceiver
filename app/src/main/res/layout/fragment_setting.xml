@@ -85,7 +85,8 @@
         
         <ImageView
             android:layout_width="48dp"
-            android:layout_height="20dp"
+            android:layout_height="48dp"
+            android:padding="10dp"
             android:background="@android:color/transparent"
             android:src="@drawable/switch_img"
             android:layout_alignParentEnd="true"
@@ -123,6 +124,7 @@
         android:layout_below="@+id/view_line_setting_5"
         android:text="@string/choose_channel"
         android:id="@+id/tv_change_channel"
+        android:background="@drawable/click_with_color"
         />
 
     <TextView
@@ -154,6 +156,7 @@
         android:layout_below="@+id/view_line_setting_6"
         android:text="@string/clear_cache"
         android:id="@+id/tv_clear_cache"
+        android:background="@drawable/click_with_color"
         />
 
     <TextView
@@ -185,6 +188,7 @@
         android:layout_below="@+id/view_line_setting_7"
         android:text="@string/about"
         android:id="@+id/tv_about"
+        android:background="@drawable/click_with_color"
         />
 
     <View

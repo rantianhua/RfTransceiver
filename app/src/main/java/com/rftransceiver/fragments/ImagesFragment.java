@@ -177,16 +177,14 @@ public class ImagesFragment extends Fragment implements ImageDirsPopWindow.OnPic
                 if(parentFile.list() == null) continue;
                 ImageFolderData imageFolderData = new ImageFolderData();
                 imageFolderData.setAbPath(dirPath);
-                imageFolderData.setPaths(parentFile.list(new FilenameFilter() {
-                    @Override
-                    public boolean accept(File file, String s) {
-                        if (s.endsWith(".jpg") || s.endsWith(".jpeg")
-                                || s.endsWith(".png")) {
-                            return true;
-                        }
-                        return false;
-                    }
-                }));
+                String[] pathes = null;
+                try {
+                    pathes = parentFile.list(filenameFilter);
+                }catch (Exception e) {
+                    continue;
+                }
+                if(pathes == null) continue;
+                imageFolderData.setPaths(pathes);
                 imageFolders.add(imageFolderData);
                 int picSize = imageFolderData.getCounts();
                 if(picSize > maxImgCouns) {
@@ -200,6 +198,17 @@ public class ImagesFragment extends Fragment implements ImageDirsPopWindow.OnPic
             dirPaths = null;
             return null;
         }
+
+        final FilenameFilter filenameFilter = new FilenameFilter() {
+            @Override
+            public boolean accept(File file, String s) {
+                if (s.endsWith(".jpg") || s.endsWith(".jpeg")
+                        || s.endsWith(".png")) {
+                    return true;
+                }
+                return false;
+            }
+        };
 
         @Override
         protected void onPostExecute(Void aVoid) {

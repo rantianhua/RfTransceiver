@@ -48,10 +48,10 @@ public class GroupUtil {
             object.put(GROUP_MEMBER_ID,groupEntity.getTempId());
             object.put(GROUP_ASYNC_WORD,
                     Base64.encodeToString(groupEntity.getAsyncWord(), Base64.DEFAULT));
-            String path = groupEntity.getPicFilePath();
-            if(!TextUtils.isEmpty(path)) {
-                object.put(PIC,Base64.encodeToString(getPicBytes(path,context), Base64.DEFAULT));
-                path = null;
+            Bitmap bitmap = groupEntity.getMembers().get(0).getBitmap();
+            if(bitmap != null) {
+                object.put(PIC,Base64.encodeToString(getPicBytes(bitmap), Base64.DEFAULT));
+                bitmap = null;
             }
         }catch (Exception e) {
             e.printStackTrace();
@@ -60,6 +60,11 @@ public class GroupUtil {
     }
 
 
+    private static byte[] getPicBytes(Bitmap bitmap) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG,100,outputStream);
+        return outputStream.toByteArray();
+    }
 
     /**
      *
@@ -74,7 +79,7 @@ public class GroupUtil {
 
     public static Bitmap getSmallBitmap(String path,Context context) {
         int size = (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
-                30,context.getResources().getDisplayMetrics());
+                60,context.getResources().getDisplayMetrics());
         size = size * size;
         return ImageUtil.createImageThumbnail(path,size);
     }
@@ -96,9 +101,7 @@ public class GroupUtil {
                 memberName = member.getName();
                 Bitmap bitmap = member.getBitmap();
                 if(bitmap != null) {
-                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                    bitmap.compress(Bitmap.CompressFormat.JPEG,100,outputStream);
-                    bitmapData = outputStream.toByteArray();
+                    bitmapData = getPicBytes(bitmap);
                 }
                 object.put(GroupUtil.GROUP_MEMBER_ID,member.getId());
             }else {

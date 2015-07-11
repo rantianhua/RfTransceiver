@@ -14,7 +14,7 @@
         <ImageView
             android:layout_width="50dp"
             android:layout_height="match_parent"
-            android:background="@drawable/img_top_home_bg"
+            android:background="@drawable/click_with_color"
             android:id="@+id/img_home_troggle"
             android:src="@drawable/list"
             android:padding="15dp"/>
@@ -32,7 +32,7 @@
             android:layout_width="50dp"
             android:layout_height="match_parent"
             android:id="@+id/img_home_hide"
-            android:background="@drawable/img_top_home_bg"
+            android:background="@drawable/click_with_color"
             android:src="@drawable/top_menu_hide"
             android:layout_centerVertical="true"
             android:layout_alignParentEnd="true"
@@ -43,7 +43,7 @@
 
     <TextView
         android:layout_width="match_parent"
-        android:layout_height="30dp"
+        android:layout_height="40dp"
         android:textColor="@color/white"
         android:textSize="12sp"
         android:textStyle="bold"
@@ -70,16 +70,15 @@
         android:paddingBottom="25dp"
         android:layout_width="match_parent"
         android:layout_height="100dp"
-        android:background="@color/blue_with_press"
         android:layout_above="@+id/rl_home_input_message"
         android:id="@+id/vp_home_expression"
+        android:background="@color/blue_with_press"
         />
 
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="25dp"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
         android:layout_centerHorizontal="true"
         android:layout_alignBottom="@+id/vp_home_expression"
         android:id="@+id/ll_dots_home"
@@ -90,13 +89,12 @@
         android:layout_height="wrap_content"
         android:layout_above="@+id/rl_home_imgs_address"
         android:id="@+id/rl_home_input_message"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp"
         >
 
         <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="10dp"
             android:id="@+id/img_sounds_text"
             android:layout_centerVertical="true"
             android:src="@drawable/drawble_sounds_text"
@@ -111,8 +109,6 @@
             android:id="@+id/et_send_message"
             android:hint="@string/hint_et_sent_text"
             android:layout_centerVertical="true"
-            android:layout_marginStart="6dp"
-            android:layout_marginEnd="40dp"
             android:gravity="top|start"
             />
 
@@ -122,29 +118,27 @@
             android:id="@+id/btn_sounds"
             android:layout_toEndOf="@+id/img_sounds_text"
             android:layout_toStartOf="@+id/img_other"
-            android:layout_marginStart="6dp"
-            android:layout_marginEnd="6dp"
             android:gravity="center"
-            android:text="@string/record_sound"
+            android:text="@string/touch_send_sounds"
             android:textColor="@color/white"
             android:background="@drawable/tv_sure"
             android:visibility="invisible"
             />
 
         <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="60dp"
+            android:layout_height="48dp"
             android:id="@+id/img_other"
             android:layout_centerVertical="true"
             android:layout_alignParentEnd="true"
-            android:scaleType="centerCrop"
+            android:padding="10dp"
             android:src="@drawable/drawable_other_data"
             />
 
 
         <Button
             android:layout_width="60dp"
-            android:layout_height="30dp"
+            android:layout_height="35dp"
             android:id="@+id/btn_send"
             android:layout_alignParentEnd="true"
             android:gravity="center"

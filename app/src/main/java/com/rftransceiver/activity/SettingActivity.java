@@ -29,9 +29,9 @@ import butterknife.InjectView;
  * Created by rantianhua on 15-6-26.
  */
 public class SettingActivity extends Activity {
-    @InjectView(R.id.img_back_setting)
+    @InjectView(R.id.img_top_left)
     ImageView imgBack;
-    @InjectView(R.id.tv_title_setting)
+    @InjectView(R.id.tv_title_left)
     TextView tvTitle;
 
     private String titleChannel;
@@ -52,6 +52,7 @@ public class SettingActivity extends Activity {
 
     private void initView() {
         ButterKnife.inject(this);
+        imgBack.setImageResource(R.drawable.back);
         if(settingFrag == null) {
             settingFrag = new SettingFragment();
             settingFrag.setCallbackInSF(new SettingFragment.CallbackInSF() {

@@ -53,7 +53,7 @@ import butterknife.InjectView;
 public class MainActivity extends Activity implements View.OnClickListener,
         SendMessageListener,HomeFragment.CallbackInHomeFragment,
         BindDeviceFragment.CallbackInBindDeviceFragment,BleService.CallbackInBle
-        {
+{
 
     @InjectView(R.id.img_menu_photo)
     ImageView imgPhoto;
@@ -69,10 +69,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
     TextView tvMyDevice;
     @InjectView(R.id.tv_menu_interphone)
     TextView tvInterPhone;
-    @InjectView(R.id.img_setting_menu)
-    ImageView imgSetting;
     @InjectView(R.id.tv_menu_setting)
     TextView tvSetting;
+    @InjectView(R.id.tv_menu_exit)
+    TextView tvExit;
 
     private final String TAG = getClass().getSimpleName();
 
@@ -154,6 +154,18 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private String bindAddress;
 
     private SharedPreferences sp;
+
+    /***
+     * group's asyncWord
+     */
+    private byte[] asyncWord;
+
+    private boolean haveSetAsyncWord = false;
+
+    /**
+     * my id in group
+     */
+    private int myId;
 
     /**
      * true if open application add have bounded device before
@@ -286,7 +298,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
         tvMyDevice.setOnClickListener(this);
         tvInterPhone.setOnClickListener(this);
         tvSetting.setOnClickListener(this);
-        imgSetting.setOnClickListener(this);
+        tvExit.setOnClickListener(this);
     }
 
     /**
@@ -314,7 +326,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
         //initial the text entity
         textEntity = new TextEntity();
         DataPacketOptions textOptions = new DataPacketOptions(DataPacketOptions.Data_Type_InOptions.text,
-                3);
+                4);
         textEntity.setOptions(textOptions);
         textEntity.setSendListener(this);
 
@@ -362,7 +374,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                         //start to receive sounds data
                                         receiver.startReceiver();
                                         if(homeFragment != null) {
-                                            homeFragment.receivingData(0,null);
+                                            homeFragment.receivingData(0,null,(int)msg.obj);
                                         }
                                         break;
                                     case 1:
@@ -381,14 +393,14 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                 byte[] data = (byte[]) msg.obj;
                                 if(data == null) return;
                                 if(homeFragment != null) {
-                                    homeFragment.receivingData(1,new String(data));
+                                    homeFragment.receivingData(1,new String(data),msg.arg2);
                                 }
                                 break;
                             case Constants.READ_ADDRESS:
                                 byte[] add = (byte[]) msg.obj;
                                 if(add != null) {
                                     if(homeFragment != null) {
-                                        homeFragment.receivingData(2,new String(add));
+                                        homeFragment.receivingData(2,new String(add),msg.arg2);
                                     }
                                 }
                                 break;
@@ -396,7 +408,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                 byte[] image = (byte[]) msg.obj;
                                 if(image != null) {
                                     if(homeFragment != null) {
-                                        homeFragment.receivingData(3,new String(image));
+                                        homeFragment.receivingData(3,new String(image),msg.arg2);
                                     }
                                 }
                                 break;
@@ -409,6 +421,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                 break;
                             case Constants.READ_SETASYNCWORD:
                                 showToast("设置同步字成功");
+                                haveSetAsyncWord = true;
                                 break;
                             case Constants.READ_RSSI:
                                 showToast("读到rssi值是：" + msg.arg2);
@@ -474,9 +487,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     private void sendAsyncWord() {
-        if(bluetoothLeService != null) {
-            Constants.ASYNC_WORD[2] = 9;
-            Constants.ASYNC_WORD[3] = 10;
+        if(bluetoothLeService == null || asyncWord == null) return;
+        if(!haveSetAsyncWord) {
             bluetoothLeService.writeInstruction(Constants.ASYNC_WORD);
         }
     }
@@ -573,10 +585,12 @@ public class MainActivity extends Activity implements View.OnClickListener,
                 changeFragment(homeFragment);
                 lockerView.toggleMenu();
                 break;
-            case R.id.img_setting_menu:
             case R.id.tv_menu_setting:
                 startActivityForResult(new Intent(MainActivity.this,
                         SettingActivity.class), REQUEST_CHANGECHANNEL);
+                break;
+            case R.id.tv_menu_exit:
+                MainActivity.this.finish();
                 break;
         }
     }
@@ -626,6 +640,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     @Override
     public void sendPacketedData (byte[] data,boolean end){
         if(data == null || bluetoothLeService == null) return;
+        data[Constants.Group_Member_Id_index] = (byte)myId;
         bluetoothLeService.write(data);
         data = null;
     }
@@ -666,6 +681,9 @@ public class MainActivity extends Activity implements View.OnClickListener,
         if(homeFragment != null && homeFragment.isVisible()) {
             //homeFragment.bleLose();
             homeFragment.deviceConnected(connect);
+        }
+        if(connect && !haveSetAsyncWord) {
+            sendAsyncWord();
         }
         deviceBinded = connect;
     }
@@ -780,6 +798,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
             Bundle bundle = data.getExtras();
             if(bundle == null) return;
             GroupEntity groupEntity = bundle.getParcelable(GroupActivity.EXTRA_GROUP);
+            asyncWord = groupEntity.getAsyncWord();
+            myId = groupEntity.getTempId();
             if(groupEntity == null) return;
             if(homeFragment == null) {
                 initHomeFragment();
@@ -787,7 +807,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
             }
             homeFragment.updateGroup(groupEntity);
             lockerView.closeMenu();
-            GroupUtil.recycle(groupEntity.getMembers());
+            sendAsyncWord();
+            //GroupUtil.recycle(groupEntity.getMembers());
         }else if(requestCode == HomeFragment.REQUEST_LOCATION && resultCode == Activity.RESULT_OK && data != null) {
             String address = data.getStringExtra(HomeFragment.EXTRA_LOCATION);
             if(!TextUtils.isEmpty(address))

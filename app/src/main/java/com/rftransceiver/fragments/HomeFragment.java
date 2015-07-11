@@ -12,6 +12,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
@@ -22,6 +23,7 @@ import android.text.TextWatcher;
 import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
@@ -34,6 +36,7 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.rftransceiver.R;
 import com.rftransceiver.activity.LocationActivity;
@@ -42,6 +45,7 @@ import com.rftransceiver.adapter.ListConversationAdapter;
 import com.rftransceiver.datasets.ConversationData;
 import com.rftransceiver.db.DBManager;
 import com.rftransceiver.group.GroupEntity;
+import com.rftransceiver.group.GroupMember;
 import com.rftransceiver.util.CommonAdapter;
 import com.rftransceiver.util.CommonViewHolder;
 import com.rftransceiver.util.Constants;
@@ -54,6 +58,8 @@ import com.source.DataPacketOptions;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -147,7 +153,12 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
 
     private int imgSendSize;
 
-    private String tipConnectLose,tipReconnecting,tipConnecSuccess;
+    private String tipConnectLose,tipReconnecting,tipConnecSuccess,tipSendSounds,tipStopSounds;
+
+    /**
+     * decide send or not sent for touch event on btnSounds
+     */
+    private boolean sendSounds = false;
 
     /**
      * to manipulate database
@@ -164,6 +175,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     }
     private MenuAction menuAction = MenuAction.NONE;
 
+    private static final android.os.Handler mainHandler = new android.os.Handler(Looper.myLooper());
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -178,6 +191,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         tipConnectLose = getResources().getString(R.string.connection_lose);
         tipReconnecting = getResources().getString(R.string.reconnecting);
         tipConnecSuccess = getResources().getString(R.string.connect_success);
+        tipSendSounds = getString(R.string.touch_send_sounds);
+        tipStopSounds = getString(R.string.loose_stop_sounds);
         dataLists = new ArrayList<>();
         dbManager = DBManager.getInstance(getActivity());
      }
@@ -300,6 +315,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         ButterKnife.inject(this,v);
         conversationAdapter = new ListConversationAdapter(getActivity(),imgageGetter,getFragmentManager());
         listView.setAdapter(conversationAdapter);
+        conversationAdapter.updateData(dataLists);
         if(!TextUtils.isEmpty(homeTitle)) {
             tvTitle.setText(homeTitle);
             homeTitle = null;
@@ -314,12 +330,13 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
             if(preGrop != -1) {
                 loadGroup(preGrop);
             }
+        }else {
+            updateGroup(groupEntity);
         }
     }
 
     private void initEvent() {
         btnSend.setOnClickListener(this);
-        btnSounds.setOnClickListener(this);
         imgTroggle.setOnClickListener(this);
         imgHomeHide.setOnClickListener(this);
         tvTip.setOnClickListener(this);
@@ -344,12 +361,54 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
 
             @Override
             public void afterTextChanged(Editable editable) {
-                if(editable.toString().length() > 0) {
+                if (editable.toString().length() > 0) {
                     imgAdd.setVisibility(View.INVISIBLE);
                     btnSend.setVisibility(View.VISIBLE);
-                }else{
+                } else {
                     imgAdd.setVisibility(View.VISIBLE);
                     btnSend.setVisibility(View.INVISIBLE);
+                }
+            }
+        });
+        btnSounds.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                switch (motionEvent.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        sendSounds = true;
+                        btnSounds.setText(tipStopSounds);
+                        if(tvTip.getVisibility() == View.VISIBLE) {
+                            String text = tvTip.getText().toString();
+                           if(text.endsWith("正在说话...") || text.equals(tipConnectLose) ||
+                                   text.equals(tipReconnecting)) {
+                               sendSounds = false;
+                               return false;
+                           }
+                        }
+                        else {
+                            mainHandler.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if(sendSounds) {
+                                        if(callback != null) {
+                                            callback.send(MainActivity.SendAction.SOUNDS,null);
+                                            tvTip.setVisibility(View.VISIBLE);
+                                            tvTip.setText("我正在说话...");
+                                        }
+                                    }
+                                }
+                            }, 1000);
+                        }
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        if(sendSounds && callback != null) callback.stopSendSounds();
+                        sendSounds = false;
+                        btnSounds.setText(tipSendSounds);
+                        tvTip.setText("");
+                        tvTip.setVisibility(View.GONE);
+                        return false;
+                    default:
+                        return true;
                 }
             }
         });
@@ -360,15 +419,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         switch (view.getId()) {
             case R.id.btn_send:
                 sendText();
-                break;
-            case R.id.btn_sounds:
-                if(btnSounds.getText().equals(getString(R.string.record_sound))) {
-                    sendSounds();
-                }
-                else if(btnSounds.getText().equals(getString(R.string.recording_sound))) {
-                    if(callback != null) callback.stopSendSounds();
-                    btnSounds.setText(getString(R.string.record_sound));
-                }
                 break;
             case R.id.img_home_troggle:
                 if(callback != null) callback.toggleMenu();
@@ -660,25 +710,13 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     private void sendText() {
         Editable editable = editableFactory.newEditable(etSendMessage.getText());
         String message = Html.toHtml(editable);
-        Log.e("sendText",message);
-        message = message.replace("<p>","");
+        message = message.replace("<p dir=\"ltr\">","");
         message = message.replace("</p>", "");
-        message = message.replace("</br>", "");
-        message = message.replace("<br>", "");
-        Log.e("sendText",message);
+        Log.e("sendText", message);
         if(!TextUtils.isEmpty(message)) {
             if(callback != null) {
                 callback.send(MainActivity.SendAction.Words,message);
             }
-        }
-    }
-
-    /**
-     * send sounds
-     */
-    private void sendSounds() {
-        if(callback != null){
-            callback.send(MainActivity.SendAction.SOUNDS,null);
         }
     }
 
@@ -689,31 +727,44 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
      *            2 is address data
      *            3 is image data
      */
-    public void receivingData(int tye,String data) {
+    public void receivingData(int tye,String data,int myId) {
         ConversationData receiveData = null;
+        Drawable drawable = null;
+        if(groupEntity != null) {
+            for(int i = 0;i < groupEntity.getMembers().size();i++) {
+                GroupMember member = groupEntity.getMembers().get(i);
+                if(member.getId() == myId) {
+                    drawable = member.getDrawable();
+                    if(tye == 0) {
+                        tvTip.setVisibility(View.VISIBLE);
+                        tvTip.setText(member.getName()+"正在说话...");
+                    }
+                    break;
+                }
+            }
+        }
         switch (tye) {
             case 0:
-                btnSounds.setText(getString(R.string.sounds_im));
-                btnSounds.setClickable(false);
                 receiveData = new ConversationData(ListConversationAdapter.ConversationType.LEFT_SOUNDS,
-                        null,BitmapFactory.decodeResource(getResources(),R.drawable.photo),0,"100m");
+                        null,null,0,"100m");
                 break;
             case 1:
                 receiveData = new ConversationData(ListConversationAdapter.ConversationType.LEFT_TEXT,
-                        data, BitmapFactory.decodeResource(getResources(),R.drawable.photo),0,"100m");
+                        data, null,0,"100m");
                 break;
             case 2:
                 receiveData = new ConversationData(ListConversationAdapter.ConversationType.LEFT_ADDRESS,
-                        null, BitmapFactory.decodeResource(getResources(),R.drawable.photo),0,"100m");
+                        null, null,0,"100m");
                 receiveData.setAddress(data);
                 break;
             case 3:
                 receiveData = new ConversationData(ListConversationAdapter.ConversationType.LEFT_PIC,
-                        null, BitmapFactory.decodeResource(getResources(),R.drawable.photo),0,"100m");
+                        null, null,0,"100m");
                 receiveData.setBitmap(data);
                 break;
         }
         if(receiveData == null) return;
+        receiveData.setPhotoDrawable(drawable);
         dataLists.add(receiveData);
         conversationAdapter.updateData(dataLists);
         listView.setSelection(conversationAdapter.getCount()-1);
@@ -725,8 +776,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
      */
     public void endReceive(int type) {
         if(type == 0) {
-            btnSounds.setText(getString(R.string.record_sound));
-            btnSounds.setClickable(true);
+           //stop to recevie sounds data
+            tvTip.setText("");
+            tvTip.setVisibility(View.GONE);
         }
     }
 
@@ -767,16 +819,16 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     }
 
     public void reset() {
-        btnSounds.setText(getString(R.string.record_sound));
-        btnSounds.setClickable(true);
-        btnSend.setClickable(true);
+//        btnSounds.setText(getString(R.string.record_sound));
+//        btnSounds.setClickable(true);
+//        btnSend.setClickable(true);
     }
 
     /**
      * call when starting recording sounds
      */
     public void startSendingSounds() {
-        btnSounds.setText(getString(R.string.recording_sound));
+        //btnSounds.setText(getString(R.string.recording_sound));
     }
 
     /**
@@ -834,16 +886,18 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     public void updateGroup(final GroupEntity groupEntity) {
         this.groupEntity = groupEntity;
         if(groupEntity == null) return;
+
         final String name = groupEntity.getName();
-        if(tvTitle == null) {
-            homeTitle = name
-                    +"(" + groupEntity.getMembers().size() + "人" + ")";
-        }else {
-            getActivity().runOnUiThread(new Runnable() {
+        homeTitle = name
+                +"(" + groupEntity.getMembers().size() + "人" + ")";
+        if(tvTitle != null) {
+            if(!this.isAdded()) return;
+            Activity activity = getActivity();
+            if (activity == null) return;
+            activity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    tvTitle.setText(name
-                            +"(" + groupEntity.getMembers().size() + "人" + ")");
+                    tvTitle.setText(homeTitle);
                 }
             });
         }

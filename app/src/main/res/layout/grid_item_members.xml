@@ -14,7 +14,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/tv_member_name"
-        android:textSize="17sp"
         android:layout_centerHorizontal="true"
         android:layout_below="@+id/img_member_photo"
         android:layout_marginTop="5dp"

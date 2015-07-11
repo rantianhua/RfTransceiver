@@ -29,9 +29,9 @@ import butterknife.InjectView;
  */
 public class GroupDetailFragment extends Fragment {
 
-    @InjectView(R.id.img_back_group_detail)
+    @InjectView(R.id.img_top_left)
     ImageView imgBack;
-    @InjectView(R.id.tv_title_group_detail)
+    @InjectView(R.id.tv_title_left)
     TextView tvTitle;
     @InjectView(R.id.grid_members)
     GridView gridView;
@@ -51,11 +51,13 @@ public class GroupDetailFragment extends Fragment {
     Button btnExitAndDelete;
 
     private GroupEntity groupEntity;
+    private String textBack;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         groupEntity = getArguments().getParcelable("group");
+        textBack = getString(R.string.back);
     }
 
     @Nullable
@@ -69,6 +71,8 @@ public class GroupDetailFragment extends Fragment {
 
     private void initView(View view) {
         ButterKnife.inject(this,view);
+        imgBack.setImageResource(R.drawable.back);
+        tvTitle.setText(textBack);
         gridView.setAdapter(new CommonAdapter<GroupMember>(getActivity(),groupEntity.getMembers(),
                 R.layout.grid_item_members) {
             @Override

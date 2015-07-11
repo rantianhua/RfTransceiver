@@ -2,8 +2,6 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
     android:paddingTop="80dp"
-    android:paddingStart="30dp"
-    android:paddingEnd="30dp"
     android:background="@drawable/lanchuner_bg"
     >
 
@@ -17,90 +15,36 @@
         android:id="@+id/img_init_camera"
         />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/ll_init_tv"
-        android:orientation="horizontal"
-        android:layout_below="@+id/img_init_camera"
-        android:layout_marginTop="20dp"
-        android:gravity="center_horizontal">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="5dp"
-            android:textColor="#fff"
-            android:textSize="18sp"
-            android:text="昵称"
-            android:typeface="monospace"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="5dp"
-            android:textColor="#fff"
-            android:text="name"
-            android:textSize="15sp"
-            android:typeface="monospace"
-            />
-
-    </LinearLayout>
-
-    <EditText
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/et_init_nickname"
-        android:layout_alignBottom="@+id/tv_init_counter"
-        android:layout_alignParentStart="true"
-        android:layout_toStartOf="@+id/tv_init_counter"
-        android:layout_marginEnd="15dp"
-        android:textColor="#fff"
-        android:background="@android:color/transparent"
-        android:paddingBottom="5dp"
-        android:singleLine="true"
-        android:imeOptions="actionDone"
-        android:hint="@string/hint_et_nickname"
-        android:maxLength="10"
-        />
-
-    <View
-        android:layout_width="wrap_content"
-        android:layout_height="0.2dp"
-        android:layout_alignStart="@+id/et_init_nickname"
-        android:layout_alignEnd="@+id/et_init_nickname"
-        android:layout_below="@+id/et_init_nickname"
-        android:layout_marginTop="2dp"
-        android:background="#fff"
-        android:id="@+id/line_init_1"/>
-
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:padding="5dp"
         android:textColor="@color/white"
-        android:layout_below="@+id/ll_init_tv"
-        android:layout_marginTop="50dp"
-        android:layout_alignParentEnd="true"
         android:textSize="18sp"
-        android:id="@+id/tv_init_counter"/>
+        android:text="昵称"
+        android:typeface="monospace"
+        android:layout_below="@+id/img_init_camera"
+        android:layout_marginTop="20dp"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/tv_name_label"/>
 
-    <ImageButton
-        android:layout_width="16dp"
-        android:layout_height="16dp"
-        android:background="@drawable/cancel"
-        android:layout_alignBottom="@+id/et_init_nickname"
-        android:layout_alignEnd="@+id/et_init_nickname"
-        android:layout_marginBottom="10dp"
-        android:id="@+id/ibn_init_cancel"/>
+    <include layout="@layout/view_limit_et"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="30dp"
+        android:layout_marginEnd="30dp"
+        android:layout_below="@+id/tv_name_label"
+        android:layout_marginTop="60dp"
+        android:id="@+id/include_et_limit_init"/>
 
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/btn_init_ok"
-        android:layout_below="@+id/line_init_1"
+        android:layout_below="@+id/include_et_limit_init"
         android:layout_marginTop="70dp"
-        android:layout_marginStart="30dp"
-        android:layout_marginEnd="30dp"
+        android:layout_marginStart="60dp"
+        android:layout_marginEnd="60dp"
         android:textColor="@color/white"
         android:text="@string/sure"
         android:textSize="18sp"
