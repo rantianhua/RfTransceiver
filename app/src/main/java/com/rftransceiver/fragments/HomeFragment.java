@@ -11,6 +11,9 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.media.AudioAttributes;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Looper;
 import android.support.annotation.Nullable;
@@ -58,6 +61,7 @@ import com.source.DataPacketOptions;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.jar.Attributes;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 
@@ -177,6 +181,15 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
 
     private static final android.os.Handler mainHandler = new android.os.Handler(Looper.myLooper());
 
+    /**
+     * to play sounds for button click
+     */
+    private SoundPool soundPool;
+    /**
+     * the play sounds' id
+     */
+    private int soundsId;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -195,6 +208,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         tipStopSounds = getString(R.string.loose_stop_sounds);
         dataLists = new ArrayList<>();
         dbManager = DBManager.getInstance(getActivity());
+
+        soundPool = new SoundPool(3, AudioManager.STREAM_SYSTEM,1);
+        soundsId = soundPool.load(getActivity(),R.raw.btn_down,1);
      }
 
     private void initExpressions(LayoutInflater inflater) {
@@ -294,8 +310,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
             public Drawable getDrawable(String s) {
                 int id = Integer.parseInt(s);
                 Drawable drawable = getResources().getDrawable(id);
-                drawable.setBounds(0,0,40,
-                        40);
+                if(drawable != null) {
+                    drawable.setBounds(0,0,40,
+                            40);
+                }
                 return drawable;
             }
         };
@@ -375,6 +393,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 switch (motionEvent.getAction()) {
                     case MotionEvent.ACTION_DOWN:
+                        if(callback != null) callback.setMenuScroll(false);
+                        btnSounds.setSelected(true);
+                        soundPool.play(soundsId,1,1,1,0,1);
                         sendSounds = true;
                         btnSounds.setText(tipStopSounds);
                         if(tvTip.getVisibility() == View.VISIBLE) {
@@ -400,13 +421,16 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                             }, 1000);
                         }
                         return true;
+                    case MotionEvent.ACTION_CANCEL:
                     case MotionEvent.ACTION_UP:
+                        if(callback != null) callback.setMenuScroll(true);
+                        btnSounds.setSelected(false);
                         if(sendSounds && callback != null) callback.stopSendSounds();
                         sendSounds = false;
                         btnSounds.setText(tipSendSounds);
                         tvTip.setText("");
                         tvTip.setVisibility(View.GONE);
-                        return false;
+                        return true;
                     default:
                         return true;
                 }
@@ -775,7 +799,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
      * @param type 0 is sounds data,
      */
     public void endReceive(int type) {
-        if(type == 0) {
+        if(type == 0 && !sendSounds) {
            //stop to recevie sounds data
             tvTip.setText("");
             tvTip.setVisibility(View.GONE);
@@ -810,7 +834,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         if(subData == null) return;
         dataLists.add(subData);
         conversationAdapter.updateData(dataLists);
-        listView.setSelection(conversationAdapter.getCount()-1);
+        listView.setSelection(conversationAdapter.getCount() - 1);
     }
 
     private void hideSoft() {
@@ -860,17 +884,18 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     }
 
     public void deviceConnected(final boolean connect) {
-        getActivity().runOnUiThread(new Runnable() {
+        mainHandler.post(new Runnable() {
             @Override
             public void run() {
-                if(connect) {
-                    if(tvTip.getText().toString().equals(tipReconnecting) && tvTip.getVisibility() ==
-                            View.VISIBLE) {
+                String text = tvTip.getText().toString();
+                if (connect) {
+                    if (tvTip.getVisibility() ==
+                            View.VISIBLE && text.equals(tipReconnecting)) {
                         tvTip.setText(tipConnecSuccess);
                         tvTip.setVisibility(View.GONE);
                     }
-                }else {
-                    if(!tvTip.getText().toString().equals(tipReconnecting)) {
+                } else {
+                    if (!text.equals(tipReconnecting)) {
                         tvTip.setText(tipConnectLose);
                         tvTip.setVisibility(View.VISIBLE);
                     }
@@ -928,11 +953,21 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
          * call to reset cms
          */
         void resetCms();
+
+        /**
+         * if true ,then can open left menu by right slide
+         * if false ,can't do it
+         * @param b
+         */
+        void setMenuScroll(boolean b);
+
     }
 
     @Override
     public void onDestroy() {
         dbManager = null;
+        soundPool.release();
+        soundPool = null;
         super.onDestroy();
         expressions = null;
         imgDots = null;

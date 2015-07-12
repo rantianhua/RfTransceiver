@@ -97,9 +97,13 @@ public class Audio_Encoder implements Runnable
 	            if (isEncoding)
 	            {
 	                AudioData rawData = dataList.remove(0);  //get the data to encode
-	                encodedData = new byte[rawData.getSize()];  
-	                encodeSize=coder.encode(rawData.getRealData(),0,encodedData, rawData.getSize());
-	                 
+	                encodedData = new byte[rawData.getSize()];
+					try {
+						encodeSize=coder.encode(rawData.getRealData(),0,encodedData, rawData.getSize());
+					}catch (Exception e) {
+						e.printStackTrace();
+					}
+
 	                if (encodeSize > 0) 
 	                {  
 	                    sender.addData(encodedData, encodeSize);  

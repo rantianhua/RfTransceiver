@@ -604,6 +604,15 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     /**
+     * call back in HomeFragment
+     * @param b
+     */
+    @Override
+    public void setMenuScroll(boolean b) {
+        lockerView.openScroll(b);
+    }
+
+    /**
      * get channel state , if busy ,can't send message
      */
     private void chenckChannel() {

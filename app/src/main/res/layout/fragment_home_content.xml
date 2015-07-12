@@ -60,7 +60,7 @@
         android:layout_height="match_parent"
         android:id="@+id/listview_conversation"
         android:layout_above="@+id/vp_home_expression"
-        android:layout_marginTop="80dp"
+        android:layout_below="@+id/tv_tip_home"
         android:listSelector="@android:color/transparent"
         android:divider="#000000"
         />
@@ -121,7 +121,7 @@
             android:gravity="center"
             android:text="@string/touch_send_sounds"
             android:textColor="@color/white"
-            android:background="@drawable/tv_sure"
+            android:background="@drawable/touch_with_stroke"
             android:visibility="invisible"
             />
 

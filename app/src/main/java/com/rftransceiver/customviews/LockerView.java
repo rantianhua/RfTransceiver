@@ -36,6 +36,7 @@ public class LockerView extends HorizontalScrollView {
     private View content;
     private boolean clickToClose = false;
     private static int contentPaddingTop = 30;
+    private boolean scroll = true;
 
     public LockerView(Context context,AttributeSet attributeSet) {
         super(context,attributeSet);
@@ -100,6 +101,7 @@ public class LockerView extends HorizontalScrollView {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         int action = event.getAction();
+        if(!scroll) return scroll;
         switch (action)
         {
             case MotionEvent.ACTION_DOWN:
@@ -121,10 +123,14 @@ public class LockerView extends HorizontalScrollView {
                     menuOpened = true;
                 }
                 return true;
+            default:
+                return super.onTouchEvent(event);
         }
-        return super.onTouchEvent(event);
     }
 
+    /**
+     * close the left menu
+     */
     public void closeMenu() {
         if(menuOpened) {
             this.smoothScrollTo(menuWidth,0);
@@ -132,12 +138,18 @@ public class LockerView extends HorizontalScrollView {
         }
     }
 
-
+    /**
+     * open the left menu
+     */
     public void openMenu() {
         if(!menuOpened) {
-            this.smoothScrollTo(0,0);
+            this.smoothScrollTo(0, 0);
             menuOpened = true;
         }
+    }
+
+    public void openScroll(boolean scroll) {
+        this.scroll = scroll;
     }
 
     public boolean isMenuOpened() {
