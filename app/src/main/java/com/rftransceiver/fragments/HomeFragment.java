@@ -393,7 +393,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 switch (motionEvent.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        if(callback != null) callback.setMenuScroll(false);
                         btnSounds.setSelected(true);
                         soundPool.play(soundsId,1,1,1,0,1);
                         sendSounds = true;
@@ -423,7 +422,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                         return true;
                     case MotionEvent.ACTION_CANCEL:
                     case MotionEvent.ACTION_UP:
-                        if(callback != null) callback.setMenuScroll(true);
                         btnSounds.setSelected(false);
                         if(sendSounds && callback != null) callback.stopSendSounds();
                         sendSounds = false;
@@ -953,14 +951,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
          * call to reset cms
          */
         void resetCms();
-
-        /**
-         * if true ,then can open left menu by right slide
-         * if false ,can't do it
-         * @param b
-         */
-        void setMenuScroll(boolean b);
-
     }
 
     @Override

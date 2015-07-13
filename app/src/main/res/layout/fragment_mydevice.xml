@@ -2,31 +2,18 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent">
 
-    <RelativeLayout
+    <include layout="@layout/view_simple_top"
         android:layout_width="match_parent"
         android:layout_height="50dp"
-        android:background="@color/dark_blue"
-        android:id="@+id/rl_top_mydevice">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:textSize="18sp"
-            android:textColor="@color/white"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:layout_centerVertical="true"
-            android:layout_marginStart="16dp"
-            android:text="@string/my_device"/>
-
-    </RelativeLayout>
+        android:id="@+id/include_top_mydevice"
+        />
 
     <ImageView
         android:layout_width="120dp"
         android:layout_height="120dp"
         android:src="@drawable/device"
         android:layout_centerHorizontal="true"
-        android:layout_below="@+id/rl_top_mydevice"
+        android:layout_below="@+id/include_top_mydevice"
         android:layout_marginTop="25dp"
         android:id="@+id/img_mydevice_label"
         />
@@ -47,20 +34,19 @@
         android:textSize="17sp"
         android:textColor="@android:color/black"
         android:gravity="start|center_vertical"
-        android:text="@string/find_mydevice"
         android:layout_below="@+id/view_line_mydevice_1"
         android:paddingTop="5dp"
         android:paddingBottom="5dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="15dp"
-        android:id="@+id/tv_find_mydevice"/>
+        android:id="@+id/tv_mydevice_name"/>
 
     <View
         android:layout_width="match_parent"
         android:layout_height="0.5dp"
         android:background="@color/dark_blue"
         android:id="@+id/view_line_mydevice_2"
-        android:layout_below="@+id/tv_find_mydevice"
+        android:layout_below="@+id/tv_mydevice_name"
         android:layout_marginTop="15dp"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"/>
@@ -106,7 +92,7 @@
         android:layout_width="200dp"
         android:layout_height="40dp"
         android:id="@+id/btn_handle_device"
-        android:background="@drawable/tv_sure"
+        android:background="@drawable/btn_my_device"
         android:textColor="@color/white"
         android:gravity="center"
         android:layout_centerHorizontal="true"

@@ -56,19 +56,21 @@ public class BindDeviceFragment extends ListFragment {
     TextView tvHandle;
 
     private BluetoothAdapter adapter;
+
+    private ProgressDialog pd;
     /**
      * callback after find a deivce
      */
     private final BluetoothAdapter.LeScanCallback leScanCallback = new BluetoothAdapter.LeScanCallback() {
         @Override
         public void onLeScan(final BluetoothDevice device, int i, byte[] bytes) {
-            if(device == null) return;
-            if(devices.contains(device)) return;
-            getActivity().runOnUiThread(new Runnable() {
+            if (device == null) return;
+            if (devices.contains(device)) return;
+            mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
                     devices.add(device);
-                    CommonAdapter commonAdapter = (CommonAdapter)getListAdapter();
+                    CommonAdapter commonAdapter = (CommonAdapter) getListAdapter();
                     commonAdapter.notifyDataSetChanged();
                 }
             });
@@ -83,7 +85,7 @@ public class BindDeviceFragment extends ListFragment {
     /**
      * a dialogfragment to indicate is do something
      */
-    private LoadDialogFragment loadDialogFragment;
+    //private LoadDialogFragment loadDialogFragment;
 
     /**
      * @param savedInstanceState
@@ -107,6 +109,8 @@ public class BindDeviceFragment extends ListFragment {
      */
     private BluetoothDevice waitConnectDevice;
 
+    private static final Handler mainHandler = new Handler(Looper.getMainLooper());
+
     private String textSure,textResearch;
 
     @Override
@@ -118,6 +122,7 @@ public class BindDeviceFragment extends ListFragment {
         devices = new ArrayList<>();
         textResearch = getString(R.string.restart_search);
         textSure = getString(R.string.sure);
+        pd = new ProgressDialog(getActivity());
     }
 
     @Override
@@ -167,10 +172,8 @@ public class BindDeviceFragment extends ListFragment {
                 if(tvHandle.getText().toString().equals(textResearch)) {
                     startSearch();
                 }else if(tvHandle.getText().toString().equals(textSure)) {
-                    if(loadDialogFragment == null) {
-                        loadDialogFragment = LoadDialogFragment.getInstance("正在绑定");
-                    }
-                    loadDialogFragment.show(getFragmentManager(),null);
+                    pd.setMessage("正在绑定...");
+                    pd.show();
                     connectDevice();
                 }
             }
@@ -204,9 +207,7 @@ public class BindDeviceFragment extends ListFragment {
      * the device have connected
      */
     public void deviceConnected() {
-        if(loadDialogFragment != null && loadDialogFragment.isVisible()) {
-            loadDialogFragment.dismiss();
-        }
+        if(pd.isShowing()) pd.dismiss();
         setCallback(null);
     }
 
@@ -249,7 +250,8 @@ public class BindDeviceFragment extends ListFragment {
     public void onDestroy() {
         super.onDestroy();
         devices = null;
-        loadDialogFragment =null;
+        if(pd.isShowing()) pd.dismiss();
+        pd = null;
         setCallback(null);
     }
 }

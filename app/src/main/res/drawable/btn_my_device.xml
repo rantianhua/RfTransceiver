@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 如果是没有选中，则表明button的功能是解除绑定，否则为绑定设备-->
+
+    <item android:state_pressed="false" android:state_selected="false">
+        <shape android:shape="rectangle">
+            <corners android:radius="5dp"/>
+            <solid android:color="@color/blue_without_press"/>
+        </shape>
+    </item>
+
+    <item android:state_pressed="true" android:state_selected="false">
+        <shape android:shape="rectangle">
+            <corners android:radius="5dp"/>
+            <solid android:color="@color/blue_with_press"/>
+        </shape>
+    </item>
+
+    <item android:state_pressed="false" android:state_selected="true">
+        <shape android:shape="rectangle">
+            <corners android:radius="5dp"/>
+            <solid android:color="@color/red"/>
+        </shape>
+    </item>
+
+    <item android:state_pressed="true" android:state_selected="true">
+        <shape android:shape="rectangle">
+            <corners android:radius="5dp"/>
+            <solid android:color="@color/red_with_press"/>
+        </shape>
+    </item>
+
+</selector>

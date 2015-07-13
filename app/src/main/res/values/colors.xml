@@ -6,6 +6,7 @@
     <color name="blue_without_press">#0060b1</color>
     <color name="dark_blue">#043564</color>
     <color name="red">#ffa40000</color>
+    <color name="red_with_press">#ffff762c</color>
     <color name="blue">#ff2231ff</color>
 </resources>
 

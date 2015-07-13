@@ -9,6 +9,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.rftransceiver.R;
@@ -28,6 +30,12 @@ public class MyDeviceFragment extends Fragment {
 
     @InjectView(R.id.btn_handle_device)
     Button btnHandle;
+    @InjectView(R.id.img_top_left)
+    ImageView imgBack;
+    @InjectView(R.id.tv_title_left)
+    TextView tvTitle;
+    @InjectView(R.id.tv_mydevice_name)
+    TextView tvMydevice;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -52,25 +60,44 @@ public class MyDeviceFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 String text = btnHandle.getText().toString();
-                if(getString(R.string.bind_device).equals(text)) {
+                if(btnHandle.isSelected()) {
                     //to bind a device
                     if(callback != null) callback.bindDevice();
-                }else if(getString(R.string.unbind_device).equals(text)){
+                }else {
                     //to unbind bounded device
                     unbindDevice();
                 }
-
+                text = null;
+            }
+        });
+        imgBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(getActivity() != null) {
+                    getActivity().onBackPressed();
+                }else {
+                    getFragmentManager().popBackStackImmediate();
+                }
             }
         });
     }
 
     private void initView(View view) {
-        ButterKnife.inject(this,view);
+        ButterKnife.inject(this, view);
         if(haveBindDevice) {
-            btnHandle.setText(getString(R.string.unbind_device));
+            btnHandle.setText(R.string.unbind_device);
+            btnHandle.setSelected(false);
         }else {
-            btnHandle.setText(getString(R.string.bind_device));
+            btnHandle.setText(R.string.bind_device);
+            btnHandle.setSelected(true);
         }
+
+        imgBack.setImageResource(R.drawable.back);
+        tvTitle.setText(R.string.my_device);
+
+        String name = sp.getString(Constants.BIND_DEVICE_NAME,"未知");
+        tvMydevice.setText(name);
+        name = null;
     }
 
     /**
@@ -81,9 +108,11 @@ public class MyDeviceFragment extends Fragment {
         callback.unbindDevice();
         SharedPreferences.Editor editor = sp.edit();
         editor.putString(Constants.BIND_DEVICE_ADDRESS, "");
+        editor.putString(Constants.DEVICE_NAME,"");
         editor.apply();
         Toast.makeText(getActivity(),"已解除绑定",Toast.LENGTH_SHORT).show();
-        btnHandle.setText(getString(R.string.bind_device));
+        btnHandle.setText(R.string.bind_device);
+        btnHandle.setSelected(true);
     }
 
     public void setCallback(CallbackInMyDevice callback) {

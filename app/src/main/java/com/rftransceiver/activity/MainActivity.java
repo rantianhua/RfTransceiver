@@ -2,6 +2,7 @@ package com.rftransceiver.activity;
 
 import android.app.Activity;
 import android.app.Fragment;
+import android.app.FragmentTransaction;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -34,6 +35,7 @@ import com.rftransceiver.db.DBManager;
 import com.rftransceiver.fragments.BindDeviceFragment;
 import com.rftransceiver.fragments.HomeFragment;
 import com.rftransceiver.fragments.LoadDialogFragment;
+import com.rftransceiver.fragments.MyDeviceFragment;
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.GroupUtil;
@@ -124,6 +126,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
      *  the reference of HomeFragment
      */
     private HomeFragment homeFragment;
+
+    /**
+     * MyDeviceFragment to look,bind or unbind device
+     */
+    private MyDeviceFragment myDeviceFragment;
 
     /**
      * the menu to mark send action
@@ -284,11 +291,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
         if(TextUtils.isEmpty(bindAddress)) {
             //choose device to bind
             initBindDeiveFragment();
-            changeFragment(bindDeviceFragment);
+            changeFragment(bindDeviceFragment,false);
         }else {
             needConnectDevice = true;
             initHomeFragment();
-            changeFragment(homeFragment);
+            changeFragment(homeFragment,false);
         }
     }
 
@@ -305,9 +312,14 @@ public class MainActivity extends Activity implements View.OnClickListener,
      *
      * @param fragment needed display
      */
-    private void changeFragment(Fragment fragment) {
-        getFragmentManager().beginTransaction().replace(R.id.frame_content,fragment)
-                .commit();
+    private void changeFragment(Fragment fragment,boolean addToback) {
+        FragmentTransaction transaction = getFragmentManager().beginTransaction();
+        transaction.replace(R.id.frame_content, fragment);
+        if(addToback) {
+            transaction.addToBackStack(null);
+        }
+        transaction.commitAllowingStateLoss();
+        transaction = null;
     }
 
     private void iniInterphone() {
@@ -357,6 +369,33 @@ public class MainActivity extends Activity implements View.OnClickListener,
         if(bindDeviceFragment == null) {
             bindDeviceFragment = new BindDeviceFragment();
             bindDeviceFragment.setCallback(this);
+        }
+    }
+
+    private void initMyDeviceFragment() {
+        if(myDeviceFragment == null) {
+            myDeviceFragment = new MyDeviceFragment();
+            myDeviceFragment.setCallback(new MyDeviceFragment.CallbackInMyDevice() {
+                @Override
+                public void bindDevice() {
+                    //call to bind device
+                    initBindDeiveFragment();
+                    changeFragment(bindDeviceFragment,
+                            homeFragment != null && homeFragment.isAdded());
+                    lockerView.closeMenu();
+                }
+
+                @Override
+                public void unbindDevice() {
+                    //call to unbind device
+                    if(bluetoothLeService != null && deviceBinded) {
+                        bluetoothLeService.disconnect();
+                    }
+                    deviceBinded = false;
+                    bindAddress = null;
+                    deviceName = null;
+                }
+            });
         }
     }
 
@@ -483,7 +522,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private void groupAction(int mode) {
         Intent intent = new Intent(this,GroupActivity.class);
         intent.putExtra(GroupActivity.ACTION_MODE,mode);
-        startActivityForResult(intent,REQUEST_GROUP);
+        startActivityForResult(intent, REQUEST_GROUP);
     }
 
     private void sendAsyncWord() {
@@ -576,14 +615,16 @@ public class MainActivity extends Activity implements View.OnClickListener,
                 groupAction(0);
                 break;
             case R.id.tv_menu_my_device:
-                startActivityForResult(new Intent(MainActivity.this,
-                        MyDeviceActivity.class),REQUEST_MYDEVICE);
+                initMyDeviceFragment();
+                changeFragment(myDeviceFragment,
+                        homeFragment != null && homeFragment.isAdded());
                 break;
             case R.id.tv_menu_interphone:
-                if(homeFragment != null && homeFragment.isVisible()) return;
-                initHomeFragment();
-                changeFragment(homeFragment);
                 lockerView.toggleMenu();
+                if(homeFragment != null && homeFragment.isVisible())
+                    return;
+                initHomeFragment();
+                changeFragment(homeFragment,false);
                 break;
             case R.id.tv_menu_setting:
                 startActivityForResult(new Intent(MainActivity.this,
@@ -601,15 +642,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
     @Override
     public void toggleMenu() {
         lockerView.toggleMenu();
-    }
-
-    /**
-     * call back in HomeFragment
-     * @param b
-     */
-    @Override
-    public void setMenuScroll(boolean b) {
-        lockerView.openScroll(b);
     }
 
     /**
@@ -683,7 +715,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
         if(bindDeviceFragment != null) {
             bindDeviceFragment.deviceConnected();
             initHomeFragment();
-            changeFragment(homeFragment);
+            changeFragment(homeFragment,false);
             saveBoundedDevice();
             bindDeviceFragment = null;
         }
@@ -779,28 +811,15 @@ public class MainActivity extends Activity implements View.OnClickListener,
         if(bluetoothLeService != null) {
             bluetoothLeService.connect(bindAddress);
         }
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putString(Constants.BIND_DEVICE_ADDRESS,bindAddress);
+        editor.putString(Constants.BIND_DEVICE_NAME,deviceName);
+        editor.apply();
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(requestCode == REQUEST_MYDEVICE && resultCode ==Activity.RESULT_OK && data != null) {
-            /**
-             * in MyDeviceActivity,need to rebind or unbind device
-             */
-            switch (data.getStringExtra(MyDeviceActivity.EXTRA_INMYDEVICE)) {
-                case MyDeviceActivity.BINDDEVICE:
-                    initBindDeiveFragment();
-                    changeFragment(bindDeviceFragment);
-                    lockerView.closeMenu();
-                    break;
-                case MyDeviceActivity.UNBINDDEVICE:
-                    if(bluetoothLeService != null && deviceBinded) {
-                        bluetoothLeService.disconnect();
-                        deviceBinded = false;
-                    }
-                    break;
-            }
-        }else if(requestCode == REQUEST_GROUP && resultCode == Activity.RESULT_OK && data != null) {
+        if(requestCode == REQUEST_GROUP && resultCode == Activity.RESULT_OK && data != null) {
             /**
              * in GroupActivity,after finish create or add group,send a GroupEntity
              */
@@ -812,7 +831,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
             if(groupEntity == null) return;
             if(homeFragment == null) {
                 initHomeFragment();
-                changeFragment(homeFragment);
+                changeFragment(homeFragment,false);
             }
             homeFragment.updateGroup(groupEntity);
             lockerView.closeMenu();
@@ -824,7 +843,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                 send(SendAction.Address,address);
         }else if(requestCode == REQUEST_CHANGECHANNEL && resultCode == Activity.RESULT_OK
                 && data != null) {
-            int channel = data.getIntExtra(Constants.SELECTED_CHANNEL,-1);
+            int channel = data.getIntExtra(Constants.SELECTED_CHANNEL, -1);
             if(channel == -1) return;
             changeChanel((byte)channel);
         }
