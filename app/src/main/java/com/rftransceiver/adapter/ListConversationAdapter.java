@@ -3,6 +3,7 @@ package com.rftransceiver.adapter;
 import android.app.FragmentManager;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.text.Html;
 import android.text.Spannable;
@@ -35,6 +36,7 @@ public class ListConversationAdapter extends BaseAdapter {
     private List<ConversationData> listData = new ArrayList<>();
     private LayoutInflater inflater = null;
     private FragmentManager fm;
+    private TextView tvImgProgress;
 
     /**
      * parse expression data from content
@@ -109,6 +111,7 @@ public class ListConversationAdapter extends BaseAdapter {
                 case RIGHT_PIC:
                     convertView = inflater.inflate(R.layout.list_right_pic,null);
                     hodler.imgData = (ImageView) convertView.findViewById(R.id.img_data_right);
+                    hodler.tvImgProgress = (TextView) convertView.findViewById(R.id.tv_img_progress);
                     break;
                 case RIGHT_ADDRESS:
                     convertView = inflater.inflate(R.layout.list_right_address,null);
@@ -128,11 +131,6 @@ public class ListConversationAdapter extends BaseAdapter {
             if(data.getPhotoDrawable() != null) {
                 hodler.imgPhoto.setImageDrawable(data.getPhotoDrawable());
             }
-//            String instance = data.getInstance();
-//            if(instance != null) {
-//                hodler.tvLevel.setText(instance);
-//            }
-//            hodler.imgLevel.setImageResource(data.getLevelId());
         }
         switch (data.getConversationType()) {
             case RIGHT_TEXT:
@@ -141,10 +139,15 @@ public class ListConversationAdapter extends BaseAdapter {
                 hodler.tvContent.setText(spannable);
                 break;
             case LEFT_PIC:
+                if(data.getBitmap() != null) {
+                    hodler.imgData.setImageBitmap(data.getBitmap());
+                }
+                break;
             case RIGHT_PIC:
                 if(data.getBitmap() != null) {
                     hodler.imgData.setImageBitmap(data.getBitmap());
                 }
+                tvImgProgress = hodler.tvImgProgress;
                 break;
             case LEFT_ADDRESS:
             case RIGHT_ADDRESS:
@@ -168,6 +171,15 @@ public class ListConversationAdapter extends BaseAdapter {
         return convertView;
     }
 
+    public void updateImgageProgress(int percent) {
+        if(tvImgProgress != null && tvImgProgress.getVisibility() == View.VISIBLE) {
+            tvImgProgress.setText(percent + "%");
+            if(percent == 100) {
+                tvImgProgress.setVisibility(View.INVISIBLE);
+            }
+        }
+    }
+
     /**
      * update data source
      * @param dataLists
@@ -179,7 +191,7 @@ public class ListConversationAdapter extends BaseAdapter {
     }
 
     class ViewHodler {
-        TextView tvContent,tvSounds;
+        TextView tvContent,tvSounds,tvImgProgress;
         ImageView imgPhoto,imgData;
         FrameLayout container;
     }

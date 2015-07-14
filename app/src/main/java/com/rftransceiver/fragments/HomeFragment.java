@@ -179,7 +179,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     }
     private MenuAction menuAction = MenuAction.NONE;
 
-    private static final android.os.Handler mainHandler = new android.os.Handler(Looper.myLooper());
+    private static final android.os.Handler mainHandler = new android.os.Handler(Looper.getMainLooper());
 
     /**
      * to play sounds for button click
@@ -200,7 +200,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
 //        imgSendSize = getResources().getDimensionPixelSize(R.dimen.img_data_height)
 //             * getResources().getDimensionPixelSize(R.dimen.img_data_width);
 
-        imgSendSize = 40 * 80;
+        imgSendSize = 100 * 120;
         tipConnectLose = getResources().getString(R.string.connection_lose);
         tipReconnecting = getResources().getString(R.string.reconnecting);
         tipConnecSuccess = getResources().getString(R.string.connect_success);
@@ -518,6 +518,15 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         }
     }
 
+    public void upteImageProgress(final int percent) {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                conversationAdapter.updateImgageProgress(percent);
+            }
+        });
+    }
+
     /**
      * show right menu with translate animation
      */
@@ -700,6 +709,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                     case RESET:
                         if(callback != null) {
                             callback.resetCms();
+                            endReceive(0);
+                            btnSounds.setEnabled(true);
                         }
                         break;
                 }
@@ -759,7 +770,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                     drawable = member.getDrawable();
                     if(tye == 0) {
                         tvTip.setVisibility(View.VISIBLE);
-                        tvTip.setText(member.getName()+"正在说话...");
+                        tvTip.setText(member.getName() + "正在说话...");
+                        btnSounds.setEnabled(false);
                     }
                     break;
                 }
@@ -801,6 +813,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
            //stop to recevie sounds data
             tvTip.setText("");
             tvTip.setVisibility(View.GONE);
+            btnSounds.setEnabled(true);
         }
     }
 
@@ -838,12 +851,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     private void hideSoft() {
         InputMethodManager imm = (InputMethodManager)getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(etSendMessage.getWindowToken(), 0);
-    }
-
-    public void reset() {
-//        btnSounds.setText(getString(R.string.record_sound));
-//        btnSounds.setClickable(true);
-//        btnSend.setClickable(true);
     }
 
     /**
@@ -909,7 +916,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     public void updateGroup(final GroupEntity groupEntity) {
         this.groupEntity = groupEntity;
         if(groupEntity == null) return;
-
+        if(callback != null) callback.setMyId(groupEntity.getTempId());
         final String name = groupEntity.getName();
         homeTitle = name
                 +"(" + groupEntity.getMembers().size() + "人" + ")";
@@ -951,6 +958,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
          * call to reset cms
          */
         void resetCms();
+
+        void setMyId(int tempId);
     }
 
     @Override

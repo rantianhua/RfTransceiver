@@ -3,9 +3,12 @@ package com.source.text;
 import android.util.Log;
 
 import com.rftransceiver.datasets.MyDataQueue;
+import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.PoolThreadUtil;
 import com.source.DataPacketOptions;
 import com.source.SendMessageListener;
+
+import java.math.BigDecimal;
 
 /**
  * Created by Rth on 2015/4/29.
@@ -41,6 +44,17 @@ public class TextEntity implements Runnable{
      * a cache to save text data
      */
     private byte[] temp;
+
+    /**
+     * every packet's real data's length
+     */
+    private int realDataLen;
+
+    /**
+     * used for imageData
+     */
+    private float imgDataLen;
+    private float sendDataLen;
 
     public TextEntity() {
 
@@ -86,11 +100,11 @@ public class TextEntity implements Runnable{
     private volatile boolean addImageData = true;
     private void unpacking(String content) {
         initTemp(DataPacketOptions.TextType.Image);
+        imgDataLen = 0;
         byte[] sourceData = content.getBytes();
-        int len = sourceData.length;
-        int realDataLen = (options.getLength()-1-options.getOffset());
-        int remainder = len % realDataLen;
-        int count = len / realDataLen;
+        imgDataLen = sourceData.length;
+        int remainder = (int)(imgDataLen % realDataLen);
+        int count = (int) imgDataLen / realDataLen;
         PoolThreadUtil.getInstance().addTask(new SendImageData());
         for(int i = 0;i <= count;i++) {
             if(i != count) {
@@ -131,7 +145,12 @@ public class TextEntity implements Runnable{
                 byte[] imageData = (byte[])dataQueue.get();
                 if(imageData != null) {
                     if(sendListener == null) return;
-                    sendListener.sendPacketedData(imageData,false);
+                    if(imageData[options.getRealLenIndex()] == options.getRealLen()) {
+                        sendDataLen += realDataLen;
+                    }else {
+                        sendDataLen += imageData[options.getRealLenIndex()];
+                    }
+                    sendListener.sendPacketedData(imageData,false,getSendImgPercent());
                     try {
                         Thread.sleep(100);
                     }catch (Exception e) {
@@ -141,8 +160,14 @@ public class TextEntity implements Runnable{
             }
             int size = dataQueue.getSize();
             for(int i = 0;i < size;i++) {
-                if(sendListener == null) return;
-                sendListener.sendPacketedData((byte[])dataQueue.get(),false);
+                byte[] data = (byte[])dataQueue.get();
+                if(sendListener == null || data == null) return;
+                if(data[options.getRealLenIndex()] == options.getRealLen()) {
+                    sendDataLen += realDataLen;
+                }else {
+                    sendDataLen += data[options.getRealLenIndex()];
+                }
+                sendListener.sendPacketedData(data,false,getSendImgPercent());
                 try {
                     Thread.sleep(100);
                 }catch (Exception e) {
@@ -150,6 +175,14 @@ public class TextEntity implements Runnable{
                 }
             }
         }
+    }
+
+    private int  getSendImgPercent() {
+        float scale = sendDataLen / imgDataLen;
+        scale *= 100;
+        int per = (int)scale;
+        if(per == 100) sendDataLen = 0;
+        return per;
     }
 
     private void initTemp(DataPacketOptions.TextType type){
@@ -185,6 +218,7 @@ public class TextEntity implements Runnable{
         this.options = options;
         if(options != null) {
             index = options.getOffset();
+            realDataLen = (options.getLength()-1-options.getOffset());
         }
     }
 }

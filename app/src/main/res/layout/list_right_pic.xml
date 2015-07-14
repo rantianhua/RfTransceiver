@@ -10,10 +10,34 @@
     <ImageView
         android:layout_width="@dimen/img_data_width"
         android:layout_height="@dimen/img_data_height"
-        android:id="@+id/img_data_right"
+        android:id="@+id/img_data_right_stroke"
         android:layout_centerVertical="true"
         android:layout_alignParentEnd="true"
         android:background="@drawable/frame_map_bg"
+        />
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/img_data_right_stroke"
+        android:layout_alignEnd="@+id/img_data_right_stroke"
+        android:layout_alignTop="@+id/img_data_right_stroke"
+        android:layout_alignBottom="@+id/img_data_right_stroke"
+        android:layout_margin="1dp"
+        android:id="@+id/img_data_right"
+        android:scaleType="centerCrop"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="30dp"
+        android:gravity="center"
+        android:layout_alignBottom="@+id/img_data_right_stroke"
+        android:layout_alignStart="@+id/img_data_right_stroke"
+        android:layout_alignEnd="@+id/img_data_right_stroke"
+        android:textColor="@color/white"
+        android:id="@+id/tv_img_progress"
+        android:background="@drawable/tv_progress_with_img"
         />
 
 </RelativeLayout>

@@ -101,7 +101,6 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
             e.printStackTrace();
         }
         geocoder.setOnGetGeoCodeResultListener(getGeoCoderResultListener);
-
     }
 
     @Nullable
@@ -164,7 +163,9 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
     public void onResume() {
         mapView.onResume();
         super.onResume();
-        locationClient.requestLocation();
+        if(locationClient != null) {
+            locationClient.requestLocation();
+        }
     }
 
     @Override

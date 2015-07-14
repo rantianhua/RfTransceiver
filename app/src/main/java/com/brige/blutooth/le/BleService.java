@@ -213,7 +213,7 @@ public class BleService extends Service {
      * @return
      */
     private boolean canWrite() {
-        if(writeCharacteristic == null && callback == null) return false;
+        if(callback == null) return false;
         if(writeCharacteristic == null) {
             if(mConnectionState == STATE_DISCONNECTED) {
                 callback.bleConnection(false);
@@ -348,6 +348,8 @@ public class BleService extends Service {
             return;
         }
         mBluetoothGatt.disconnect();
+        mConnectionState = STATE_DISCONNECTED;
+        mBluetoothDeviceAddress = null;
     }
 
     /**

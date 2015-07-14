@@ -34,7 +34,8 @@ public class TextParser {
             makeText(data,data[options.getRealLenIndex()]);
             byte[] sendData = new byte[length];
             System.arraycopy(textTemp,0,sendData,0,length);
-            int tag = 1;
+            length = 0;
+            int tag = -1;
             switch (type) {
                 case Words:
                     tag = Constants.READ_WORDS;
@@ -46,10 +47,11 @@ public class TextParser {
                     tag = Constants.READ_Image;
                     break;
             }
-            handler.obtainMessage(Constants.MESSAGE_READ,
-                    tag,memberId,sendData).sendToTarget();
+            if(tag != -1) {
+                handler.obtainMessage(Constants.MESSAGE_READ,
+                        tag,memberId,sendData).sendToTarget();
+            }
             sendData = null;
-            length = 0;
         }
 
     }

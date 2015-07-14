@@ -207,7 +207,7 @@ public class BindDeviceFragment extends ListFragment {
      * the device have connected
      */
     public void deviceConnected() {
-        if(pd.isShowing()) pd.dismiss();
+        if(pd != null && pd.isShowing()) pd.dismiss();
         setCallback(null);
     }
 

@@ -112,7 +112,6 @@ public class Constants {
      * instruction packets
      */
     public static final byte[] RESET = new byte[Instruction_Packet_Length];
-    public static final byte[] ASYNC_WORD = new byte[Instruction_Packet_Length];
     public static final byte[] CHANNEL = new byte[Instruction_Packet_Length];
     public static final byte[] RSSI = new byte[Instruction_Packet_Length];
     public static final byte[] CHANNEL_STATE = new byte[Instruction_Packet_Length];
@@ -121,10 +120,6 @@ public class Constants {
         RESET[0] = Instruction_Packet_Head;
         RESET[RESET.length-1] = Instruction_Packet_Tail;
         RESET[1] = (byte)0xff;
-
-        ASYNC_WORD[0] = Instruction_Packet_Head;
-        ASYNC_WORD[ASYNC_WORD.length-1] = Instruction_Packet_Tail;
-        ASYNC_WORD[1] = (byte)0x01;
 
         CHANNEL[0] = Instruction_Packet_Head;
         CHANNEL[CHANNEL.length-1] = Instruction_Packet_Tail;

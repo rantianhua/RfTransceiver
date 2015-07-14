@@ -1,8 +1,12 @@
 package com.rftransceiver.activity;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.Fragment;
+import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -20,6 +24,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
@@ -291,11 +296,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
         if(TextUtils.isEmpty(bindAddress)) {
             //choose device to bind
             initBindDeiveFragment();
-            changeFragment(bindDeviceFragment,false);
+            changeFragment(bindDeviceFragment);
         }else {
             needConnectDevice = true;
             initHomeFragment();
-            changeFragment(homeFragment,false);
+            changeFragment(homeFragment);
         }
     }
 
@@ -312,11 +317,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
      *
      * @param fragment needed display
      */
-    private void changeFragment(Fragment fragment,boolean addToback) {
+    private void changeFragment(Fragment fragment) {
         FragmentTransaction transaction = getFragmentManager().beginTransaction();
         transaction.replace(R.id.frame_content, fragment);
-        if(addToback) {
-            transaction.addToBackStack(null);
+        if(fragment instanceof MyDeviceFragment) {
+            transaction.addToBackStack("myDevice");
         }
         transaction.commitAllowingStateLoss();
         transaction = null;
@@ -375,28 +380,36 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private void initMyDeviceFragment() {
         if(myDeviceFragment == null) {
             myDeviceFragment = new MyDeviceFragment();
-            myDeviceFragment.setCallback(new MyDeviceFragment.CallbackInMyDevice() {
-                @Override
-                public void bindDevice() {
-                    //call to bind device
-                    initBindDeiveFragment();
-                    changeFragment(bindDeviceFragment,
-                            homeFragment != null && homeFragment.isAdded());
-                    lockerView.closeMenu();
-                }
-
-                @Override
-                public void unbindDevice() {
-                    //call to unbind device
-                    if(bluetoothLeService != null && deviceBinded) {
-                        bluetoothLeService.disconnect();
-                    }
-                    deviceBinded = false;
-                    bindAddress = null;
-                    deviceName = null;
-                }
-            });
         }
+        myDeviceFragment.setCallback(new MyDeviceFragment.CallbackInMyDevice() {
+            @Override
+            public void bindDevice() {
+                //call to bind device
+                getFragmentManager().popBackStackImmediate();
+                initBindDeiveFragment();
+                changeFragment(bindDeviceFragment);
+            }
+
+            @Override
+            public void unbindDevice() {
+                //call to unbind device
+                if(bluetoothLeService != null && deviceBinded) {
+                    bluetoothLeService.disconnect();
+                }
+                saveBoundedDevice("","");
+                deviceBinded = false;
+                bindAddress = null;
+                deviceName = null;
+            }
+
+            /**
+             * @param open decide to open or close scroll for lockview
+             */
+            @Override
+            public void openScrollLockView(boolean open) {
+                lockerView.openScroll(open);
+            }
+        });
     }
 
     private void initDataExchangeHandler() {
@@ -437,10 +450,17 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                 break;
                             case Constants.READ_ADDRESS:
                                 byte[] add = (byte[]) msg.obj;
+                                String address = null;
                                 if(add != null) {
-                                    if(homeFragment != null) {
+                                    address = new String(add);
+                                }
+                                if(address != null) {
+                                    String[] addrs = address.split("\\|");
+                                    if(addrs.length == 2 && homeFragment != null) {
                                         homeFragment.receivingData(2,new String(add),msg.arg2);
                                     }
+                                    addrs = null;
+                                    address = null;
                                 }
                                 break;
                             case Constants.READ_Image:
@@ -528,7 +548,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private void sendAsyncWord() {
         if(bluetoothLeService == null || asyncWord == null) return;
         if(!haveSetAsyncWord) {
-            bluetoothLeService.writeInstruction(Constants.ASYNC_WORD);
+            bluetoothLeService.writeInstruction(asyncWord);
         }
     }
 
@@ -538,7 +558,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
         record.stopRecording();
         receiver.clear();
         parseFactory.resetSounds();
-        homeFragment.reset();
         if(write) {
             if(bluetoothLeService != null) {
                 bluetoothLeService.writeInstruction(Constants.RESET);
@@ -616,15 +635,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
                 break;
             case R.id.tv_menu_my_device:
                 initMyDeviceFragment();
-                changeFragment(myDeviceFragment,
-                        homeFragment != null && homeFragment.isAdded());
+                changeFragment(myDeviceFragment);
+                lockerView.closeMenu();
                 break;
             case R.id.tv_menu_interphone:
-                lockerView.toggleMenu();
-                if(homeFragment != null && homeFragment.isVisible())
-                    return;
-                initHomeFragment();
-                changeFragment(homeFragment,false);
+                showInterphone();
                 break;
             case R.id.tv_menu_setting:
                 startActivityForResult(new Intent(MainActivity.this,
@@ -634,6 +649,20 @@ public class MainActivity extends Activity implements View.OnClickListener,
                 MainActivity.this.finish();
                 break;
         }
+    }
+
+    private void showInterphone() {
+        if(deviceName == null || bindAddress == null) {
+            new AlertDialog.Builder(this).setMessage("绑定设备后才能进入对讲机开始聊天！")
+                    .setPositiveButton(R.string.sure, null)
+                    .show();
+            return;
+        }
+        lockerView.toggleMenu();
+        if(homeFragment != null && homeFragment.isVisible())
+            return;
+        initHomeFragment();
+        changeFragment(homeFragment);
     }
 
     /**
@@ -686,6 +715,17 @@ public class MainActivity extends Activity implements View.OnClickListener,
         data = null;
     }
 
+    @Override
+    public void sendPacketedData(byte[] data, boolean end, int percent) {
+        if(data == null || bluetoothLeService == null) return;
+        data[Constants.Group_Member_Id_index] = (byte)myId;
+        bluetoothLeService.write(data);
+        if(homeFragment != null && homeFragment.isVisible()) {
+            homeFragment.upteImageProgress(percent);
+        }
+        data = null;
+    }
+
     /**
      * callback in BleService
      * @param data
@@ -715,11 +755,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
         if(bindDeviceFragment != null) {
             bindDeviceFragment.deviceConnected();
             initHomeFragment();
-            changeFragment(homeFragment,false);
-            saveBoundedDevice();
+            changeFragment(homeFragment);
             bindDeviceFragment = null;
         }
-        if(homeFragment != null && homeFragment.isVisible()) {
+        if(homeFragment != null) {
             //homeFragment.bleLose();
             homeFragment.deviceConnected(connect);
         }
@@ -732,10 +771,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
     /**
      * save have bounded device
      */
-    private void saveBoundedDevice() {
+    private void saveBoundedDevice(String name,String address) {
         SharedPreferences.Editor editor = sp.edit();
-        editor.putString(Constants.BIND_DEVICE_ADDRESS,bindAddress);
-        editor.putString(Constants.BIND_DEVICE_NAME,deviceName);
+        editor.putString(Constants.BIND_DEVICE_ADDRESS,address);
+        editor.putString(Constants.BIND_DEVICE_NAME,name);
         editor.apply();
     }
 
@@ -745,6 +784,9 @@ public class MainActivity extends Activity implements View.OnClickListener,
      */
     @Override
     public void deviceNotWork() {
+        if(homeFragment != null) {
+            homeFragment.deviceConnected(false);
+        }
         showToast("请确保设备正在工作");
     }
 
@@ -782,6 +824,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
         resetCms(true);
     }
 
+    @Override
+    public void setMyId(int tempId) {
+        this.myId = tempId;
+    }
+
     /**
      * call in HomeFragment
      * reconnect device
@@ -811,10 +858,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
         if(bluetoothLeService != null) {
             bluetoothLeService.connect(bindAddress);
         }
-        SharedPreferences.Editor editor = sp.edit();
-        editor.putString(Constants.BIND_DEVICE_ADDRESS,bindAddress);
-        editor.putString(Constants.BIND_DEVICE_NAME,deviceName);
-        editor.apply();
+        saveBoundedDevice(deviceName, bindAddress);
     }
 
     @Override
@@ -831,7 +875,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
             if(groupEntity == null) return;
             if(homeFragment == null) {
                 initHomeFragment();
-                changeFragment(homeFragment,false);
+                changeFragment(homeFragment);
             }
             homeFragment.updateGroup(groupEntity);
             lockerView.closeMenu();

@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -59,25 +60,19 @@ public class MyDeviceFragment extends Fragment {
         btnHandle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String text = btnHandle.getText().toString();
-                if(btnHandle.isSelected()) {
+                if (btnHandle.isSelected()) {
                     //to bind a device
-                    if(callback != null) callback.bindDevice();
-                }else {
+                    if (callback != null) callback.bindDevice();
+                } else {
                     //to unbind bounded device
                     unbindDevice();
                 }
-                text = null;
             }
         });
         imgBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(getActivity() != null) {
-                    getActivity().onBackPressed();
-                }else {
-                    getFragmentManager().popBackStackImmediate();
-                }
+                getFragmentManager().popBackStackImmediate();
             }
         });
     }
@@ -95,7 +90,7 @@ public class MyDeviceFragment extends Fragment {
         imgBack.setImageResource(R.drawable.back);
         tvTitle.setText(R.string.my_device);
 
-        String name = sp.getString(Constants.BIND_DEVICE_NAME,"未知");
+        String name = sp.getString(Constants.BIND_DEVICE_NAME,"未绑定任何设备");
         tvMydevice.setText(name);
         name = null;
     }
@@ -106,12 +101,8 @@ public class MyDeviceFragment extends Fragment {
     private void unbindDevice() {
         if(callback == null) return;
         callback.unbindDevice();
-        SharedPreferences.Editor editor = sp.edit();
-        editor.putString(Constants.BIND_DEVICE_ADDRESS, "");
-        editor.putString(Constants.DEVICE_NAME,"");
-        editor.apply();
-        Toast.makeText(getActivity(),"已解除绑定",Toast.LENGTH_SHORT).show();
         btnHandle.setText(R.string.bind_device);
+        tvMydevice.setText("已解绑" + tvMydevice.getText().toString());
         btnHandle.setSelected(true);
     }
 
@@ -119,18 +110,24 @@ public class MyDeviceFragment extends Fragment {
         this.callback = callback;
     }
 
-    public CallbackInMyDevice getCallback() {
-        return callback;
+    @Override
+    public void onResume() {
+        super.onResume();
+        Log.e("mydevie", "onresume...");
+        if(callback != null) callback.openScrollLockView(false);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        Log.e("mydevie", "ondestroy...");
+        if(callback != null) callback.openScrollLockView(true);
         setCallback(null);
     }
 
     public interface CallbackInMyDevice {
         void bindDevice();
         void unbindDevice();
+        void openScrollLockView(boolean open);
     }
 }

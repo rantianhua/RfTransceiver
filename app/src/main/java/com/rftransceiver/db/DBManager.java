@@ -164,10 +164,11 @@ public class DBManager {
             if(!TextUtils.isEmpty(name) && !TextUtils.isEmpty(async)) {
                 byte[] asyncword = Base64.decode(async,Base64.DEFAULT);
                 groupEntity = new GroupEntity(name,asyncword);
+                if(myId != -1) {
+                    groupEntity.setTempId(myId);
+                }
             }
-            if(myId != -1) {
-                groupEntity.setTempId(myId);
-            }
+
             if(groupEntity != null) {
                 //find all members
                 String sql = "select * from " + DatabaseHelper.TABLE_MEMBER
