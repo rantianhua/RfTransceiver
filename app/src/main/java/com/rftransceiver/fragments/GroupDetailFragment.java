@@ -1,7 +1,7 @@
 package com.rftransceiver.fragments;
 
 import android.app.Fragment;
-import android.app.FragmentManager;
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -14,12 +14,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.rftransceiver.R;
+import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.group.GroupMember;
 import com.rftransceiver.util.CommonAdapter;
 import com.rftransceiver.util.CommonViewHolder;
-
-import java.util.List;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -39,16 +38,14 @@ public class GroupDetailFragment extends Fragment {
     TextView tvGroupName;
     @InjectView(R.id.tv_group_channel)
     TextView tvChannel;
-    @InjectView(R.id.img_switch_add_contacts)
-    ImageView imgContacts;
     @InjectView(R.id.img_switch_group_sounds)
     ImageView imgSounds;
     @InjectView(R.id.btn_clear_chat)
     Button btnClearChat;
-    @InjectView(R.id.btn_exit_connect)
-    Button btnExitConnect;
-    @InjectView(R.id.btn_exit_and_quit)
-    Button btnExitAndDelete;
+    @InjectView(R.id.btn_exit_group)
+    Button btnExitGroup;
+    @InjectView(R.id.btn_delete_group)
+    Button btnDeleteGroup;
 
     private GroupEntity groupEntity;
     private String textBack;
@@ -63,7 +60,7 @@ public class GroupDetailFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_group_detail,container,false);
+        View view = inflater.inflate(R.layout.fragment_group_detail, container, false);
         initView(view);
         inttEvent();
         return view;
@@ -73,44 +70,37 @@ public class GroupDetailFragment extends Fragment {
         ButterKnife.inject(this,view);
         imgBack.setImageResource(R.drawable.back);
         tvTitle.setText(textBack);
-        gridView.setAdapter(new CommonAdapter<GroupMember>(getActivity(),groupEntity.getMembers(),
+        gridView.setAdapter(new CommonAdapter<GroupMember>(getActivity(), groupEntity.getMembers(),
                 R.layout.grid_item_members) {
             @Override
             public void convert(CommonViewHolder helper, GroupMember item) {
                 Drawable drawable = item.getDrawable();
-                if(drawable != null) {
-                    helper.setImageDrawable(R.id.img_member_photo,drawable);
+                if (drawable != null) {
+                    helper.setImageDrawable(R.id.img_member_photo, drawable);
                 }
-                helper.setText(R.id.tv_member_name,item.getName());
+                helper.setText(R.id.tv_member_name, item.getName());
             }
         });
         tvGroupName.setText(groupEntity.getName());
+
+        String[] channels = getResources().getStringArray(R.array.channel);
+        tvChannel.setText(channels[MainActivity.CURRENT_CHANNEL]);
+        channels = null;
     }
 
     private void inttEvent() {
-        tvChannel.setOnClickListener(new View.OnClickListener() {
+        imgBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
-            }
-        });
-        imgContacts.setSelected(true);
-        imgContacts.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if(imgContacts.isSelected()) {
-                    imgContacts.setSelected(false);
-                }else {
-                    imgContacts.setSelected(true);
-                }
+                getFragmentManager().popBackStackImmediate();
             }
         });
         imgSounds.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(imgSounds.isSelected()) {
+                if (imgSounds.isSelected()) {
                     imgSounds.setSelected(false);
-                }else {
+                } else {
                     imgSounds.setSelected(true);
                 }
             }
@@ -118,21 +108,34 @@ public class GroupDetailFragment extends Fragment {
         btnClearChat.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                sendAction(0, null);
             }
         });
-        btnExitConnect.setOnClickListener(new View.OnClickListener() {
+        btnExitGroup.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
             }
         });
-        btnExitAndDelete.setOnClickListener(new View.OnClickListener() {
+        btnDeleteGroup.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
             }
         });
+    }
+
+    /**
+     * all actions  handled by HomeFragment
+     * @param action 0 indicates clear chat records
+     *               1 indicates open the scroll ability of locerview
+     * @param intent
+     */
+    private void sendAction(int action, Intent intent) {
+        if(getTargetFragment() != null) {
+            getTargetFragment().onActivityResult(HomeFragment.REQUEST_GROUP_DETAIL,
+                    action,intent);
+        }
     }
 
     public static GroupDetailFragment getInstance(GroupEntity groupEntity) {
@@ -147,5 +150,6 @@ public class GroupDetailFragment extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         groupEntity = null;
+        sendAction(1,null);
     }
 }

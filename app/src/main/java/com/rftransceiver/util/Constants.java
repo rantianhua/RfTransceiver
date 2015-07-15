@@ -146,4 +146,6 @@ public class Constants {
     public static final String SELECTED_CHANNEL = "selected_channel";
 
     public static final String PRE_GROUP = "pre_group";
+
+    public static boolean SAVE_SOUNDS = true;
 }

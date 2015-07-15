@@ -108,41 +108,7 @@
                 android:layout_below="@+id/tv_group_channel_label"
                 android:layout_marginTop="10dp"/>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/tv_add_to_contacts"
-                android:text="@string/add_to_contacts"
-                android:textSize="16sp"
-                android:textColor="@android:color/black"
-                android:layout_marginStart="16dp"
-                android:gravity="start|center_vertical"
-                android:layout_below="@+id/view_line_group_detail_2"
-                android:layout_marginTop="40dp"
-                android:paddingTop="5dp"
-                android:paddingBottom="5dp"
-                />
 
-            <ImageView
-                android:layout_width="50dp"
-                android:layout_height="wrap_content"
-                android:layout_alignBottom="@+id/tv_add_to_contacts"
-                android:layout_alignTop="@+id/tv_add_to_contacts"
-                android:id="@+id/img_switch_add_contacts"
-                android:layout_alignParentEnd="true"
-                android:layout_marginEnd="16dp"
-                android:src="@drawable/switch_img"
-                />
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="0.5dp"
-                android:background="@color/dark_blue"
-                android:layout_marginStart="20dp"
-                android:layout_marginEnd="20dp"
-                android:id="@+id/view_line_group_detail_3"
-                android:layout_below="@+id/tv_add_to_contacts"
-                android:layout_marginTop="5dp"/>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -153,8 +119,8 @@
                 android:textColor="@android:color/black"
                 android:layout_marginStart="16dp"
                 android:gravity="start|center_vertical"
-                android:layout_below="@+id/view_line_group_detail_3"
-                android:layout_marginTop="5dp"
+                android:layout_below="@+id/view_line_group_detail_2"
+                android:layout_marginTop="15dp"
                 android:paddingTop="5dp"
                 android:paddingBottom="5dp"
                 />
@@ -188,8 +154,8 @@
             <Button
                 android:layout_width="200dp"
                 android:layout_height="40dp"
-                android:text="@string/exit_connect"
-                android:id="@+id/btn_exit_connect"
+                android:text="@string/exit_group"
+                android:id="@+id/btn_exit_group"
                 android:gravity="center"
                 android:layout_centerHorizontal="true"
                 android:background="@drawable/btn_groups_bg"
@@ -202,14 +168,14 @@
             <Button
                 android:layout_width="200dp"
                 android:layout_height="40dp"
-                android:text="@string/exit_group"
-                android:id="@+id/btn_exit_and_quit"
+                android:text="@string/delete_group"
+                android:id="@+id/btn_delete_group"
                 android:gravity="center"
                 android:layout_centerHorizontal="true"
                 android:background="@drawable/btn_groups_bg"
                 android:textColor="@color/white"
                 android:textSize="18sp"
-                android:layout_below="@+id/btn_exit_connect"
+                android:layout_below="@+id/btn_exit_group"
                 android:layout_marginTop="15dp"
                 />
 

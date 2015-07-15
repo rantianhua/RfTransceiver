@@ -1,5 +1,6 @@
 package com.rftransceiver.db;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -17,9 +18,12 @@ import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.group.GroupMember;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.ImageUtil;
+import com.rftransceiver.util.PoolThreadUtil;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Created by rantianhua on 15-6-27.
@@ -40,6 +44,8 @@ public class DBManager {
     private static DBManager dbManager;
 
     private SharedPreferences sp;
+
+    private List<ContentValues> listChats = new ArrayList<>();
 
     private DBManager(Context context) {
         helper = new DatabaseHelper(context);
@@ -117,7 +123,7 @@ public class DBManager {
      */
     private void saveCurrentGid(int gid) {
         SharedPreferences.Editor editor = sp.edit();
-        editor.putInt(Constants.PRE_GROUP,gid);
+        editor.putInt(Constants.PRE_GROUP, gid);
         editor.apply();
     }
 
@@ -137,6 +143,7 @@ public class DBManager {
     public static void close() {
         if(dbManager != null) {
             dbManager.closeDB();
+            dbManager.listChats = null;
             dbManager = null;
         }
     }
@@ -202,5 +209,65 @@ public class DBManager {
             closeDB();
         }
         return groupEntity;
+    }
+
+    /**
+     * save chat data to db
+     * @param data
+     * @param type 0 is sounds data
+     *             1 is text
+     *             2 is address
+     *             3 is picture
+     */
+    public void readyMessage(Object data,int type,int memberId,int groupId) {
+        ContentValues values = new ContentValues();
+        String saveData = null;
+        if(type == 3) {
+            //save picture to local dir
+            String picName = System.currentTimeMillis() + ".jpg";
+            try {
+                File file = new File(picDir,picName);
+                Bitmap bitmap = (Bitmap)data;
+                ImageUtil.savePicToLocal(file,bitmap);
+                saveData = file.getAbsolutePath();
+            }catch (Exception e) {
+                ;
+            }
+        }else {
+            saveData = (String) data;
+        }
+        values.put("_gid",groupId);
+        values.put("_mid",memberId);
+        values.put("_type",type);
+        values.put("_data", saveData);
+        listChats.add(values);
+
+        if(listChats.size() > 9) {
+            saveMessage(listChats);
+            listChats.clear();
+        }
+
+    }
+
+    private void saveMessage(List<ContentValues> listChats) {
+        final List<ContentValues> saveValues = new ArrayList<>();
+        saveValues.addAll(listChats);
+        PoolThreadUtil.getInstance().addTask(new Runnable() {
+            @Override
+            public void run() {
+                openDB();
+                db.beginTransaction();
+                try {
+                    for(ContentValues values : saveValues) {
+                        db.insert(DatabaseHelper.TABLE_DATA,null,values);
+                    }
+                }catch (Exception e) {
+
+                }finally {
+                    db.endTransaction();
+                    closeDB();
+                }
+            }
+        });
     }
 }

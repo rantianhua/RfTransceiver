@@ -81,8 +81,8 @@
     <string name="back">返回</string>
     <string name="group_name">组名</string>
     <string name="add_to_contacts">保存到通讯录</string>
-    <string name="exit_connect">退出连接</string>
+    <string name="exit_group">退出小组</string>
     <string name="clear_chat_record">清除聊天记录</string>
-    <string name="exit_group">退出小组并删除</string>
+    <string name="delete_group">删除该小组</string>
 
 </resources>

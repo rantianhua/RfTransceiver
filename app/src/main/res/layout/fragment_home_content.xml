@@ -204,41 +204,4 @@
         android:layout_alignParentBottom="true"
         android:visibility="invisible"/>
 
-    <TextView
-        android:layout_width="80dp"
-        android:layout_height="40dp"
-        android:id="@+id/tv_reset_home"
-        android:text="@string/reset_scm"
-        android:textColor="@color/white"
-        android:background="@drawable/tv_reset"
-        android:layout_alignParentEnd="true"
-        android:layout_above="@+id/tv_group_info"
-        android:gravity="center"
-        android:visibility="invisible"/>
-
-    <TextView
-        android:layout_width="80dp"
-        android:layout_height="40dp"
-        android:id="@+id/tv_group_info"
-        android:text="@string/see_group"
-        android:textColor="@color/white"
-        android:background="@drawable/tv_group_info"
-        android:layout_alignParentEnd="true"
-        android:gravity="center"
-        android:visibility="invisible"
-        android:layout_centerVertical="true"/>
-
-    <TextView
-        android:layout_width="80dp"
-        android:layout_height="40dp"
-        android:id="@+id/tv_mute_home"
-        android:text="@string/mute"
-        android:textColor="@color/white"
-        android:background="@drawable/tv_mute"
-        android:layout_alignParentEnd="true"
-        android:layout_below="@+id/tv_group_info"
-        android:gravity="center"
-        android:visibility="invisible"/>
-
-
 </RelativeLayout>

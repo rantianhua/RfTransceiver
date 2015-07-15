@@ -196,10 +196,6 @@ public class ListConversationAdapter extends BaseAdapter {
         FrameLayout container;
     }
 
-    public void addData(ConversationData data) {
-        listData.add(data);
-    }
-
     public enum ConversationType{
         LEFT_TEXT,
         LEFT_PIC,

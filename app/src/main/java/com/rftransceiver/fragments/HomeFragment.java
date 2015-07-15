@@ -102,12 +102,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     ViewPager vp;
     @InjectView(R.id.ll_dots_home)
     LinearLayout llDots;
-    @InjectView(R.id.tv_reset_home)
-    TextView tvReset;
-    @InjectView(R.id.tv_group_info)
-    TextView tvSeeGroup;
-    @InjectView(R.id.tv_mute_home)
-    TextView tvMute;
     @InjectView(R.id.tv_title_content)
     TextView tvTitle;
 
@@ -141,12 +135,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     private Html.ImageGetter imgageGetter;
 
     /**
-     * the object animation for right menu
-     */
-    private AnimatorSet translateIn,translateOut;
-    private float transOffset;
-
-    /**
      * a instance of a GroupEntity
      */
     private GroupEntity groupEntity;
@@ -171,14 +159,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
 
     private String homeTitle;
 
-    private enum MenuAction{
-        MUTE,
-        GROUP_INFO,
-        RESET,
-        NONE
-    }
-    private MenuAction menuAction = MenuAction.NONE;
-
     private static final android.os.Handler mainHandler = new android.os.Handler(Looper.getMainLooper());
 
     /**
@@ -190,13 +170,14 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
      */
     private int soundsId;
 
+    private ContextMenuDialogFrag contextMenuDialogFrag;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         expressions = new ArrayList<>();
         imgDots = new ArrayList<>();
         initImageGetter();
-        transOffset = getResources().getDisplayMetrics().density * 80 + 0.5f;
 //        imgSendSize = getResources().getDimensionPixelSize(R.dimen.img_data_height)
 //             * getResources().getDimensionPixelSize(R.dimen.img_data_width);
 
@@ -362,9 +343,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         imgAdd.setOnClickListener(this);
         imgPicture.setOnClickListener(this);
         imgAddress.setOnClickListener(this);
-        tvReset.setOnClickListener(this);
-        tvMute.setOnClickListener(this);
-        tvSeeGroup.setOnClickListener(this);
 
         etSendMessage.addTextChangedListener(new TextWatcher() {
             @Override
@@ -394,24 +372,23 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                 switch (motionEvent.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         btnSounds.setSelected(true);
-                        soundPool.play(soundsId,1,1,1,0,1);
+                        soundPool.play(soundsId, 1, 1, 1, 0, 1);
                         sendSounds = true;
                         btnSounds.setText(tipStopSounds);
-                        if(tvTip.getVisibility() == View.VISIBLE) {
+                        if (tvTip.getVisibility() == View.VISIBLE) {
                             String text = tvTip.getText().toString();
-                           if(text.endsWith("正在说话...") || text.equals(tipConnectLose) ||
-                                   text.equals(tipReconnecting)) {
-                               sendSounds = false;
-                               return false;
-                           }
-                        }
-                        else {
+                            if (text.endsWith("正在说话...") || text.equals(tipConnectLose) ||
+                                    text.equals(tipReconnecting)) {
+                                sendSounds = false;
+                                return false;
+                            }
+                        } else {
                             mainHandler.postDelayed(new Runnable() {
                                 @Override
                                 public void run() {
-                                    if(sendSounds) {
-                                        if(callback != null) {
-                                            callback.send(MainActivity.SendAction.SOUNDS,null);
+                                    if (sendSounds) {
+                                        if (callback != null) {
+                                            callback.send(MainActivity.SendAction.SOUNDS, null);
                                             tvTip.setVisibility(View.VISIBLE);
                                             tvTip.setText("我正在说话...");
                                         }
@@ -423,7 +400,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                     case MotionEvent.ACTION_CANCEL:
                     case MotionEvent.ACTION_UP:
                         btnSounds.setSelected(false);
-                        if(sendSounds && callback != null) callback.stopSendSounds();
+                        if (sendSounds && callback != null) callback.stopSendSounds();
                         sendSounds = false;
                         btnSounds.setText(tipSendSounds);
                         tvTip.setText("");
@@ -447,12 +424,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                 break;
             case R.id.img_home_hide:
                 //click hide menu on the top
-                imgHomeHide.setClickable(false);
-                if(tvMute.getVisibility() == View.INVISIBLE) {
-                    showRightMenu();
-                }else {
-                    hideRightMenu();
+                if(contextMenuDialogFrag == null) {
+                    contextMenuDialogFrag = new ContextMenuDialogFrag();
+                    contextMenuDialogFrag.setTargetFragment(HomeFragment.this,REQUEST_CONTEXT_MENU);
                 }
+                contextMenuDialogFrag.show(getFragmentManager(),"contextMenu");
                 break;
             case R.id.tv_tip_home:
                 if(tvTip.getText().toString().equals(tipConnectLose)) {
@@ -501,18 +477,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                 intent.setClass(getActivity(),LocationActivity.class);
                 getActivity().startActivityForResult(intent, REQUEST_LOCATION);
                 break;
-            case R.id.tv_mute_home:
-                hideRightMenu();
-                menuAction = MenuAction.MUTE;
-                break;
-            case R.id.tv_group_info:
-                menuAction = MenuAction.GROUP_INFO;
-                hideRightMenu();
-                break;
-            case R.id.tv_reset_home:
-                menuAction = MenuAction.RESET;
-                hideRightMenu();
-                break;
             default:
                 break;
         }
@@ -526,212 +490,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
             }
         });
     }
-
-    /**
-     * show right menu with translate animation
-     */
-    private void showRightMenu() {
-        initInAnimation();
-        translateIn.start();
-    }
-
-    private void initInAnimation() {
-        if(translateIn != null) return;
-        translateIn = new AnimatorSet();
-        List<Animator> animators = new ArrayList<>();
-        ObjectAnimator transTvResetIn = ObjectAnimator.ofFloat(tvReset,"translationX",transOffset,0.0f);
-        transTvResetIn.setDuration(300);
-        transTvResetIn.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animator) {
-                tvReset.setVisibility(View.VISIBLE);
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animator) {
-
-            }
-        });
-        ObjectAnimator transTvGroupIn = ObjectAnimator.ofFloat(tvSeeGroup,"translationX",transOffset,0.0f);
-        transTvGroupIn.setDuration(300);
-        transTvGroupIn.setStartDelay(150);
-        transTvGroupIn.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animator) {
-                tvSeeGroup.setVisibility(View.VISIBLE);
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animator) {
-
-            }
-        });
-        ObjectAnimator transTvMuteIn = ObjectAnimator.ofFloat(tvMute,"translationX",transOffset,0.0f);
-        transTvMuteIn.setDuration(300);
-        transTvMuteIn.setStartDelay(300);
-        transTvMuteIn.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animator) {
-                tvMute.setVisibility(View.VISIBLE);
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animator) {
-                imgHomeHide.setClickable(true);
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animator) {
-
-            }
-        });
-        animators.add(transTvResetIn);
-        animators.add(transTvGroupIn);
-        animators.add(transTvMuteIn);
-        translateIn.playTogether(animators);
-    }
-
     @Override
     public void onPause() {
         super.onPause();
-        translateIn = null;
-        translateOut = null;
     }
 
-    /**
-     * hide right menu with animation
-     */
-    private void hideRightMenu() {
-        initOutAnimation();
-        translateOut.start();
-    }
-
-    private void initOutAnimation() {
-        if(translateOut != null) return;
-        translateOut = new AnimatorSet();
-        List<Animator> animators = new ArrayList<>();
-        ObjectAnimator transTvResetOut = ObjectAnimator.ofFloat(tvReset,"translationX",transOffset);
-        transTvResetOut.setDuration(300);
-        transTvResetOut.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animator) {
-                tvReset.setVisibility(View.INVISIBLE);
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animator) {
-
-            }
-        });
-        ObjectAnimator transTvGroupOut = ObjectAnimator.ofFloat(tvSeeGroup,"translationX",transOffset);
-        transTvGroupOut.setStartDelay(150);
-        transTvGroupOut.setDuration(300);
-        transTvGroupOut.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animator) {
-                tvSeeGroup.setVisibility(View.INVISIBLE);
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animator) {
-
-            }
-        });
-        ObjectAnimator transTvMuteOut = ObjectAnimator.ofFloat(tvMute,"translationX",0.0f,transOffset);
-        transTvMuteOut.setDuration(300);
-        transTvMuteOut.setStartDelay(300);
-        transTvMuteOut.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animator) {
-                tvMute.setVisibility(View.INVISIBLE);
-                imgHomeHide.setClickable(true);
-                switch (menuAction) {
-                    case MUTE:
-                        break;
-                    case GROUP_INFO:
-                        if(groupEntity != null && groupEntity.getMembers().size() > 0) {
-                            getFragmentManager().beginTransaction().replace(R.id.frame_content,
-                                    GroupDetailFragment.getInstance(groupEntity))
-                                    .addToBackStack(null)
-                                    .commit();
-                        }
-                        break;
-                    case RESET:
-                        if(callback != null) {
-                            callback.resetCms();
-                            endReceive(0);
-                            btnSounds.setEnabled(true);
-                        }
-                        break;
-                }
-                menuAction = MenuAction.NONE;
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animator) {
-
-            }
-        });
-        animators.add(transTvResetOut);
-        animators.add(transTvGroupOut);
-        animators.add(transTvMuteOut);
-        translateOut.playTogether(animators);
-    }
 
     public void setCallback(CallbackInHomeFragment callback) {
         this.callback = callback;
@@ -792,16 +555,18 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                 receiveData.setAddress(data);
                 break;
             case 3:
-                receiveData = new ConversationData(ListConversationAdapter.ConversationType.LEFT_PIC,
-                        null, null,0,"100m");
-                receiveData.setBitmap(data);
+                Bitmap recevBitmap = getBitmapFromText(data);
+                if(recevBitmap != null) {
+                    receiveData = new ConversationData(ListConversationAdapter.ConversationType.LEFT_PIC,
+                            null, recevBitmap,0,"100m");
+                }
                 break;
         }
         if(receiveData == null) return;
         receiveData.setPhotoDrawable(drawable);
         dataLists.add(receiveData);
         conversationAdapter.updateData(dataLists);
-        listView.setSelection(conversationAdapter.getCount()-1);
+        listView.setSelection(conversationAdapter.getCount() - 1);
     }
 
     /**
@@ -817,6 +582,16 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         }
     }
 
+    private Bitmap getBitmapFromText(String data) {
+        Bitmap recevBitmap = null;
+        try {
+            byte[] imgs = Base64.decode(data, Base64.DEFAULT);
+            recevBitmap = BitmapFactory.decodeByteArray(imgs, 0, imgs.length);
+        }catch (Exception e){
+
+        }
+        return recevBitmap;
+    }
     /**
      * call if can send text by ble
      * @param sendText the text wait to be send
@@ -837,9 +612,13 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                 subData.setAddress(sendText);
                 break;
             case Image:
-                subData = new ConversationData(ListConversationAdapter.ConversationType.RIGHT_PIC,
-                        null);
-                subData.setBitmap(sendText);
+                Bitmap bitmap = getBitmapFromText(sendText);
+                if(bitmap != null) {
+                    subData = new ConversationData(ListConversationAdapter.ConversationType.RIGHT_PIC,
+                            null);
+                    subData.setBitmap(bitmap);
+                    bitmap = null;
+                }
                 break;
         }
         if(subData == null) return;
@@ -867,19 +646,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
      * @return
      */
     public boolean checkTouch(int touchX, int touchY) {
-        if(tvMute.getVisibility() == View.VISIBLE) {
-            tvReset.getGlobalVisibleRect(rect);
-            if(rect.contains(touchX,touchY)) return false;
-            tvSeeGroup.getGlobalVisibleRect(rect);
-            if(rect.contains(touchX,touchY)) return false;
-            tvMute.getGlobalVisibleRect(rect);
-            if(rect.contains(touchX,touchY)) return false;
-            imgHomeHide.getGlobalVisibleRect(rect);
-            if(rect.contains(touchX,touchY)) return false;
-            hideRightMenu();
-            //do not dispath touch event
-            return true;
-        }
         vp.getGlobalVisibleRect(rect);
         if(rect.contains(touchX,touchY)) {
             //tell parent do not intercept touch event
@@ -960,6 +726,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         void resetCms();
 
         void setMyId(int tempId);
+
+        void openScroll(boolean open);
     }
 
     @Override
@@ -981,7 +749,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         PoolThreadUtil.getInstance().addTask(new Runnable() {
             @Override
             public void run() {
-                Log.e("loadGroup","to load exists group");
                 updateGroup(dbManager.getAgroup(gid));
             }
         });
@@ -1007,12 +774,53 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
             if(callback != null) {
                 callback.send(MainActivity.SendAction.Image,imgData);
             }
-        }else {
+        }else if(requestCode == REQUEST_CONTEXT_MENU) {
+            switch (resultCode) {
+                case 0:
+                    //to reset scm
+                    if(callback != null) {
+                        callback.resetCms();
+                        endReceive(0);
+                        btnSounds.setEnabled(true);
+                    }
+                    break;
+                case 1:
+                    //to look group
+                    if(groupEntity != null && groupEntity.getMembers().size() > 0) {
+                        if(callback != null) {
+                            callback.openScroll(false);
+                        }
+                        Fragment groupFragment = GroupDetailFragment.getInstance(groupEntity);
+                        groupFragment.setTargetFragment(HomeFragment.this,REQUEST_GROUP_DETAIL);
+                        getFragmentManager().beginTransaction().replace(R.id.frame_content,
+                                groupFragment)
+                                .addToBackStack(null)
+                                .commit();
+                    }
+                    break;
+                case 2:
+                    //unplay sounds
+                    break;
+            }
+        }else if(requestCode == REQUEST_GROUP_DETAIL) {
+            switch (resultCode) {
+                case 0:
+                    //clear chat records
+                    break;
+                case 1:
+                    //open scroll
+                    if(callback != null) callback.openScroll(true);
+                    break;
+            }
+        }
+        else {
             super.onActivityResult(requestCode, resultCode, data);
         }
     }
 
     public static final int REQUEST_LOCATION = 302;
     public static final int REQUEST_HOME = 303;
+    public static final int REQUEST_CONTEXT_MENU = 304;
+    public static final int REQUEST_GROUP_DETAIL = 305;
     public static final String EXTRA_LOCATION = "address";
 }

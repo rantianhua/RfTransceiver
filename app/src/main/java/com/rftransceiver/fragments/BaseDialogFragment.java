@@ -20,12 +20,12 @@ public abstract class BaseDialogFragment extends DialogFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         getDialog().getWindow().requestFeature(Window.FEATURE_NO_TITLE);
         getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        getDialog().setContentView(initContentView(container));
+        getDialog().setContentView(initContentView(inflater));
         initEvent();
         return super.onCreateView(inflater, container, savedInstanceState);
     }
 
-    public abstract View initContentView(ViewGroup container);
+    public abstract View initContentView(LayoutInflater inflater);
     public abstract void initEvent();
 
 }

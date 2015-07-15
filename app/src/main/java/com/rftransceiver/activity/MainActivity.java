@@ -273,6 +273,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
         iniInterphone();
         //bind the ble service
         bindService(new Intent(this, BleService.class), serviceConnectionBle, BIND_AUTO_CREATE);
+
     }
 
     private void initView() {
@@ -671,6 +672,14 @@ public class MainActivity extends Activity implements View.OnClickListener,
     @Override
     public void toggleMenu() {
         lockerView.toggleMenu();
+    }
+
+    /**
+     * callback in HomeFragment
+     */
+    @Override
+    public void openScroll(boolean open) {
+        lockerView.openScroll(open);
     }
 
     /**

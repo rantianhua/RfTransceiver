@@ -89,6 +89,7 @@ public class ConversationData {
     }
 
     public void setPhotoDrawable(Bitmap bitmap) {
+        this.bitmap = bitmap;
         if(bitmap != null) {
             this.photoDrawable = new CircleImageDrawable(bitmap);
         }
@@ -122,14 +123,11 @@ public class ConversationData {
         this.address = address;
     }
 
-    public void setBitmap(String bitmapData) {
-        if(!TextUtils.isEmpty(bitmapData)) {
-            byte[] imgs = Base64.decode(bitmapData, Base64.DEFAULT);
-            this.bitmap  = BitmapFactory.decodeByteArray(imgs, 0, imgs.length);
-        }
-    }
-
     public Bitmap getBitmap() {
         return bitmap;
+    }
+
+    public void setBitmap(Bitmap bitmap) {
+        this.bitmap = bitmap;
     }
 }
