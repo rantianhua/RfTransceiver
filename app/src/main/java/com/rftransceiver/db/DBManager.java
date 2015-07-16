@@ -243,15 +243,16 @@ public class DBManager {
         listChats.add(values);
 
         if(listChats.size() > 9) {
-            saveMessage(listChats);
-            listChats.clear();
+            saveMessage();
         }
 
     }
 
-    private void saveMessage(List<ContentValues> listChats) {
+    public void saveMessage() {
+        if(listChats.size() == 0) return;
         final List<ContentValues> saveValues = new ArrayList<>();
         saveValues.addAll(listChats);
+        listChats.clear();
         PoolThreadUtil.getInstance().addTask(new Runnable() {
             @Override
             public void run() {

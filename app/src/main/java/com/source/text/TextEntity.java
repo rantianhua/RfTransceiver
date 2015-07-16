@@ -56,6 +56,8 @@ public class TextEntity implements Runnable{
     private float imgDataLen;
     private float sendDataLen;
 
+    private boolean end = false;
+
     public TextEntity() {
 
     }
@@ -76,7 +78,6 @@ public class TextEntity implements Runnable{
                 index = options.getOffset();
                 //cache full
                 if(remainder == 0 && dataQueue.getSize() == count-1) {
-                    Log.e("unpacking", "the last packet");
                     temp[options.getRealLenIndex()] = (byte)(index-options.getOffset());
                 }
                 dataQueue.add(temp);
@@ -147,10 +148,12 @@ public class TextEntity implements Runnable{
                     if(sendListener == null) return;
                     if(imageData[options.getRealLenIndex()] == options.getRealLen()) {
                         sendDataLen += realDataLen;
+                        end = false;
                     }else {
                         sendDataLen += imageData[options.getRealLenIndex()];
+                        end = true;
                     }
-                    sendListener.sendPacketedData(imageData,false,getSendImgPercent());
+                    sendListener.sendPacketedData(imageData,end,getSendImgPercent());
                     try {
                         Thread.sleep(100);
                     }catch (Exception e) {
@@ -164,10 +167,12 @@ public class TextEntity implements Runnable{
                 if(sendListener == null || data == null) return;
                 if(data[options.getRealLenIndex()] == options.getRealLen()) {
                     sendDataLen += realDataLen;
+                    end = false;
                 }else {
                     sendDataLen += data[options.getRealLenIndex()];
+                    end = true;
                 }
-                sendListener.sendPacketedData(data,false,getSendImgPercent());
+                sendListener.sendPacketedData(data,end,getSendImgPercent());
                 try {
                     Thread.sleep(100);
                 }catch (Exception e) {
@@ -199,7 +204,7 @@ public class TextEntity implements Runnable{
         while (dataQueue.getSize() > 0) {
             boolean end = dataQueue.getSize() == 1;
             if(sendListener == null) return;
-            sendListener.sendPacketedData((byte[])dataQueue.get(),end);
+            sendListener.sendPacketedData((byte[])dataQueue.get(),end,0);
             try {
                 Thread.sleep(40);
             }catch (Exception e) {

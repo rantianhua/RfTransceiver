@@ -21,6 +21,8 @@ public class SoundsEntity implements Runnable
 
     byte[] temp;
 
+    private int realSoundsLen;
+
     public SoundsEntity()
 	 {
          dataQueue = MyDataQueue.getInstance(MyDataQueue.DataType.Sounds_Send);
@@ -75,7 +77,7 @@ public class SoundsEntity implements Runnable
                                 temp[index++] = restData.getencodeData()[j];
                                 if (index == options.getLength()-1) {
                                     //temp have been full,can to be sent
-                                    sendListener.sendPacketedData(temp,false);
+                                    sendSoundsData(temp, false, realSoundsLen);
                                     initTemp();
                                     //reset to recount
                                     index = options.getOffset();
@@ -103,11 +105,11 @@ public class SoundsEntity implements Runnable
                                 //temp have been full,can to be sent
                                 if((restCountsInDataQueue+restCountsIntemp) % soundsPackets == 0 && i == restCountsInDataQueue-1) {
                                     temp[options.getRealLenIndex()] = (byte) (index-options.getOffset());
-                                    sendListener.sendPacketedData(temp,true);
+                                    sendSoundsData(temp, true, temp[options.getRealLenIndex()]);
                                     setRunning(false);  //shutdown this thread
                                     sum = 0;    //ready to count next send
                                 }else {
-                                    sendListener.sendPacketedData(temp,false);
+                                    sendSoundsData(temp, false, realSoundsLen);
                                     initTemp();
                                 }
                                 //reset to recount
@@ -118,7 +120,7 @@ public class SoundsEntity implements Runnable
                     if(index > options.getOffset()) {
                         //now temp is the last packet
                         temp[options.getRealLenIndex()] = (byte) (index-options.getOffset());
-                        sendListener.sendPacketedData(temp,true);
+                        sendSoundsData(temp,true,temp[options.getRealLenIndex()]);
                         setRunning(false);  //shutdown this thread
                         sum = 0;    //ready to count next send
                         index = options.getOffset();
@@ -126,6 +128,20 @@ public class SoundsEntity implements Runnable
                 }
 	        }
 	 }
+
+    /**
+     * send packed packets to ble
+     * @param data
+     * @param end
+     * @param length
+     */
+    private void sendSoundsData(byte[] data,boolean end,int length) {
+        if (sendListener == null) {
+            setRunning(false);
+            return;
+        }
+        sendListener.sendPacketedData(data,end,length);
+    }
 
     public synchronized boolean isSendering() {
         return isSendering;
@@ -160,6 +176,9 @@ public class SoundsEntity implements Runnable
     public void setOptions(DataPacketOptions options) {
         this.options =null;
         this.options = options;
+        if(options != null) {
+            realSoundsLen = options.getRealLen()-options.getOffset()-1;
+        }
     }
 
 }

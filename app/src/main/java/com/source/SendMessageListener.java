@@ -11,6 +11,4 @@ public interface SendMessageListener {
      * @param percent the sent data's percent of whole data
      */
     void sendPacketedData(byte[] data, boolean end,int percent);
-
-    void sendPacketedData(byte[] data, boolean end);
 }

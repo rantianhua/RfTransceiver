@@ -170,7 +170,19 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
      */
     private int soundsId;
 
+    /**
+     * my id in group
+     */
+    private int myId = -1;
+
+    /**
+     * current group's id in db
+     */
+    private int currentGroupId = -1;
+
     private ContextMenuDialogFrag contextMenuDialogFrag;
+
+    private String sendImgagePath;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -325,13 +337,27 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         if(groupEntity == null) {
-            int preGrop = getActivity().getSharedPreferences(Constants.SP_USER,0).getInt(Constants.PRE_GROUP,-1);
-            if(preGrop != -1) {
-                loadGroup(preGrop);
+            if(getCurrentGroupId() != -1) {
+                loadGroup(currentGroupId);
             }
         }else {
             updateGroup(groupEntity);
         }
+    }
+
+    /**
+     * get current group id
+     * @return
+     */
+    private int getCurrentGroupId() {
+        if(currentGroupId == -1) {
+            try {
+                currentGroupId = getActivity().getSharedPreferences(Constants.SP_USER,0).getInt(Constants.PRE_GROUP,-1);
+            }catch (Exception e ){
+
+            }
+        }
+        return currentGroupId;
     }
 
     private void initEvent() {
@@ -493,6 +519,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     @Override
     public void onPause() {
         super.onPause();
+        dbManager.saveMessage();
     }
 
 
@@ -596,20 +623,26 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
      * call if can send text by ble
      * @param sendText the text wait to be send
      */
-    public void sendText(String sendText,DataPacketOptions.TextType type) {
+    public void sendMessage(String sendText,MainActivity.SendAction sendAction) {
         if(TextUtils.isEmpty(sendText)) return;
         ConversationData subData = null;
-        switch (type) {
+        switch (sendAction) {
             case Words:
                 hideSoft();
                 etSendMessage.setText("");
                 subData = new ConversationData(ListConversationAdapter.ConversationType.RIGHT_TEXT,
                         sendText);
+                if(myId != -1) {
+                    dbManager.readyMessage(sendText,1,myId,getCurrentGroupId());
+                }
                 break;
             case Address:
                 subData = new ConversationData(ListConversationAdapter.ConversationType.RIGHT_ADDRESS,
                         null);
                 subData.setAddress(sendText);
+                if(myId != -1) {
+                    dbManager.readyMessage(sendText,2,myId,getCurrentGroupId());
+                }
                 break;
             case Image:
                 Bitmap bitmap = getBitmapFromText(sendText);
@@ -618,6 +651,15 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                             null);
                     subData.setBitmap(bitmap);
                     bitmap = null;
+                    if(myId != -1) {
+                        dbManager.readyMessage(sendImgagePath,3,myId,getCurrentGroupId());
+                    }
+                }
+                break;
+            case SOUNDS:
+                subData = new ConversationData(ListConversationAdapter.ConversationType.RIGHT_SOUNDS,null);
+                if(myId != -1) {
+                    dbManager.readyMessage(sendText,0,myId,getCurrentGroupId());
                 }
                 break;
         }
@@ -682,6 +724,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     public void updateGroup(final GroupEntity groupEntity) {
         this.groupEntity = groupEntity;
         if(groupEntity == null) return;
+        myId = groupEntity.getTempId();
         if(callback != null) callback.setMyId(groupEntity.getTempId());
         final String name = groupEntity.getName();
         homeTitle = name
@@ -758,22 +801,32 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if(requestCode == REQUEST_HOME && resultCode == Activity.RESULT_CANCELED && data != null) {
             getFragmentManager().popBackStackImmediate();
-            String imgPath = data.getStringExtra(Constants.PHOTO_PATH);
-            if(imgPath == null) return;
-            Bitmap bitmap = ImageUtil.createImageThumbnail(imgPath,imgSendSize);
-            if(bitmap == null) return;
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            int options = 100;
-            bitmap.compress(Bitmap.CompressFormat.PNG,options,outputStream);
-            while (outputStream.toByteArray().length / 1024 > 60) {
-                outputStream.reset();
-                options -= 10;
-                bitmap.compress(Bitmap.CompressFormat.PNG,options,outputStream);
-            }
-            String imgData = Base64.encodeToString(outputStream.toByteArray(),Base64.DEFAULT);
-            if(callback != null) {
-                callback.send(MainActivity.SendAction.Image,imgData);
-            }
+            sendImgagePath = data.getStringExtra(Constants.PHOTO_PATH);
+            if(sendImgagePath == null) return;
+            PoolThreadUtil.getInstance().addTask(new Runnable() {
+                @Override
+                public void run() {
+                    Bitmap bitmap = ImageUtil.createImageThumbnail(sendImgagePath,imgSendSize);
+                    if(bitmap == null) return;
+                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                    int options = 100;
+                    bitmap.compress(Bitmap.CompressFormat.PNG,options,outputStream);
+                    while (outputStream.toByteArray().length / 1024 > 60) {
+                        outputStream.reset();
+                        options -= 10;
+                        bitmap.compress(Bitmap.CompressFormat.PNG,options,outputStream);
+                    }
+                    String imgData = Base64.encodeToString(outputStream.toByteArray(),Base64.DEFAULT);
+                    if(callback != null) {
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                callback.send(MainActivity.SendAction.Image, imgData);
+                            }
+                        });
+                    }
+                }
+            });
         }else if(requestCode == REQUEST_CONTEXT_MENU) {
             switch (resultCode) {
                 case 0:

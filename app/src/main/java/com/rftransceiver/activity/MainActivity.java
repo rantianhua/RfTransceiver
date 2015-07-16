@@ -24,6 +24,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
+import android.util.Base64;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -178,6 +179,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
      * my id in group
      */
     private int myId;
+
+    /**
+     * the total length of sent sounds data everytime
+     */
+    private int sendSoundsLen;
 
     /**
      * true if open application add have bounded device before
@@ -491,19 +497,15 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                     stopReceiveSounds();
                                     if (action == SendAction.SOUNDS) {
                                         //start record
-                                        action = SendAction.NONE;
                                         record.startRecording();
                                         if(homeFragment != null) {
                                             homeFragment.startSendingSounds();
                                         }
                                     } else if (action == SendAction.Words) {
-                                        action = SendAction.NONE;
                                         sendText(DataPacketOptions.TextType.Words);
                                     }else if(action == SendAction.Address) {
-                                        action = SendAction.NONE;
                                         sendText(DataPacketOptions.TextType.Address);
                                     }else if(action == SendAction.Image) {
-                                        action = SendAction.NONE;
                                         sendText(DataPacketOptions.TextType.Image);
                                     }
                                 } else if (msg.arg2 == 1) {
@@ -696,8 +698,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
      */
     private void sendText(DataPacketOptions.TextType type) {
         if(sendText != null) {
-            textEntity.unpacking(sendText,type);
-            homeFragment.sendText(sendText,type);
+            textEntity.unpacking(sendText, type);
         }
     }
 
@@ -712,25 +713,53 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
 
     /**
-     * call in SendMessageListener
-     * @param data
-     * @param end
+     *
+     * @param data the data to be sent
+     * @param end send all the data or not
+     * @param percent the sent data's percent of whole data
+     *                or the length of send data
      */
-    @Override
-    public void sendPacketedData (byte[] data,boolean end){
-        if(data == null || bluetoothLeService == null) return;
-        data[Constants.Group_Member_Id_index] = (byte)myId;
-        bluetoothLeService.write(data);
-        data = null;
-    }
-
+    private boolean notifySendImage = false;
     @Override
     public void sendPacketedData(byte[] data, boolean end, int percent) {
         if(data == null || bluetoothLeService == null) return;
         data[Constants.Group_Member_Id_index] = (byte)myId;
         bluetoothLeService.write(data);
-        if(homeFragment != null && homeFragment.isVisible()) {
-            homeFragment.upteImageProgress(percent);
+        switch (action) {
+            case Address:
+            case Words:
+                if(end) {
+                    if(homeFragment != null && homeFragment.isVisible()) {
+                        homeFragment.sendMessage(sendText,action);
+                    }
+                    action = SendAction.NONE;
+                }
+                break;
+            case Image:
+                if(homeFragment == null) return;
+                if(!notifySendImage) {
+                    homeFragment.sendMessage(sendText,action);
+                    notifySendImage = true;
+                }else {
+                    homeFragment.upteImageProgress(percent);
+                }
+                if(end) {
+                    action = SendAction.NONE;
+                    notifySendImage = false;
+                }
+                break;
+            case SOUNDS:
+                sendSoundsLen += percent;
+                if(end) {
+                    action = SendAction.NONE;
+                    byte[] sendSounds = new byte[sendSoundsLen];
+                    String sounds = Base64.encodeToString(sendSounds,Base64.DEFAULT);
+                    sendSoundsLen = 0;
+                    if(homeFragment != null && homeFragment.isVisible()) {
+                        homeFragment.sendMessage(sounds,SendAction.SOUNDS);
+                    }
+                }
+                break;
         }
         data = null;
     }
