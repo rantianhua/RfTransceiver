@@ -165,6 +165,7 @@ public class ListConversationAdapter extends BaseAdapter {
                 break;
             case LEFT_SOUNDS:
             case RIGHT_SOUNDS:
+                hodler.tvSounds.setTag(data.getContent());
                 break;
         }
 

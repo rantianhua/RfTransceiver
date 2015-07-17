@@ -67,7 +67,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 .append("_myId INTEGER")
                 .append(");");
         sqLiteDatabase.execSQL(sb.toString());
-        sb.delete(0,sb.length());
+        sb.delete(0, sb.length());
 
         sb.append("CREATE TABLE ").append(TABLE_MEMBER).append("(")
                 .append("_gid INTEGER, ").append("_mid INTEGER, ")
@@ -78,6 +78,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         sb.delete(0,sb.length());
 
         sb.append("CREATE TABLE ").append(TABLE_DATA).append("(")
+                .append("_date_time NUMERIC")
                 .append("_gid INTEGER, ").append("_mid INTEGER, ")
                 .append("_type INTEGER, ").append("_data TEXT ")
                 .append(");");

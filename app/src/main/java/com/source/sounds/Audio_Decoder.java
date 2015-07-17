@@ -15,7 +15,7 @@ public class Audio_Decoder implements Runnable
     private static final int MAX_BUFFER_SIZE = 2048;
     private Speex coder=new Speex();
     private short[] decodedData = new short[1024];
-    public volatile boolean isDecoding=false;
+    public boolean isDecoding=false;
 
 	private Audio_Decoder()
 	{  
@@ -28,10 +28,10 @@ public class Audio_Decoder implements Runnable
 	{
         Audio_Player player = Audio_Player.getInstance();
         player.startPlaying();
-        setIsDecoding(true);
         coder.init();
         int decodeSize = 0;
-        while (getIsDecoding()) {
+        setIsDecoding(true);
+        while (isDecoding) {
 
             AudioData encodeData  = (AudioData)dataList.get();
             if(encodeData == null) {
@@ -50,6 +50,7 @@ public class Audio_Decoder implements Runnable
             }
         }
         player.stopPlaying();
+        Log.e("stop decoding", "stop playing in decoder");
 	}
     
 	 public void addData(AudioData data)
@@ -62,7 +63,8 @@ public class Audio_Decoder implements Runnable
 	public void startDecoding()
 	{
 		 if (getIsDecoding())
-		 {  
+		 {
+             Log.e("start decoding","is decoding ,so return " + isDecoding);
 	            return;  
 	     }
         PoolThreadUtil.getInstance().addTask(this);
@@ -71,7 +73,9 @@ public class Audio_Decoder implements Runnable
 	//关闭解码器
     public void stopDecoding() 
     {
+        Log.e("stop decoding","stop decoding");
         setIsDecoding(false);
+
 	}
 
     //获取单一实例

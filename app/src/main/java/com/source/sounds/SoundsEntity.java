@@ -1,6 +1,7 @@
 package com.source.sounds;
 
 
+import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.datasets.AudioData;
 import com.rftransceiver.datasets.MyDataQueue;
 import com.rftransceiver.util.Constants;
@@ -33,6 +34,7 @@ public class SoundsEntity implements Runnable
         setRunning(true);
         setSendering(true);
         try {
+            MainActivity.soundsRecords.clear();
             PoolThreadUtil.getInstance().addTask(this);
         } catch (Exception e) {
             setSendering(false);
@@ -44,6 +46,7 @@ public class SoundsEntity implements Runnable
 	{
             byte[] tempData = new byte[size];
             System.arraycopy(data,0,tempData,0,size);
+            MainActivity.soundsRecords.add(tempData);
 		    AudioData encodedData = new AudioData();
 	        encodedData.setSize(size);
             encodedData.setencodeData(tempData);

@@ -2,11 +2,8 @@ package com.rftransceiver.activity;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.app.Fragment;
-import android.app.FragmentManager;
 import android.app.FragmentTransaction;
-import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -22,10 +19,8 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
-import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Base64;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
@@ -44,7 +39,6 @@ import com.rftransceiver.fragments.LoadDialogFragment;
 import com.rftransceiver.fragments.MyDeviceFragment;
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.util.Constants;
-import com.rftransceiver.util.GroupUtil;
 import com.rftransceiver.util.PoolThreadUtil;
 import com.source.DataPacketOptions;
 import com.source.SendMessageListener;
@@ -53,6 +47,9 @@ import com.source.sounds.Audio_Reciver;
 import com.source.sounds.Audio_Recorder;
 import com.source.sounds.SoundsEntity;
 import com.source.text.TextEntity;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -143,12 +140,17 @@ public class MainActivity extends Activity implements View.OnClickListener,
      */
     private SendAction action = SendAction.NONE;
     public enum SendAction {
-        Words,
         SOUNDS,
+        Words,
         Address,
         Image,
         NONE
     }
+
+    /**
+     * cache all record sounds data
+     */
+    public static final List<byte[]> soundsRecords = new ArrayList<>();
 
     /**
      * when in BindDeviceFragment, if the bluetooth is opening this will be true
@@ -180,17 +182,15 @@ public class MainActivity extends Activity implements View.OnClickListener,
      */
     private int myId;
 
-    /**
-     * the total length of sent sounds data everytime
-     */
-    private int sendSoundsLen;
-
+//    /**
+//     * cache the receive sounds data
+//     */
+//    private List<byte[]> receiSounds;
     /**
      * true if open application add have bounded device before
      */
     private boolean needConnectDevice = false;
 
-    public static final int REQUEST_MYDEVICE = 300;
     public static final int REQUEST_GROUP = 301;
     public static final int REQUEST_CHANGECHANNEL = 305;
 
@@ -336,7 +336,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
     private void iniInterphone() {
         //initial the receiver
-        receiver = new Audio_Reciver();
+        receiver = Audio_Reciver.getInstance();
         DataPacketOptions soundsOptions = new DataPacketOptions(DataPacketOptions.Data_Type_InOptions.sounds,
                 9);
         SoundsEntity soundsEntity = new SoundsEntity();
@@ -435,14 +435,28 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                         if(homeFragment != null) {
                                             homeFragment.receivingData(0,null,(int)msg.obj);
                                         }
+                                        soundsRecords.clear();
                                         break;
                                     case 1:
                                         //end to receive sounds data
                                         stopReceiveSounds();
+                                        byte[] receSounds = new byte[soundsRecords.size() * Constants.Small_Sounds_Packet_Length];
+                                        int index = 0;
+                                        for(byte[] s : soundsRecords) {
+                                            System.arraycopy(s,0,receSounds,index,s.length);
+                                            index += s.length;
+                                        }
+                                        soundsRecords.clear();
+                                        String rcvSounds = Base64.encodeToString(receSounds,Base64.DEFAULT);
+                                        receSounds = null;
+                                        if(homeFragment != null) {
+                                            homeFragment.endReceiveSounds(rcvSounds, (int) (msg.obj));
+                                        }
                                         break;
                                     case 2:
                                         //cache the received sounds data
                                         byte[] sound = (byte[]) msg.obj;
+                                        soundsRecords.add(sound);
                                         receiver.cacheData(sound, Constants.Small_Sounds_Packet_Length);
                                         break;
                                 }
@@ -721,47 +735,55 @@ public class MainActivity extends Activity implements View.OnClickListener,
      */
     private boolean notifySendImage = false;
     @Override
-    public void sendPacketedData(byte[] data, boolean end, int percent) {
+    public void sendPacketedData(final byte[] data, final boolean end, final int percent) {
         if(data == null || bluetoothLeService == null) return;
-        data[Constants.Group_Member_Id_index] = (byte)myId;
-        bluetoothLeService.write(data);
-        switch (action) {
-            case Address:
-            case Words:
-                if(end) {
-                    if(homeFragment != null && homeFragment.isVisible()) {
-                        homeFragment.sendMessage(sendText,action);
-                    }
-                    action = SendAction.NONE;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                data[Constants.Group_Member_Id_index] = (byte)myId;
+                bluetoothLeService.write(data);
+                switch (action) {
+                    case Address:
+                    case Words:
+                        if(end) {
+                            if(homeFragment != null && homeFragment.isVisible()) {
+                                homeFragment.sendMessage(sendText, action);
+                            }
+                            action = SendAction.NONE;
+                        }
+                        break;
+                    case Image:
+                        if(homeFragment == null) return;
+                        if(!notifySendImage) {
+                            homeFragment.sendMessage(sendText,action);
+                            notifySendImage = true;
+                        }else {
+                            homeFragment.upteImageProgress(percent);
+                        }
+                        if(end) {
+                            action = SendAction.NONE;
+                            notifySendImage = false;
+                        }
+                        break;
+                    case SOUNDS:
+                        if(end) {
+                            action = SendAction.NONE;
+                            byte[] sendSounds = new byte[MainActivity.soundsRecords.size() * Constants.Small_Sounds_Packet_Length];
+                            int index = 0;
+                            for(byte[] ss : soundsRecords) {
+                                System.arraycopy(ss,0,sendSounds,index,ss.length);
+                                index += ss.length;
+                            }
+                            String sounds = Base64.encodeToString(sendSounds,Base64.DEFAULT);
+                            if(homeFragment != null && homeFragment.isVisible()) {
+                                homeFragment.sendMessage(sounds,SendAction.SOUNDS);
+                            }
+                            soundsRecords.clear();
+                        }
+                        break;
                 }
-                break;
-            case Image:
-                if(homeFragment == null) return;
-                if(!notifySendImage) {
-                    homeFragment.sendMessage(sendText,action);
-                    notifySendImage = true;
-                }else {
-                    homeFragment.upteImageProgress(percent);
-                }
-                if(end) {
-                    action = SendAction.NONE;
-                    notifySendImage = false;
-                }
-                break;
-            case SOUNDS:
-                sendSoundsLen += percent;
-                if(end) {
-                    action = SendAction.NONE;
-                    byte[] sendSounds = new byte[sendSoundsLen];
-                    String sounds = Base64.encodeToString(sendSounds,Base64.DEFAULT);
-                    sendSoundsLen = 0;
-                    if(homeFragment != null && homeFragment.isVisible()) {
-                        homeFragment.sendMessage(sounds,SendAction.SOUNDS);
-                    }
-                }
-                break;
-        }
-        data = null;
+            }
+        });
     }
 
     /**
@@ -843,6 +865,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
      */
     @Override
     public void send(SendAction sendAction,String text) {
+        if(action != SendAction.NONE) {
+            showToast("上一条消息还在发送，请等待！");
+            return;
+        }
         action = sendAction;
         sendText = text;
         chenckChannel();

@@ -3,6 +3,7 @@ package com.source.sounds;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
+import android.util.Log;
 
 import com.rftransceiver.datasets.AudioData;
 import com.rftransceiver.util.PoolThreadUtil;
@@ -96,7 +97,8 @@ public class Audio_Player implements Runnable
 		public void startPlaying()
 		{  
 	        if (getIsPlaying())
-	        {  
+	        {
+				Log.e("startPlaying","is playing ,so return");
 	            return;  
 	        }
             PoolThreadUtil.getInstance().addTask(this);
@@ -124,11 +126,11 @@ public class Audio_Player implements Runnable
 
 		public void run()
 		{
-	        setIsPlaying(true);
-	        if (!initAudioTrack()) 
-	        {              
-	            return;  
-	        }  
+	        if (!initAudioTrack())
+	        {
+	            return;
+	        }
+			setIsPlaying(true);
 	        while (getIsPlaying())
 	        {  
 	            if (dataList.size() > 0) 

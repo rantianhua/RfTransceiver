@@ -23,6 +23,7 @@ import android.text.Editable;
 import android.text.Html;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.text.format.DateFormat;
 import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -59,7 +60,12 @@ import com.source.DataPacketOptions;
 
 
 import java.io.ByteArrayOutputStream;
+import java.sql.Timestamp;
+import java.text.FieldPosition;
+import java.text.ParsePosition;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.jar.Attributes;
 import java.util.logging.Handler;
@@ -183,6 +189,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     private ContextMenuDialogFrag contextMenuDialogFrag;
 
     private String sendImgagePath;
+
+    private Date date = new Date();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -550,50 +558,72 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
      *            2 is address data
      *            3 is image data
      */
-    public void receivingData(int tye,String data,int myId) {
+    public void receivingData(int tye,String data,int memberId) {
         ConversationData receiveData = null;
         Drawable drawable = null;
         if(groupEntity != null) {
             for(int i = 0;i < groupEntity.getMembers().size();i++) {
                 GroupMember member = groupEntity.getMembers().get(i);
-                if(member.getId() == myId) {
-                    drawable = member.getDrawable();
-                    if(tye == 0) {
+                if(member.getId() == memberId) {
+                    if(tye == 0 && data == null) {
                         tvTip.setVisibility(View.VISIBLE);
                         tvTip.setText(member.getName() + "正在说话...");
                         btnSounds.setEnabled(false);
+                        return;
                     }
+                    drawable = member.getDrawable();
                     break;
                 }
             }
         }
+        long time = date.getTime();
+        Bitmap recevBitmap = null;
         switch (tye) {
             case 0:
                 receiveData = new ConversationData(ListConversationAdapter.ConversationType.LEFT_SOUNDS,
-                        null,null,0,"100m");
+                        data);
                 break;
             case 1:
                 receiveData = new ConversationData(ListConversationAdapter.ConversationType.LEFT_TEXT,
-                        data, null,0,"100m");
+                        data, null);
                 break;
             case 2:
                 receiveData = new ConversationData(ListConversationAdapter.ConversationType.LEFT_ADDRESS,
-                        null, null,0,"100m");
+                        null, null);
                 receiveData.setAddress(data);
                 break;
             case 3:
-                Bitmap recevBitmap = getBitmapFromText(data);
+                recevBitmap = getBitmapFromText(data);
                 if(recevBitmap != null) {
                     receiveData = new ConversationData(ListConversationAdapter.ConversationType.LEFT_PIC,
-                            null, recevBitmap,0,"100m");
+                            null, recevBitmap);
                 }
                 break;
         }
         if(receiveData == null) return;
+        receiveData.setDateTime(time);
         receiveData.setPhotoDrawable(drawable);
         dataLists.add(receiveData);
         conversationAdapter.updateData(dataLists);
         listView.setSelection(conversationAdapter.getCount() - 1);
+        Object oj = recevBitmap != null ? recevBitmap : data;
+        saveMessage(oj,tye,memberId,time);
+        recevBitmap = null;
+    }
+
+    /**
+     * receive whole sounds ,cast to String to save in db
+     * @param sounds
+     * @param memberId
+     */
+    public void endReceiveSounds(String sounds, int memberId) {
+        receivingData(0, sounds, memberId);
+    }
+
+    private void saveMessage(Object message,int type,int mid,long time) {
+        if(groupEntity != null) {
+            dbManager.readyMessage(message,type,mid,currentGroupId,time);
+        }
     }
 
     /**
@@ -626,49 +656,46 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     public void sendMessage(String sendText,MainActivity.SendAction sendAction) {
         if(TextUtils.isEmpty(sendText)) return;
         ConversationData subData = null;
+        long time = date.getTime();
+        Bitmap sendBitmap = null;
         switch (sendAction) {
             case Words:
                 hideSoft();
                 etSendMessage.setText("");
                 subData = new ConversationData(ListConversationAdapter.ConversationType.RIGHT_TEXT,
                         sendText);
-                if(myId != -1) {
-                    dbManager.readyMessage(sendText,1,myId,getCurrentGroupId());
-                }
                 break;
             case Address:
                 subData = new ConversationData(ListConversationAdapter.ConversationType.RIGHT_ADDRESS,
                         null);
                 subData.setAddress(sendText);
-                if(myId != -1) {
-                    dbManager.readyMessage(sendText,2,myId,getCurrentGroupId());
-                }
                 break;
             case Image:
-                Bitmap bitmap = getBitmapFromText(sendText);
-                if(bitmap != null) {
+                sendBitmap = getBitmapFromText(sendText);
+                if(sendBitmap != null) {
                     subData = new ConversationData(ListConversationAdapter.ConversationType.RIGHT_PIC,
                             null);
-                    subData.setBitmap(bitmap);
-                    bitmap = null;
-                    if(myId != -1) {
-                        dbManager.readyMessage(sendImgagePath,3,myId,getCurrentGroupId());
-                    }
+                    subData.setBitmap(sendBitmap);
                 }
                 break;
             case SOUNDS:
-                subData = new ConversationData(ListConversationAdapter.ConversationType.RIGHT_SOUNDS,null);
-                if(myId != -1) {
-                    dbManager.readyMessage(sendText,0,myId,getCurrentGroupId());
-                }
+                subData = new ConversationData(ListConversationAdapter.ConversationType.RIGHT_SOUNDS
+                        ,sendText);
                 break;
         }
         if(subData == null) return;
+        subData.setDateTime(time);
         dataLists.add(subData);
         conversationAdapter.updateData(dataLists);
         listView.setSelection(conversationAdapter.getCount() - 1);
+        Object object = sendBitmap == null ? sendText : sendBitmap;
+        saveMessage(object,sendAction.ordinal(),myId,time);
+        sendBitmap = null;
     }
 
+    /**
+     * hide the softkey
+     */
     private void hideSoft() {
         InputMethodManager imm = (InputMethodManager)getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(etSendMessage.getWindowToken(), 0);
@@ -816,7 +843,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                         options -= 10;
                         bitmap.compress(Bitmap.CompressFormat.PNG,options,outputStream);
                     }
-                    String imgData = Base64.encodeToString(outputStream.toByteArray(),Base64.DEFAULT);
+                    final String imgData = Base64.encodeToString(outputStream.toByteArray(),Base64.DEFAULT);
                     if(callback != null) {
                         mainHandler.post(new Runnable() {
                             @Override

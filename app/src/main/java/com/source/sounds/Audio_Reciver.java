@@ -1,6 +1,8 @@
 package com.source.sounds;
 
 
+import android.util.Log;
+
 import com.rftransceiver.datasets.MyDataQueue;
 import com.rftransceiver.datasets.AudioData;
 import com.rftransceiver.util.PoolThreadUtil;
@@ -10,13 +12,29 @@ public class Audio_Reciver implements Runnable
     private boolean isReceiving = false;
     private MyDataQueue dataQueue = null;
 
-    public Audio_Reciver() {
+    private static Audio_Reciver instance;
+
+    private PlaySoundsListener listener;
+
+    private boolean autoStop = false;
+
+    private Audio_Reciver() {
         /**
          * 初始化缓冲区
          */
         dataQueue = MyDataQueue.getInstance(MyDataQueue.DataType.Sound_Receiver);
     }
 
+    public static Audio_Reciver getInstance() {
+        if(instance == null) {
+            instance = new Audio_Reciver();
+        }
+        return instance;
+    }
+
+    public void setListener(PlaySoundsListener listener) {
+        this.listener = listener;
+    }
 
 	 public void startReceiver()
 	 {
@@ -25,12 +43,17 @@ public class Audio_Reciver implements Runnable
          }
 	 }
 
+    public void startWithAutoStop() {
+        autoStop = true;
+        startReceiver();
+    }
+
     @Override
     public void run() {
         //先启动解码器
         Audio_Decoder decoder = Audio_Decoder.getInstance();
         decoder.startDecoding();
-
+        if(listener != null) listener.playingStart();
         setReceiving(true);
         while(isReceiving()) {
 
@@ -41,9 +64,19 @@ public class Audio_Reciver implements Runnable
                 //将数据添加至解码器
                 decoder.addData(data);
             }
+            if(autoStop) {
+                if(dataQueue.getSize() == 0) {
+                    autoStop = false;
+                    decoder.stopDecoding();
+                    stopReceiver();
+                }
+            }
         }
         //停止解码器
         decoder.stopDecoding();
+        if(listener != null) {
+            listener.playingStop();
+        }
     }
 
     public void stopReceiver() {
@@ -73,5 +106,14 @@ public class Audio_Reciver implements Runnable
 
     public void clear() {
         dataQueue.clear();
+    }
+
+    /**
+     * play sounds listener
+     * can konwn the start and end of playing
+     */
+    public interface PlaySoundsListener{
+        void playingStart();
+        void playingStop();
     }
 }

@@ -17,7 +17,7 @@ public class PoolThreadUtil {
     private ExecutorService executorService;
 
     private PoolThreadUtil() {
-        executorService = Executors.newFixedThreadPool(20);
+        executorService = Executors.newFixedThreadPool(30);
     }
 
     /**

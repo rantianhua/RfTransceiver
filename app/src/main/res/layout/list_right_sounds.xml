@@ -7,7 +7,7 @@
     android:paddingBottom="10dp"
     >
 
-    <TextView
+    <com.rftransceiver.customviews.SoundsTextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/tv_conversation_bg"

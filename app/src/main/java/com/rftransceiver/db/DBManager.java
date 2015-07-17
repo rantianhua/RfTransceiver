@@ -21,6 +21,7 @@ import com.rftransceiver.util.ImageUtil;
 import com.rftransceiver.util.PoolThreadUtil;
 
 import java.io.File;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -219,7 +220,7 @@ public class DBManager {
      *             2 is address
      *             3 is picture
      */
-    public void readyMessage(Object data,int type,int memberId,int groupId) {
+    public void readyMessage(Object data,int type,int memberId,int groupId,long timestamp) {
         ContentValues values = new ContentValues();
         String saveData = null;
         if(type == 3) {
@@ -236,6 +237,7 @@ public class DBManager {
         }else {
             saveData = (String) data;
         }
+        values.put("_date_time",timestamp);
         values.put("_gid",groupId);
         values.put("_mid",memberId);
         values.put("_type",type);

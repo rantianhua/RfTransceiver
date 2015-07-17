@@ -32,17 +32,6 @@ public class ConversationData {
     private Drawable photoDrawable;
 
     /**
-     * use a drawable to show Signal intensity,
-     * this id the id of the drawable
-     */
-    private int levelId = R.drawable.level1;
-
-    /**
-     * the instance between two persons
-     */
-    private String instance;
-
-    /**
      * the address data
      */
     private String address;
@@ -52,6 +41,11 @@ public class ConversationData {
      */
     private Bitmap bitmap;
 
+    /**
+     * the send or receive time
+     */
+    private long dateTime;
+
     public ConversationData(ListConversationAdapter.ConversationType type,
                             String text) {
         setConversationType(type);
@@ -59,13 +53,11 @@ public class ConversationData {
     }
 
     public ConversationData(ListConversationAdapter.ConversationType type,
-                            String text,Bitmap bitmap,int levelId,String instance) {
+                            String text,Bitmap bitmap) {
         this(type, text);
         if(bitmap != null) {
             setPhotoDrawable(bitmap);
         }
-        setLevelId(levelId);
-        setInstance(instance);
     }
 
     public ListConversationAdapter.ConversationType getConversationType() {
@@ -99,22 +91,6 @@ public class ConversationData {
         this.photoDrawable = drawable;
     }
 
-    public int getLevelId() {
-        return levelId;
-    }
-
-    public void setLevelId(int levelId) {
-        if(levelId != 0) this.levelId = levelId;
-    }
-
-    public String getInstance() {
-        return instance;
-    }
-
-    public void setInstance(String instance) {
-        this.instance = instance;
-    }
-
     public String getAddress() {
         return address;
     }
@@ -130,4 +106,13 @@ public class ConversationData {
     public void setBitmap(Bitmap bitmap) {
         this.bitmap = bitmap;
     }
+
+    public long getDateTime() {
+        return dateTime;
+    }
+
+    public void setDateTime(long dateTime) {
+        this.dateTime = dateTime;
+    }
+
 }
