@@ -71,8 +71,11 @@ public class Audio_Recorder  implements Runnable
         setRecording(true);
         while (isRecording())
         {  
-            bufferRead = audioRecord.read(samples, 0, bufferSize);  
-            if (bufferRead > 0) 
+            bufferRead = audioRecord.read(samples, 0, bufferSize);
+//            for(int i = 0; i < bufferRead;i++) {
+//                samples[i] *= 4;
+//            }
+            if (bufferRead > 0)
             {
                 // add the data to the encoder
                 encoder.addData(samples, bufferRead);

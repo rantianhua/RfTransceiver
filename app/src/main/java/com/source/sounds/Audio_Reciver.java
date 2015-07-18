@@ -7,9 +7,11 @@ import com.rftransceiver.datasets.MyDataQueue;
 import com.rftransceiver.datasets.AudioData;
 import com.rftransceiver.util.PoolThreadUtil;
 
+import butterknife.InjectView;
+
 public class Audio_Reciver implements Runnable
 {
-    private boolean isReceiving = false;
+    private volatile boolean isReceiving = false;
     private MyDataQueue dataQueue = null;
 
     private static Audio_Reciver instance;
@@ -40,6 +42,7 @@ public class Audio_Reciver implements Runnable
 	 {
          if(!isReceiving()) {
              PoolThreadUtil.getInstance().addTask(this);
+             Log.e("start","receiver");
          }
 	 }
 
@@ -55,6 +58,13 @@ public class Audio_Reciver implements Runnable
         decoder.startDecoding();
         if(listener != null) listener.playingStart();
         setReceiving(true);
+        while (!decoder.getIsDecoding()) {
+            try {
+                Thread.sleep(50);
+            }catch (InterruptedException e) {
+
+            }
+        }
         while(isReceiving()) {
 
             AudioData data = (AudioData)dataQueue.get();
@@ -64,10 +74,10 @@ public class Audio_Reciver implements Runnable
                 //将数据添加至解码器
                 decoder.addData(data);
             }
+            Log.e("receiving", "running");
             if(autoStop) {
                 if(dataQueue.getSize() == 0) {
                     autoStop = false;
-                    decoder.stopDecoding();
                     stopReceiver();
                 }
             }
@@ -82,6 +92,7 @@ public class Audio_Reciver implements Runnable
     public void stopReceiver() {
         //stop receive
         setReceiving(false);
+        Log.e("stop", "receiver" + isReceiving());
     }
 
     public synchronized boolean isReceiving() {

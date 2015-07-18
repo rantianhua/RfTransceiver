@@ -13,6 +13,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
@@ -39,6 +40,7 @@ import com.rftransceiver.fragments.LoadDialogFragment;
 import com.rftransceiver.fragments.MyDeviceFragment;
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.util.Constants;
+import com.rftransceiver.util.ImageUtil;
 import com.rftransceiver.util.PoolThreadUtil;
 import com.source.DataPacketOptions;
 import com.source.SendMessageListener;
@@ -291,13 +293,20 @@ public class MainActivity extends Activity implements View.OnClickListener,
             tvName.setText(name);
         }
         name = null;
-        String photoPath = sp.getString(Constants.PHOTO_PATH,"");
+        final float dentisy = getResources().getDisplayMetrics().density;
+        final String photoPath = sp.getString(Constants.PHOTO_PATH,"");
         if(!TextUtils.isEmpty(photoPath)) {
-            imgPhoto.setImageDrawable(new CircleImageDrawable(
-                    BitmapFactory.decodeFile(photoPath)));
-        }
-        photoPath = null;
+            PoolThreadUtil.getInstance().addTask(new Runnable() {
+                @Override
+                public void run() {
+                    int size = (int) (dentisy * 120 + 0.5f);
+                    Bitmap bitmap = ImageUtil.createImageThumbnail(photoPath, size * size);
+                    dataExchangeHandler.obtainMessage(Constants.GET_BITMAP, -1, -1, bitmap).sendToTarget();
+                    bitmap = null;
+                }
+            });
 
+        }
         bindAddress = sp.getString(Constants.BIND_DEVICE_ADDRESS,null);
 
         if(TextUtils.isEmpty(bindAddress)) {
@@ -538,6 +547,13 @@ public class MainActivity extends Activity implements View.OnClickListener,
                         break;
                     case Constants.MESSAGE_TOAST:
                         showToast(msg.getData().getString(Constants.TOAST));
+                        break;
+                    case Constants.GET_BITMAP:
+                        Bitmap bitmap = (Bitmap) msg.obj;
+                        if(bitmap != null) {
+                            imgPhoto.setImageDrawable(new CircleImageDrawable(
+                                    bitmap));
+                        }
                         break;
                 }
             }

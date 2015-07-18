@@ -12,13 +12,15 @@ import android.widget.Toast;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.PoolThreadUtil;
 import com.source.sounds.Audio_Reciver;
+import com.source.sounds.StaticPlay;
 
 /**
  * Created by rth on 15-7-17.
  */
-public class SoundsTextView extends TextView implements View.OnClickListener,Audio_Reciver.PlaySoundsListener{
+public class SoundsTextView extends TextView implements View.OnClickListener{
 
     private final Audio_Reciver reciver = Audio_Reciver.getInstance();
+    private StaticPlay staticPlay;
 
     public SoundsTextView(Context context) {
         super(context);
@@ -43,45 +45,8 @@ public class SoundsTextView extends TextView implements View.OnClickListener,Aud
     public void onClick(View view) {
         final String sounds = (String) getTag();
         if(!TextUtils.isEmpty(sounds));
-        if(reciver.isReceiving()) {
-            if(getContext() != null) {
-                Toast.makeText(getContext(),"等待当前播放结束",Toast.LENGTH_SHORT).show();
-            }
-            return;
-        }
-        //cache sounds data to auto_receiver
-        PoolThreadUtil.getInstance().addTask(new Runnable() {
-            @Override
-            public void run() {
-                byte[] soundsData = Base64.decode(sounds,Base64.DEFAULT);
-                int count = soundsData.length / Constants.Small_Sounds_Packet_Length;
-                for(int i = 0; i < count;i++) {
-                    byte[] subData = new byte[Constants.Small_Sounds_Packet_Length];
-                    System.arraycopy(soundsData,i*subData.length,subData,0,subData.length);
-                    reciver.cacheData(subData,subData.length);
-                    subData = null;
-                }
-                reciver.setListener(SoundsTextView.this);
-                reciver.startWithAutoStop();
-            }
-        });
-    }
-
-    /**
-     * callback in Audio_receiver
-     */
-    @Override
-    public void playingStart() {
-
-    }
-
-    /**
-     * callback in Audio_receiver
-     */
-    @Override
-    public void playingStop() {
-        Log.e("playingStop","auto stop");
-        reciver.setListener(null);
+        staticPlay = StaticPlay.getInstance();
+        staticPlay.play(sounds);
     }
 
 }

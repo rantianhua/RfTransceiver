@@ -27,6 +27,7 @@ import com.rftransceiver.R;
 import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.customviews.CircleImageDrawable;
 import com.rftransceiver.util.Constants;
+import com.rftransceiver.util.ImageUtil;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -164,9 +165,12 @@ public class InitFragment extends Fragment implements View.OnClickListener{
         if(requestCode == REQUEST_FRAGMENT && resultCode == Activity.RESULT_CANCELED) {
             getFragmentManager().popBackStackImmediate();
             photoPath = data.getStringExtra(Constants.PHOTO_PATH);
-            Bitmap bitmap = BitmapFactory.decodeFile(photoPath);
-            CircleImageDrawable drawable = new CircleImageDrawable(bitmap);
-            setPhoto(drawable);
+            int size = (int)(getResources().getDisplayMetrics().density * 100 + 0.5f);
+            Bitmap bitmap = ImageUtil.createImageThumbnail(photoPath,size * size);
+            if(bitmap != null) {
+                CircleImageDrawable drawable = new CircleImageDrawable(bitmap);
+                setPhoto(drawable);
+            }
         }else {
             super.onActivityResult(requestCode, resultCode, data);
         }

@@ -59,6 +59,8 @@ public class Constants {
     public static final int READ_CHANGE_CHANNEL = 7;
 
     public static final int READ_ERROR = 8;
+
+    public static final int GET_BITMAP = 9;
     /**
      * the every data packet's length
      */

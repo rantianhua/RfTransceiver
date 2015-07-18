@@ -432,6 +432,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                         }
                         return true;
                     case MotionEvent.ACTION_CANCEL:
+                        return false;
                     case MotionEvent.ACTION_UP:
                         btnSounds.setSelected(false);
                         if (sendSounds && callback != null) callback.stopSendSounds();
@@ -622,7 +623,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
 
     private void saveMessage(Object message,int type,int mid,long time) {
         if(groupEntity != null) {
-            dbManager.readyMessage(message,type,mid,currentGroupId,time);
+            dbManager.readyMessage(message, type, mid, currentGroupId, time);
         }
     }
 
@@ -719,6 +720,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         if(rect.contains(touchX,touchY)) {
             //tell parent do not intercept touch event
             vp.getParent().requestDisallowInterceptTouchEvent(true);
+            return false;
+        }
+        btnSounds.getGlobalVisibleRect(rect);
+        if(rect.contains(touchX,touchY)) {
+            btnSounds.getParent().requestDisallowInterceptTouchEvent(true);
         }
         return false;
     }
