@@ -13,6 +13,8 @@ import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 
+import com.rftransceiver.adapter.ListConversationAdapter;
+import com.rftransceiver.datasets.ConversationData;
 import com.rftransceiver.fragments.HomeFragment;
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.group.GroupMember;
@@ -61,8 +63,12 @@ public class DBManager {
         return dbManager;
     }
 
-    private synchronized void openDB() {
+    private synchronized void openWriteDB() {
         db = helper.getWritableDatabase();
+    }
+
+    private synchronized void openReadDB() {
+        db = helper.getReadableDatabase();
     }
 
     /**
@@ -77,7 +83,7 @@ public class DBManager {
             asyncWord = Base64.encodeToString(async,Base64.DEFAULT);
         }
         if(TextUtils.isEmpty(name) || TextUtils.isEmpty(asyncWord)) return;
-        openDB();
+        openWriteDB();
         db.beginTransaction();
         try {
             //save group base info
@@ -156,7 +162,7 @@ public class DBManager {
      */
     public GroupEntity getAgroup(int gid) {
         GroupEntity groupEntity = null;
-        openDB();
+        openReadDB();
         db.beginTransaction();
         try {
             Cursor cursor = db.rawQuery("select * from " + DatabaseHelper.TABLE_GROUP +
@@ -219,6 +225,7 @@ public class DBManager {
      *             1 is text
      *             2 is address
      *             3 is picture
+     *             4 is time data
      */
     public void readyMessage(Object data,int type,int memberId,int groupId,long timestamp) {
         ContentValues values = new ContentValues();
@@ -232,7 +239,7 @@ public class DBManager {
                 ImageUtil.savePicToLocal(file,bitmap);
                 saveData = file.getAbsolutePath();
             }catch (Exception e) {
-                ;
+                ;e.printStackTrace();
             }
         }else {
             saveData = (String) data;
@@ -240,7 +247,7 @@ public class DBManager {
         values.put("_date_time",timestamp);
         values.put("_gid",groupId);
         values.put("_mid",memberId);
-        values.put("_type",type);
+        values.put("_type", type);
         values.put("_data", saveData);
         listChats.add(values);
 
@@ -250,6 +257,7 @@ public class DBManager {
 
     }
 
+    //save data to db
     public void saveMessage() {
         if(listChats.size() == 0) return;
         final List<ContentValues> saveValues = new ArrayList<>();
@@ -258,19 +266,105 @@ public class DBManager {
         PoolThreadUtil.getInstance().addTask(new Runnable() {
             @Override
             public void run() {
-                openDB();
+                openWriteDB();
                 db.beginTransaction();
                 try {
                     for(ContentValues values : saveValues) {
-                        db.insert(DatabaseHelper.TABLE_DATA,null,values);
+                        long re = db.insert(DatabaseHelper.TABLE_DATA,"_data",values);
                     }
+                    db.setTransactionSuccessful();
                 }catch (Exception e) {
-
+                    e.printStackTrace();
                 }finally {
                     db.endTransaction();
                     closeDB();
                 }
             }
         });
+    }
+
+    /**
+     * get message data saved in db
+     * @param gid group id of the data
+     * @param limits how many datas get
+     */
+    public List<ConversationData> getConversationData(int gid,int myId,int limits) {
+        String sql = "select * from " + DatabaseHelper.TABLE_DATA +
+                " where _gid=" + gid + " order by _date_time desc " + "limit " + limits;
+        List<ConversationData> conversationDatas = null;
+        openReadDB();
+        try {
+            db.beginTransaction();
+            Cursor cursor = db.rawQuery(sql,null);
+            conversationDatas = new ArrayList<>();
+            int count  = cursor.getCount() -1;
+            while (count >= 0) {
+                cursor.moveToPosition(count);
+                count--;
+                int messageId = cursor.getInt(cursor.getColumnIndex("_messageid"));
+                int type = cursor.getInt(cursor.getColumnIndex("_type"));
+                int mid = cursor.getInt(cursor.getColumnIndex("_mid"));
+                String text = cursor.getString(cursor.getColumnIndex("_data"));
+                String time = cursor.getString(cursor.getColumnIndex("_date_time"));
+
+                ConversationData data = null;
+                ListConversationAdapter.ConversationType conType = null;
+                Bitmap bitmapData = null;
+                String address = null;
+                switch (type) {
+                    case 0: //sounds data
+                        conType = mid == myId ? ListConversationAdapter.ConversationType.RIGHT_SOUNDS
+                                : ListConversationAdapter.ConversationType.LEFT_SOUNDS;
+                        break;
+                    case 1: //text data
+                        conType = mid == myId ? ListConversationAdapter.ConversationType.RIGHT_TEXT
+                                : ListConversationAdapter.ConversationType.LEFT_TEXT;
+                        break;
+                    case 2: //address data
+                        conType = mid == myId ? ListConversationAdapter.ConversationType.RIGHT_ADDRESS
+                                : ListConversationAdapter.ConversationType.LEFT_ADDRESS;
+                        address = text;
+                        text = null;
+                        break;
+                    case 3: //picture data
+                        conType = mid == myId ? ListConversationAdapter.ConversationType.RIGHT_PIC
+                                : ListConversationAdapter.ConversationType.LEFT_PIC;
+                        try {
+                            bitmapData = BitmapFactory.decodeFile(text);
+                        }catch(Exception e) {
+
+                        }
+                        break;
+                    case 4:
+                        conType = ListConversationAdapter.ConversationType.TIME;
+                        break;
+                    default:
+                        break;
+                }
+
+                if(conType == null) break;
+                data = new ConversationData(conType);
+                data.setDateTime(Long.valueOf(time));
+                data.setMid(mid);
+                if(bitmapData != null) {
+                    data.setBitmap(bitmapData);
+                }else if (address != null){
+                    data.setAddress(address);
+                    address = null;
+                }else {
+                    data.setContent(text);
+                    text = null;
+                }
+                conversationDatas.add(data);
+            }
+            cursor.close();
+        }catch (Exception e) {
+            e.printStackTrace();
+            Log.e("getData", "error " ,e);
+        }finally {
+            db.endTransaction();
+            closeDB();
+        }
+        return conversationDatas;
     }
 }

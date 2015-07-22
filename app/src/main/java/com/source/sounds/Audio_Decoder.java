@@ -44,9 +44,6 @@ public class Audio_Decoder implements Runnable
                 decodeSize=coder.decode(raw, decodedData, encodeData.getSize());
                 if (decodeSize > 0)
                 {
-                    for(int i = 0; i < decodeSize;i++) {
-                        decodedData[i] *= 4;
-                    }
                     player.addData(decodedData, decodeSize);
                     //decodedData = new short[decodeSize];
                 }

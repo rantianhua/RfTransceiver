@@ -20,6 +20,7 @@ import com.rftransceiver.R;
 import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.customviews.CircleImageDrawable;
 import com.rftransceiver.util.Constants;
+import com.rftransceiver.util.ImageUtil;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -64,9 +65,12 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
         SharedPreferences sp = getActivity().getSharedPreferences(Constants.SP_USER,0);
         String path = sp.getString(Constants.PHOTO_PATH,"");
         if(!TextUtils.isEmpty(path)) {
-            Bitmap bitmap = BitmapFactory.decodeFile(path);
+            int size = (int)(80 * getResources().getDisplayMetrics().density + 0.5f);
+            size *= size;
+            Bitmap bitmap = ImageUtil.createImageThumbnail(path,size);
             if(bitmap != null) {
                 imgPhoto.setImageDrawable(new CircleImageDrawable(bitmap));
+                bitmap = null;
             }
         }
         String name = sp.getString(Constants.NICKNAME,"");

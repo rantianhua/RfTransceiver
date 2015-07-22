@@ -30,7 +30,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
      */
     public static String TABLE_GROUP = "my_group";
     public static String TABLE_MEMBER = "member";
-    public static String TABLE_DATA = "data";
+    public static String TABLE_DATA = "message";
 
 
     public DatabaseHelper(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
@@ -78,7 +78,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         sb.delete(0,sb.length());
 
         sb.append("CREATE TABLE ").append(TABLE_DATA).append("(")
-                .append("_date_time NUMERIC")
+                .append("_messageid INTEGER PRIMARY KEY AUTOINCREMENT, ")
+                .append("_date_time TEXT, ")
                 .append("_gid INTEGER, ").append("_mid INTEGER, ")
                 .append("_type INTEGER, ").append("_data TEXT ")
                 .append(");");

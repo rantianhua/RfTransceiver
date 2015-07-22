@@ -98,8 +98,7 @@ public class Audio_Player implements Runnable
 		{  
 	        if (getIsPlaying())
 	        {
-				Log.e("startPlaying","is playing ,so return");
-	            return;  
+	            return;
 	        }
             PoolThreadUtil.getInstance().addTask(this);
 	    }

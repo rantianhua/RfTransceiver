@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:paddingStart="100dp"
-    android:paddingEnd="15dp"
     android:paddingTop="10dp"
     android:paddingBottom="10dp"
     >
@@ -14,6 +12,7 @@
         android:layout_centerVertical="true"
         android:layout_alignParentEnd="true"
         android:background="@drawable/frame_map_bg"
+        android:layout_marginEnd="15dp"
         />
 
     <ImageView

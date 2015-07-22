@@ -46,9 +46,18 @@ public class ConversationData {
      */
     private long dateTime;
 
+    /**
+     * my id in group
+     */
+    private int mid;
+
+    public ConversationData(ListConversationAdapter.ConversationType type) {
+        setConversationType(type);
+    }
+
     public ConversationData(ListConversationAdapter.ConversationType type,
                             String text) {
-        setConversationType(type);
+        this(type);
         setContent(text);
     }
 
@@ -115,4 +124,11 @@ public class ConversationData {
         this.dateTime = dateTime;
     }
 
+    public int getMid() {
+        return mid;
+    }
+
+    public void setMid(int mid) {
+        this.mid = mid;
+    }
 }

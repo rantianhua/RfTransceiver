@@ -65,6 +65,7 @@ import java.text.FieldPosition;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.jar.Attributes;
@@ -189,8 +190,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     private ContextMenuDialogFrag contextMenuDialogFrag;
 
     private String sendImgagePath;
-
-    private Date date = new Date();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -463,13 +462,26 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                     contextMenuDialogFrag = new ContextMenuDialogFrag();
                     contextMenuDialogFrag.setTargetFragment(HomeFragment.this,REQUEST_CONTEXT_MENU);
                 }
-                contextMenuDialogFrag.show(getFragmentManager(),"contextMenu");
+                try {
+                    contextMenuDialogFrag.show(getFragmentManager(),"contextMenu");
+                }catch (Exception e) {
+
+                }
                 break;
             case R.id.tv_tip_home:
                 if(tvTip.getText().toString().equals(tipConnectLose)) {
                     if(callback != null) {
                         callback.reconnectDevice();
                         tvTip.setText(tipReconnecting);
+                        mainHandler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                if(tvTip.getVisibility() == View.VISIBLE &&
+                                        tvTip.getText().toString().equals(tipReconnecting)) {
+                                    tvTip.setText(tipConnectLose);
+                                }
+                            }
+                        },5000);
                     }
                 }
                 break;
@@ -525,6 +537,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
             }
         });
     }
+
     @Override
     public void onPause() {
         super.onPause();
@@ -577,7 +590,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                 }
             }
         }
-        long time = date.getTime();
+        long time = new Date().getTime();
         Bitmap recevBitmap = null;
         switch (tye) {
             case 0:
@@ -604,6 +617,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         if(receiveData == null) return;
         receiveData.setDateTime(time);
         receiveData.setPhotoDrawable(drawable);
+        String receTime = checkDataTime(time,true);
+        if(receTime != null) {
+            ConversationData timeData = new ConversationData(ListConversationAdapter.ConversationType.TIME,receTime);
+            dataLists.add(timeData);
+        }
         dataLists.add(receiveData);
         conversationAdapter.updateData(dataLists);
         listView.setSelection(conversationAdapter.getCount() - 1);
@@ -611,6 +629,99 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         saveMessage(oj,tye,memberId,time);
         recevBitmap = null;
     }
+
+
+    /**
+     * according the last data's time to deciding show time message or not
+     */
+    private String checkDataTime(long timeStamp,boolean compareWithPre) {
+        long currentMills = System.currentTimeMillis();
+        final StringBuilder result = new StringBuilder();
+        Date now = new Date(currentMills);
+        Date other = new Date(timeStamp);
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(currentMills);
+        int currentYear = cal.get(Calendar.YEAR);
+        cal.setTimeInMillis(timeStamp);
+        int preYear = cal.get(Calendar.YEAR);
+        int isPreYears = currentYear - preYear;
+        if(isPreYears > 0) {
+            result.append(preYear).append("年")
+                    .append(cal.get(Calendar.MONTH))
+                    .append("月").append(cal.get(Calendar.DAY_OF_MONTH))
+                    .append("日 ").append(cal.get(Calendar.HOUR_OF_DAY))
+                    .append(":").append(cal.get(Calendar.MINUTE));
+        }else {
+            cal.setTimeInMillis(currentMills);
+            int toDay = cal.get(Calendar.DAY_OF_YEAR);
+            cal.setTimeInMillis(timeStamp);
+            int preDay = cal.get(Calendar.DAY_OF_YEAR);
+            int days = toDay - preDay;
+
+            switch (days) {
+                case 0:
+                    if(!compareWithPre) break;
+                    if(dataLists.size() > 1) {
+                        long pre = -1;
+                        int index = dataLists.size() -1;
+                        while (index >= 0) {
+                            if(dataLists.get(index).getDateTime() != 0) {
+                                pre = dataLists.get(index).getDateTime();
+                                break;
+                            }
+                            index--;
+                        }
+                        if(pre != -1) {
+                            double mills =  timeStamp - pre;
+                            if(mills < 60000) {
+                                return null;
+                            }
+                        }
+                    }
+                    break;
+                case 1:
+                    result.append("昨天");
+                    break;
+                case 2:
+                    result.append("前天");
+                    break;
+                default:
+                    result.append(cal.get(Calendar.MONTH) + 1);
+                    result.append(cal.get(Calendar.DAY_OF_MONTH));
+                    result.append(" ");
+                    break;
+            }
+            result.append(getHourAndMin(timeStamp,cal));
+        }
+        if(compareWithPre) {
+            saveMessage(result.toString(), 4, 0, timeStamp-1);
+        }
+        cal = null;
+        return result.toString();
+    }
+
+    //get hour and minite by timeStamo
+    private String getHourAndMin(long timeStamp,Calendar calendar) {
+        StringBuilder result = new StringBuilder();
+        calendar.setTimeInMillis(timeStamp);
+        int hours = calendar.get(Calendar.HOUR_OF_DAY);
+        if(hours <= 5) {
+            result.append("凌晨");
+        }else if(hours <= 11) {
+            result.append("早上");
+        }else if(hours <= 14) {
+            result.append("中午");
+        }else if(hours <= 18) {
+            result.append("下午");
+        }else {
+            result.append("晚上");
+        }
+        result.append(calendar.get(Calendar.HOUR_OF_DAY))
+            .append(":").append(calendar.get(Calendar.MINUTE));
+        return result.toString();
+    }
+
 
     /**
      * receive whole sounds ,cast to String to save in db
@@ -657,7 +768,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     public void sendMessage(String sendText,MainActivity.SendAction sendAction) {
         if(TextUtils.isEmpty(sendText)) return;
         ConversationData subData = null;
-        long time = date.getTime();
+        long time = new Date().getTime();
         Bitmap sendBitmap = null;
         switch (sendAction) {
             case Words:
@@ -686,6 +797,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         }
         if(subData == null) return;
         subData.setDateTime(time);
+        String sendTime = checkDataTime(time,true);
+        if(sendTime != null) {
+            ConversationData timeData = new ConversationData(ListConversationAdapter.ConversationType.TIME,sendTime);
+            dataLists.add(timeData);
+        }
         dataLists.add(subData);
         conversationAdapter.updateData(dataLists);
         listView.setSelection(conversationAdapter.getCount() - 1);
@@ -808,13 +924,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
 
     @Override
     public void onDestroy() {
-        dbManager = null;
         soundPool.release();
-        soundPool = null;
         super.onDestroy();
-        expressions = null;
-        imgDots = null;
-        dataLists = null;
+        expressions.clear();
+        imgDots.clear();
+        dataLists.clear();
     }
 
 
@@ -825,7 +939,37 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         PoolThreadUtil.getInstance().addTask(new Runnable() {
             @Override
             public void run() {
-                updateGroup(dbManager.getAgroup(gid));
+                GroupEntity ge = dbManager.getAgroup(gid);
+                if(ge != null) {
+                    updateGroup(ge);
+                    List<ConversationData> preDatas = dbManager.getConversationData(gid,ge.getTempId(),20);
+                    if(preDatas != null) {
+                        for(int i = 0;i < preDatas.size();i++) {
+                            int mid = preDatas.get(i).getMid();
+                            for(int j = 0;j < ge.getMembers().size();j++) {
+                                if(ge.getMembers().get(j).getId() == mid) {
+                                    preDatas.get(i).setPhotoDrawable(ge.getMembers().get(j).getDrawable());
+                                    break;
+                                }
+                            }
+                            if(preDatas.get(i).getConversationType() == ListConversationAdapter.ConversationType.TIME) {
+                                //recaculate the time message
+                                preDatas.get(i).setContent(checkDataTime(
+                                        preDatas.get(i).getDateTime(),false
+                                ));
+                            }
+                        }
+                        dataLists.addAll(preDatas);
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                conversationAdapter.updateData(dataLists);
+                                listView.setSelection(dataLists.size()-1);
+                            }
+                        });
+                        preDatas = null;
+                    }
+                }
             }
         });
     }

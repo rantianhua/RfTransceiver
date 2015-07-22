@@ -23,7 +23,10 @@ import com.rftransceiver.datasets.ConversationData;
 import com.rftransceiver.R;
 import com.rftransceiver.fragments.MapViewFragment;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
@@ -51,7 +54,7 @@ public class ListConversationAdapter extends BaseAdapter {
 
     @Override
     public int getViewTypeCount() {
-        return 8;
+        return 9;
     }
 
     @Override
@@ -80,29 +83,21 @@ public class ListConversationAdapter extends BaseAdapter {
                     convertView = inflater.inflate(R.layout.list_left_text,null);
                     hodler.tvContent = (TextView) convertView.findViewById(R.id.tv_list_left);
                     hodler.imgPhoto = (ImageView) convertView.findViewById(R.id.img_conversation_photo);
-//                    hodler.tvLevel = (TextView) convertView.findViewById(R.id.tv_conversation_level);
-//                    hodler.imgLevel = (ImageView) convertView.findViewById(R.id.img_conversation_level);
                     break;
                 case LEFT_PIC:
                     convertView = inflater.inflate(R.layout.list_left_pic,null);
                     hodler.imgData = (ImageView) convertView.findViewById(R.id.img_data_left);
                     hodler.imgPhoto = (ImageView) convertView.findViewById(R.id.img_conversation_photo);
-//                    hodler.tvLevel = (TextView) convertView.findViewById(R.id.tv_conversation_level);
-//                    hodler.imgLevel = (ImageView) convertView.findViewById(R.id.img_conversation_level);
                     break;
                 case LEFT_ADDRESS:
                     convertView = inflater.inflate(R.layout.list_left_address,null);
                     hodler.container = (FrameLayout) convertView.findViewById(R.id.frame_mapview_left);
                     hodler.imgPhoto = (ImageView) convertView.findViewById(R.id.img_conversation_photo);
-//                    hodler.tvLevel = (TextView) convertView.findViewById(R.id.tv_conversation_level);
-//                    hodler.imgLevel = (ImageView) convertView.findViewById(R.id.img_conversation_level);
                     break;
                 case LEFT_SOUNDS:
                     convertView = inflater.inflate(R.layout.list_left_sounds,null);
                     hodler.tvSounds = (TextView) convertView.findViewById(R.id.tv_left_sounds);
                     hodler.imgPhoto = (ImageView) convertView.findViewById(R.id.img_conversation_photo);
-//                    hodler.tvLevel = (TextView) convertView.findViewById(R.id.tv_conversation_level);
-//                    hodler.imgLevel = (ImageView) convertView.findViewById(R.id.img_conversation_level);
                     break;
                 case RIGHT_TEXT:
                     convertView = inflater.inflate(R.layout.list_right_text,null);
@@ -120,6 +115,10 @@ public class ListConversationAdapter extends BaseAdapter {
                 case RIGHT_SOUNDS:
                     convertView = inflater.inflate(R.layout.list_right_sounds,null);
                     hodler.tvSounds = (TextView) convertView.findViewById(R.id.tv_right_sounds);
+                    break;
+                case TIME:
+                    convertView = inflater.inflate(R.layout.list_item_time,null);
+                    hodler.tvTime = (TextView) convertView.findViewById(R.id.tv_chat_time);
                     break;
             }
             convertView.setTag(hodler);
@@ -160,12 +159,19 @@ public class ListConversationAdapter extends BaseAdapter {
                     }else {
                         fragment = (MapViewFragment) object;
                     }
-                    fm.beginTransaction().replace(hodler.container.getId(),fragment).commit();
+                    try {
+                        fm.beginTransaction().replace(hodler.container.getId(),fragment).commit();
+                    }catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
                 break;
             case LEFT_SOUNDS:
             case RIGHT_SOUNDS:
                 hodler.tvSounds.setTag(data.getContent());
+                break;
+            case TIME:
+                hodler.tvTime.setText(data.getContent());
                 break;
         }
 
@@ -186,13 +192,16 @@ public class ListConversationAdapter extends BaseAdapter {
      * @param dataLists
      */
     public void updateData(List<ConversationData> dataLists) {
-        this.listData.clear();
-        this.listData.addAll(dataLists);
-        notifyDataSetChanged();
+        if(dataLists.size() > 0) {
+            this.listData.clear();
+            this.listData.addAll(dataLists);
+            notifyDataSetChanged();
+        }
     }
 
+
     class ViewHodler {
-        TextView tvContent,tvSounds,tvImgProgress;
+        TextView tvContent,tvSounds,tvImgProgress,tvTime;
         ImageView imgPhoto,imgData;
         FrameLayout container;
     }
@@ -205,7 +214,8 @@ public class ListConversationAdapter extends BaseAdapter {
         RIGHT_TEXT,
         RIGHT_PIC,
         RIGHT_ADDRESS,
-        RIGHT_SOUNDS
+        RIGHT_SOUNDS,
+        TIME
     }
 
     @Override
@@ -227,6 +237,8 @@ public class ListConversationAdapter extends BaseAdapter {
                 return 6;
             case RIGHT_SOUNDS:
                 return 7;
+            case TIME:
+                return 8;
             default:
                 return 0;
         }

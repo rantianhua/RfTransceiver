@@ -83,6 +83,7 @@ public class BleService extends Service {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 mConnectionState = STATE_CONNECTED;
                 if(callback != null) callback.bleConnection(true);
+                mBluetoothDeviceAddress = gatt.getDevice().getAddress();
                 // Attempts to discover services after successful connection.
                 mBluetoothGatt.discoverServices();
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
@@ -201,10 +202,13 @@ public class BleService extends Service {
      * write instruction to ble
      * @param instruction
      */
-    public void writeInstruction(byte[] instruction) {
+    public boolean writeInstruction(byte[] instruction) {
         if(canWrite()) {
             writeCharacteristic.setValue(instruction);
             mBluetoothGatt.writeCharacteristic(writeCharacteristic);
+            return true;
+        }else {
+            return false;
         }
     }
 
@@ -327,7 +331,6 @@ public class BleService extends Service {
             // We want to directly connect to the device, so we are setting the autoConnect
             // parameter to false.
             mBluetoothGatt = device.connectGatt(this, false, mGattCallback);
-            mBluetoothDeviceAddress = address;
             mConnectionState = STATE_CONNECTING;
         } catch (Exception e) {
             e.printStackTrace();

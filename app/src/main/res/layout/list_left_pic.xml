@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:paddingStart="15dp"
-    android:paddingEnd="80dp"
     android:paddingTop="10dp"
     android:paddingBottom="10dp"
     >
@@ -11,14 +9,16 @@
         android:id="@+id/include_person_left_pic"
         android:layout_width="70dp"
         android:layout_height="wrap_content"
-        android:layout_centerVertical="true"/>
+        android:layout_centerVertical="true"
+        android:layout_marginStart="15dp"/>
 
     <ImageView
         android:layout_width="@dimen/img_data_width"
         android:layout_height="@dimen/img_data_height"
         android:id="@+id/img_data_left"
         android:layout_centerVertical="true"
-        android:layout_marginStart="75dp"
+        android:layout_toEndOf="@+id/include_person_left_pic"
+        android:layout_marginStart="5dp"
         android:background="@drawable/frame_map_bg"/>
 
 </RelativeLayout>

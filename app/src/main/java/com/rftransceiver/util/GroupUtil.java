@@ -238,7 +238,6 @@ public class GroupUtil {
 
     public static final String NAME = "name";   //the key of group's or member's name
     public static final String PIC = "pic";     //the key of group owner's or member's picture
-    public static final String OWNER_NAME = "owner_name";   //the key of group owner's or member's name
     public static final String GROUP_MEMBER_ID = "memberId";    //the key of group member's id
     public static final String GROUP_ASYNC_WORD = "async_word"; //the key of group's async word
     public static final String GROUP_SSID = "ssid"; //the key of group's async word

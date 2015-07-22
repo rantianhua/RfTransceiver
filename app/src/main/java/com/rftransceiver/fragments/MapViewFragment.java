@@ -97,10 +97,10 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
 
         try {
             geocoder = GeoCoder.newInstance();
+            geocoder.setOnGetGeoCodeResultListener(getGeoCoderResultListener);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        geocoder.setOnGetGeoCodeResultListener(getGeoCoderResultListener);
     }
 
     @Nullable
@@ -114,7 +114,9 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
         }else {
             String[] addresses = address.split("\\|");
             if(addresses.length > 1) {
-                geocoder.geocode(new GeoCodeOption().address(addresses[0]).city(addresses[1]));
+                if(geocoder != null) {
+                    geocoder.geocode(new GeoCodeOption().address(addresses[0]).city(addresses[1]));
+                }
             }
         }
 
@@ -123,7 +125,7 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
     }
 
     private void initView(View view) {
-        ButterKnife.inject(this,view);
+        ButterKnife.inject(this, view);
         //init map
         baiduMap = mapView.getMap();
         /**
@@ -181,13 +183,12 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
         //close location layer
         baiduMap.setMyLocationEnabled(false);
         mapView.onDestroy();
-        mapView = null;
-        geocoder.destroy();
-        geocoder = null;
+        if(geocoder != null) {
+            geocoder.destroy();
+        }
         super.onDestroy();
         if(poiInfoList != null) {
             poiInfoList.clear();
-            poiInfoList = null;
         }
         setCallback(null);
     }
@@ -226,7 +227,7 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
     /**
      * the listener of geo coder
      */
-    OnGetGeoCoderResultListener getGeoCoderResultListener = new OnGetGeoCoderResultListener() {
+    final OnGetGeoCoderResultListener getGeoCoderResultListener = new OnGetGeoCoderResultListener() {
         @Override
         public void onGetGeoCodeResult(GeoCodeResult geoCodeResult) {
             if(geoCodeResult == null || geoCodeResult.error != SearchResult.ERRORNO.NO_ERROR) {

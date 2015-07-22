@@ -42,7 +42,6 @@ public class Audio_Reciver implements Runnable
 	 {
          if(!isReceiving()) {
              PoolThreadUtil.getInstance().addTask(this);
-             Log.e("start","receiver");
          }
 	 }
 
@@ -74,7 +73,6 @@ public class Audio_Reciver implements Runnable
                 //将数据添加至解码器
                 decoder.addData(data);
             }
-            Log.e("receiving", "running");
             if(autoStop) {
                 if(dataQueue.getSize() == 0) {
                     autoStop = false;
@@ -92,15 +90,18 @@ public class Audio_Reciver implements Runnable
     public void stopReceiver() {
         //stop receive
         setReceiving(false);
-        Log.e("stop", "receiver" + isReceiving());
     }
 
-    public synchronized boolean isReceiving() {
-        return isReceiving;
+    public boolean isReceiving() {
+        synchronized (this) {
+            return isReceiving;
+        }
     }
 
-    public synchronized void setReceiving(boolean isReceiving) {
-        this.isReceiving = isReceiving;
+    public void setReceiving(boolean receiving) {
+        synchronized (this) {
+            this.isReceiving = receiving;
+        }
     }
 
     /**

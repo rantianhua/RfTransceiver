@@ -22,6 +22,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.text.TextUtils;
 import android.util.Base64;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
@@ -35,6 +36,7 @@ import com.rftransceiver.customviews.CircleImageDrawable;
 import com.rftransceiver.customviews.LockerView;
 import com.rftransceiver.db.DBManager;
 import com.rftransceiver.fragments.BindDeviceFragment;
+import com.rftransceiver.fragments.ContactsFragment;
 import com.rftransceiver.fragments.HomeFragment;
 import com.rftransceiver.fragments.LoadDialogFragment;
 import com.rftransceiver.fragments.MyDeviceFragment;
@@ -80,6 +82,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
     TextView tvSetting;
     @InjectView(R.id.tv_menu_exit)
     TextView tvExit;
+    @InjectView(R.id.tv_menu_contacts)
+    TextView tvContacts;
 
     private final String TAG = getClass().getSimpleName();
 
@@ -136,6 +140,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
      * MyDeviceFragment to look,bind or unbind device
      */
     private MyDeviceFragment myDeviceFragment;
+
+    /**
+     * show contacts
+     */
+    private ContactsFragment contactsFragment;
 
     /**
      * the menu to mark send action
@@ -327,6 +336,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
         tvInterPhone.setOnClickListener(this);
         tvSetting.setOnClickListener(this);
         tvExit.setOnClickListener(this);
+        tvContacts.setOnClickListener(this);
     }
 
     /**
@@ -336,8 +346,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private void changeFragment(Fragment fragment) {
         FragmentTransaction transaction = getFragmentManager().beginTransaction();
         transaction.replace(R.id.frame_content, fragment);
-        if(fragment instanceof MyDeviceFragment) {
-            transaction.addToBackStack("myDevice");
+        if(fragment instanceof MyDeviceFragment || fragment instanceof ContactsFragment) {
+            transaction.addToBackStack(null);
         }
         transaction.commitAllowingStateLoss();
         transaction = null;
@@ -380,6 +390,12 @@ public class MainActivity extends Activity implements View.OnClickListener,
         if(homeFragment == null) {
             homeFragment = new HomeFragment();
             homeFragment.setCallback(this);
+        }
+    }
+
+    private void initContacsFragment() {
+        if(contactsFragment == null) {
+            contactsFragment = new ContactsFragment();
         }
     }
 
@@ -561,6 +577,9 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     private void stopReceiveSounds() {
+        if(receiver.isReceiving()) {
+            receiver.stopReceiver();
+        }
         receiver.stopReceiver();
         if(homeFragment != null) {
             homeFragment.endReceive(0);
@@ -622,25 +641,23 @@ public class MainActivity extends Activity implements View.OnClickListener,
     protected void onDestroy() {
         PoolThreadUtil.getInstance().close();
         super.onDestroy();
-        parseFactory = null;
 
         record.stopRecording();
         receiver.stopReceiver();
         textEntity.setSendListener(null);
         textEntity.setOptions(null);
 
-        record = null;
-        receiver = null;
-        textEntity = null;
-
         unbindService(serviceConnectionBle);
         bluetoothLeService.setCallback(null);
         bluetoothLeService.disconnect();
         bluetoothLeService.close();
-        bluetoothLeService = null;
 
         DBManager.close();
 
+        bindDeviceFragment = null;
+        homeFragment = null;
+        loadDialogFragment = null;
+        myDeviceFragment = null;
     }
 
     @Override
@@ -681,6 +698,12 @@ public class MainActivity extends Activity implements View.OnClickListener,
             case R.id.tv_menu_exit:
                 MainActivity.this.finish();
                 break;
+            case R.id.tv_menu_contacts:
+                initContacsFragment();
+                changeFragment(contactsFragment);
+                lockerView.openScroll(false);
+                lockerView.closeMenu();
+                break;
         }
     }
 
@@ -719,7 +742,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
      */
     private void chenckChannel() {
         if(bluetoothLeService != null){
-            bluetoothLeService.writeInstruction(Constants.CHANNEL_STATE);
+            if( !bluetoothLeService.writeInstruction(Constants.CHANNEL_STATE)) {
+                action = SendAction.NONE;
+            }
+        }else {
+            action = SendAction.NONE;
         }
     }
 
