@@ -192,11 +192,11 @@ public class ListConversationAdapter extends BaseAdapter {
      * @param dataLists
      */
     public void updateData(List<ConversationData> dataLists) {
+        this.listData.clear();
         if(dataLists.size() > 0) {
-            this.listData.clear();
             this.listData.addAll(dataLists);
-            notifyDataSetChanged();
         }
+        notifyDataSetChanged();
     }
 
 

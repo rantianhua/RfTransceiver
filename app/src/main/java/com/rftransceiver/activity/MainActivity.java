@@ -396,6 +396,21 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private void initContacsFragment() {
         if(contactsFragment == null) {
             contactsFragment = new ContactsFragment();
+            contactsFragment.setCallback(new ContactsFragment.CallbackInContacts() {
+                @Override
+                public void changeGroup(int gid) {
+                    getFragmentManager().popBackStackImmediate();
+                    contactsFragment = null;
+                    if(homeFragment != null) {
+                        homeFragment.changeGroup(gid);
+                    }
+                }
+
+                @Override
+                public void openScorll(boolean open) {
+                    lockerView.openScroll(open);
+                }
+            });
         }
     }
 
@@ -701,7 +716,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
             case R.id.tv_menu_contacts:
                 initContacsFragment();
                 changeFragment(contactsFragment);
-                lockerView.openScroll(false);
                 lockerView.closeMenu();
                 break;
         }

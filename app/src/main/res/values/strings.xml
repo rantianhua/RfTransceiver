@@ -84,5 +84,6 @@
     <string name="exit_group">退出小组</string>
     <string name="clear_chat_record">清除聊天记录</string>
     <string name="delete_group">删除该小组</string>
+    <string name="loading">正在加载...</string>
 
 </resources>

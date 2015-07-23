@@ -14,6 +14,7 @@ import android.util.Base64;
 import android.util.Log;
 
 import com.rftransceiver.adapter.ListConversationAdapter;
+import com.rftransceiver.datasets.ContactsData;
 import com.rftransceiver.datasets.ConversationData;
 import com.rftransceiver.fragments.HomeFragment;
 import com.rftransceiver.group.GroupEntity;
@@ -269,13 +270,13 @@ public class DBManager {
                 openWriteDB();
                 db.beginTransaction();
                 try {
-                    for(ContentValues values : saveValues) {
-                        long re = db.insert(DatabaseHelper.TABLE_DATA,"_data",values);
+                    for (ContentValues values : saveValues) {
+                        long re = db.insert(DatabaseHelper.TABLE_DATA, "_data", values);
                     }
                     db.setTransactionSuccessful();
-                }catch (Exception e) {
+                } catch (Exception e) {
                     e.printStackTrace();
-                }finally {
+                } finally {
                     db.endTransaction();
                     closeDB();
                 }
@@ -366,5 +367,35 @@ public class DBManager {
             closeDB();
         }
         return conversationDatas;
+    }
+
+    public List<ContactsData> getContacts() {
+        String sql = "select _gname,_gid from " + DatabaseHelper.TABLE_GROUP;
+        openReadDB();
+        List<ContactsData> contactsDatas = null;
+        try {
+            db.beginTransaction();
+            Cursor cursor = db.rawQuery(sql,null);
+            if(cursor == null) return null;
+            if(cursor.getCount() > 0) {
+                contactsDatas = new ArrayList<>();
+            }
+            if(contactsDatas != null) {
+                while (cursor.moveToNext()) {
+                    String name = cursor.getString(0);
+                    int gid = cursor.getInt(1);
+                    ContactsData data = new ContactsData(name,gid);
+                    contactsDatas.add(data);
+                }
+            }
+            cursor.close();
+            db.setTransactionSuccessful();
+        }catch (Exception e) {
+            e.printStackTrace();
+        }finally {
+            db.endTransaction();
+            closeDB();
+        }
+        return contactsDatas;
     }
 }

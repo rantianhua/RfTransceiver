@@ -17,4 +17,11 @@
         <item name="android:windowExitAnimation">@anim/slide_out</item>
     </style>
 
+    <style name="pop_letter" parent="Base.Widget.AppCompat.PopupWindow">
+        <item name="android:windowBackground">@drawable/corner_with_gray</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowIsTranslucent">true</item>
+    </style>
+
 </resources>

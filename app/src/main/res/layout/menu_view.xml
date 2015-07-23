@@ -142,6 +142,7 @@
                 android:text="@string/contacts"
                 android:paddingStart="40dp"
                 android:paddingEnd="0dp"
+                android:background="@drawable/click_with_color"
                 />
 
             <View

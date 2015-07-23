@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -19,22 +20,21 @@ public class LetterView extends View {
 
     private final Paint paint = new Paint();
 
-    private final String[] letters = {
+    public final String[] letters = {
             "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K",
             "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X",
             "Y", "Z", "#"
     };
+
+    private SelectLetterListener listener;
 
     /**
      * the id of choosed letter in letters
      */
     private int chooseLetter = -1;
 
-    private int lettersMarginEnd;
-
     public LetterView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        lettersMarginEnd = (int)(15 * context.getResources().getDisplayMetrics().density + 0.5f);
     }
 
     @Override
@@ -50,7 +50,7 @@ public class LetterView extends View {
             if(i == chooseLetter) {
                 paint.setColor(Color.BLUE);
             }
-            float x = getWidth() - lettersMarginEnd - paint.measureText(letters[i]);
+            float x = (getWidth() - paint.measureText(letters[i])) / 2;
             float y = letterHeight * (i + 1);
             canvas.drawText(letters[i],x,y,paint);
             paint.reset();
@@ -67,15 +67,18 @@ public class LetterView extends View {
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                reDraw(choose,preChoose);
+                reDraw(choose, preChoose);
                 break;
             case MotionEvent.ACTION_MOVE:
-            case MotionEvent.ACTION_CANCEL:
                 reDraw(choose,preChoose);
                 break;
+            case MotionEvent.ACTION_CANCEL:
             case MotionEvent.ACTION_UP:
                 choose = -1;
                 invalidate();
+                if(listener != null) {
+                    listener.selectLetter(null,false);
+                }
                 break;
             default:
                 break;
@@ -83,12 +86,29 @@ public class LetterView extends View {
         return true;
     }
 
+    /**
+     * redraw the letterview
+     * @param choose now selected letter's index
+     * @param preChoose pre selected  index
+     */
     private void reDraw(int choose,int preChoose) {
         if(choose != preChoose) {
-            if(choose >= 0 && choose < letters.length) {
+            if(choose >= 0 && choose < letters.length && listener != null) {
                 chooseLetter = choose;
                 invalidate();
+                listener.selectLetter(letters[chooseLetter], true);
             }
         }
+    }
+
+    public void setListener(SelectLetterListener listener) {
+        this.listener = listener;
+    }
+
+    /**
+     * callback to send selected letter
+     */
+    public interface SelectLetterListener {
+        void selectLetter(String letter,boolean pop);
     }
 }

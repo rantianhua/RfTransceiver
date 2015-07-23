@@ -7,6 +7,7 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
@@ -891,6 +892,20 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         }
     }
 
+    /**
+     * change group by gid
+     * @param gid
+     */
+    public void changeGroup(int gid) {
+        if(gid == currentGroupId) return;
+        dataLists.clear();
+        conversationAdapter.updateData(dataLists);
+        groupEntity = null;
+        loadGroup(gid);
+        currentGroupId = gid;
+
+    }
+
     public interface CallbackInHomeFragment {
         /**
          * send text or sound message
@@ -924,11 +939,19 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
 
     @Override
     public void onDestroy() {
+        saveCurrentGid();
         soundPool.release();
         super.onDestroy();
         expressions.clear();
         imgDots.clear();
         dataLists.clear();
+    }
+
+    private void saveCurrentGid() {
+        if(getActivity() == null) return;
+        SharedPreferences.Editor editor = getActivity().getSharedPreferences(Constants.SP_USER,0).edit();
+        editor.putInt(Constants.PRE_GROUP,currentGroupId);
+        editor.apply();
     }
 
 
