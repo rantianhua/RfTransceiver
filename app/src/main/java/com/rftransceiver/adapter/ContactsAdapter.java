@@ -8,9 +8,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.rftransceiver.R;
 import com.rftransceiver.datasets.ContactsData;
+import com.rftransceiver.fragments.ContactsFragment;
 
 import org.w3c.dom.Text;
 
@@ -22,13 +24,21 @@ import java.util.Map;
  */
 public class ContactsAdapter extends BaseExpandableListAdapter {
 
+    //数据源
     private Map<String,List<ContactsData>> mapDatas ;
 
     private Context context;
 
+    //回调接口
+    private CallbackInContactsAdpter callback;
+
     public ContactsAdapter(Map<String,List<ContactsData>> dataSet,Context context) {
         this.context = context;
         mapDatas = dataSet;
+    }
+
+    public void setCallback(CallbackInContactsAdpter callback) {
+        this.callback = callback;
     }
 
     @Override
@@ -93,6 +103,22 @@ public class ContactsAdapter extends BaseExpandableListAdapter {
             childHolder.tvName.setBackgroundResource(R.drawable.click_with_color);
             view = childHolder.tvName;
             view.setTag(childHolder);
+            final int group = i;
+            final int child = i1;
+            view.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View view) {
+                    //先根据父视图的索引得到其对应的子视图的数据源
+                    List<ContactsData> cont = mapDatas.get(getKeyByIndex(group));
+                    if(cont != null) {
+                        //再根据数据源和子视图的索引得到子视图对应组的id
+                        int gid = cont.get(child).getGroupId();
+                        //通过接口将组id传到调用方
+                        if(callback != null) callback.getGroupId(gid);
+                    }
+                    return true;
+                }
+            });
         }else {
             childHolder = (ChildHolder) view.getTag();
         }
@@ -131,5 +157,9 @@ public class ContactsAdapter extends BaseExpandableListAdapter {
         TextView tvName;
     }
 
+    //该接口用来回调传递获取的组的id
+    public interface CallbackInContactsAdpter {
+        void getGroupId(int gid);
+    }
 
 }

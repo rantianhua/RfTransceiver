@@ -35,7 +35,7 @@ import butterknife.InjectView;
 /**
  * Created by rth on 15-7-22.
  */
-public class ContactsFragment extends Fragment {
+public class ContactsFragment extends Fragment implements ContactsAdapter.CallbackInContactsAdpter{
 
     @InjectView(R.id.letterview_contact)
     LetterView letterView;
@@ -178,6 +178,7 @@ public class ContactsFragment extends Fragment {
                         public void run() {
                             rlLoading.setVisibility(View.GONE);
                             adpter = new ContactsAdapter(mapContacts,getActivity());
+                            adpter.setCallback(ContactsFragment.this);
                             contacts.setAdapter(adpter);
                             for(int i = 0;i < mapContacts.size();i++) {
                                 contacts.expandGroup(i);
@@ -196,10 +197,34 @@ public class ContactsFragment extends Fragment {
                 }
             }
         });
-
-
     }
 
+    /**
+     * 在ContactsAdapter中进行回调，回调长按组时其对应的id
+     * @param gid
+     */
+    @Override
+    public void getGroupId(int gid) {
+        //显示提示框进一步确认
+        String message = "确定删除该组?";
+        MyAlertDialogFragment myAlert = MyAlertDialogFragment.getInstance(0,0,message,true);
+        myAlert.setListener(new MyAlertDialogFragment.CallbackInMyAlert() {
+            @Override
+            public void onClickSure() {
+                PoolThreadUtil.getInstance().addTask(new Runnable() {
+                    @Override
+                    public void run() {
+                        //在此处执行删除组的操作
+                    }
+                });
+            }
+
+            @Override
+            public void onClickCancel() {
+
+            }
+        });
+    }
 
     private final LetterView.SelectLetterListener selectLetterListener = new LetterView.SelectLetterListener() {
         @Override
@@ -240,6 +265,7 @@ public class ContactsFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        adpter.setCallback(null);
         letterView.setListener(null);
         showLetter = null;
         mapContacts = null;
