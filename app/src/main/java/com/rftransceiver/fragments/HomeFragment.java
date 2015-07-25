@@ -47,6 +47,7 @@ import com.rftransceiver.R;
 import com.rftransceiver.activity.LocationActivity;
 import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.adapter.ListConversationAdapter;
+import com.rftransceiver.customviews.MyListView;
 import com.rftransceiver.datasets.ConversationData;
 import com.rftransceiver.db.DBManager;
 import com.rftransceiver.group.GroupEntity;
@@ -80,10 +81,10 @@ import butterknife.internal.ListenerClass;
 /**
  * Created by rantianhua on 15-6-14.
  */
-public class HomeFragment extends Fragment implements View.OnClickListener{
+public class HomeFragment extends Fragment implements View.OnClickListener,MyListView.ILoadingListener{
 
     @InjectView(R.id.listview_conversation)
-    ListView listView;
+    MyListView listView;
     @InjectView(R.id.et_send_message)
     EditText etSendMessage;
     @InjectView(R.id.btn_send)
@@ -332,6 +333,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
 
     private void initView(View v) {
         ButterKnife.inject(this,v);
+        listView.setInterface(this);
         conversationAdapter = new ListConversationAdapter(getActivity(),imgageGetter,getFragmentManager());
         listView.setAdapter(conversationAdapter);
         conversationAdapter.updateData(dataLists);
@@ -537,6 +539,22 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                 conversationAdapter.updateImgageProgress(percent);
             }
         });
+    }
+
+    /**
+     * callback in MyListView
+     */
+    @Override
+    public void onLoad() {
+        if(groupEntity == null) listView.loadComplete();
+        final long lastData = dataLists.get(0).getDateTime();
+        PoolThreadUtil.getInstance().addTask(new Runnable() {
+            @Override
+            public void run() {
+                loadConverationData(currentGroupId,myId,lastData,20,true);
+            }
+        });
+
     }
 
     @Override
@@ -950,7 +968,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     private void saveCurrentGid() {
         if(getActivity() == null) return;
         SharedPreferences.Editor editor = getActivity().getSharedPreferences(Constants.SP_USER,0).edit();
-        editor.putInt(Constants.PRE_GROUP,currentGroupId);
+        editor.putInt(Constants.PRE_GROUP, currentGroupId);
         editor.apply();
     }
 
@@ -963,36 +981,60 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
             @Override
             public void run() {
                 GroupEntity ge = dbManager.getAgroup(gid);
-                if(ge != null) {
+                if (ge != null) {
                     updateGroup(ge);
-                    List<ConversationData> preDatas = dbManager.getConversationData(gid,ge.getTempId(),20);
-                    if(preDatas != null) {
-                        for(int i = 0;i < preDatas.size();i++) {
-                            int mid = preDatas.get(i).getMid();
-                            for(int j = 0;j < ge.getMembers().size();j++) {
-                                if(ge.getMembers().get(j).getId() == mid) {
-                                    preDatas.get(i).setPhotoDrawable(ge.getMembers().get(j).getDrawable());
-                                    break;
-                                }
-                            }
-                            if(preDatas.get(i).getConversationType() == ListConversationAdapter.ConversationType.TIME) {
-                                //recaculate the time message
-                                preDatas.get(i).setContent(checkDataTime(
-                                        preDatas.get(i).getDateTime(),false
-                                ));
-                            }
-                        }
-                        dataLists.addAll(preDatas);
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                conversationAdapter.updateData(dataLists);
-                                listView.setSelection(dataLists.size()-1);
-                            }
-                        });
-                        preDatas = null;
+                    loadConverationData(gid, ge.getTempId(), -1, 20, false);
+                }
+            }
+        });
+    }
+
+    /**
+     *
+     * @param gid the group's id
+     * @param timeStamp message send or received time
+     * @param limits get max data from db
+     * @return
+     */
+    private void loadConverationData(int gid,int myid,long timeStamp,int limits,boolean isLoad) {
+        if(groupEntity == null) return;
+        List<ConversationData> preDatas = dbManager.getConversationData(gid,myId,timeStamp,20);
+        if(isLoad) {
+            loadComplete();
+        }
+        if(preDatas != null) {
+            for(int i = 0;i < preDatas.size();i++) {
+                int mid = preDatas.get(i).getMid();
+                for(int j = 0;j < groupEntity.getMembers().size();j++) {
+                    if(groupEntity.getMembers().get(j).getId() == mid) {
+                        preDatas.get(i).setPhotoDrawable(groupEntity.getMembers().get(j).getDrawable());
+                        break;
                     }
                 }
+                if(preDatas.get(i).getConversationType() == ListConversationAdapter.ConversationType.TIME) {
+                    //recaculate the time message
+                    preDatas.get(i).setContent(checkDataTime(
+                            preDatas.get(i).getDateTime(),false
+                    ));
+                }
+            }
+            dataLists.addAll(0,preDatas);
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    conversationAdapter.updateData(dataLists);
+                    listView.setSelection(dataLists.size()-1);
+                }
+            });
+            preDatas = null;
+        }
+    }
+
+    private void loadComplete() {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                listView.loadComplete();
             }
         });
     }

@@ -77,8 +77,12 @@ public class ImageFolderData {
         datas[datas.length-1] = CAMERA;
         this.paths = Arrays.asList(datas);
         Collections.reverse(this.paths);
-        setCounts(this.paths.size()-1);
-        setFirstPicPath(getAbPath()+"/"+this.paths.get(1));
+        setCounts(this.paths.size() - 1);
+        try {
+            setFirstPicPath(getAbPath()+"/"+this.paths.get(1));
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public String getFirstPicPath() {

@@ -289,9 +289,13 @@ public class DBManager {
      * @param gid group id of the data
      * @param limits how many datas get
      */
-    public List<ConversationData> getConversationData(int gid,int myId,int limits) {
+    public List<ConversationData> getConversationData(int gid,int myId,long timeStamp,int limits) {
         String sql = "select * from " + DatabaseHelper.TABLE_DATA +
-                " where _gid=" + gid + " order by _date_time desc " + "limit " + limits;
+                " where _gid=" + gid;
+        if(timeStamp > 0) {
+            sql += " and _date_time < "+ timeStamp;
+        }
+        sql += " order by _date_time desc " + "limit " + limits;
         List<ConversationData> conversationDatas = null;
         openReadDB();
         try {

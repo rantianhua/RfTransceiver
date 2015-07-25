@@ -317,6 +317,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
         }
         bindAddress = sp.getString(Constants.BIND_DEVICE_ADDRESS,null);
+        deviceName = sp.getString(Constants.BIND_DEVICE_NAME,null);
 
         if(TextUtils.isEmpty(bindAddress)) {
             //choose device to bind
@@ -957,7 +958,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
     @Override
     public void reconnectDevice() {
         if(bindAddress == null) {
-            bindAddress = sp.getString(Constants.BIND_DEVICE_ADDRESS,"");
+            showToast("还未绑定设备！");
+            return;
         }
         if(bluetoothLeService == null || deviceBinded) return;
         if(!bluetoothLeService.connect(bindAddress)) {
