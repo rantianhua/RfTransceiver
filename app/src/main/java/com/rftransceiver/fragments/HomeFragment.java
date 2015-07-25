@@ -27,10 +27,13 @@ import android.text.TextWatcher;
 import android.text.format.DateFormat;
 import android.util.Base64;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -39,6 +42,7 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -47,6 +51,7 @@ import com.rftransceiver.R;
 import com.rftransceiver.activity.LocationActivity;
 import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.adapter.ListConversationAdapter;
+import com.rftransceiver.customviews.ContextPopMenu;
 import com.rftransceiver.customviews.MyListView;
 import com.rftransceiver.datasets.ConversationData;
 import com.rftransceiver.db.DBManager;
@@ -113,6 +118,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     LinearLayout llDots;
     @InjectView(R.id.tv_title_content)
     TextView tvTitle;
+    @InjectView(R.id.rl_top_home)
+    RelativeLayout top;
 
     /**
      * the reference of callback interface
@@ -189,9 +196,13 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
      */
     private int currentGroupId = -1;
 
-    private ContextMenuDialogFrag contextMenuDialogFrag;
+    //private ContextMenuDialogFrag contextMenuDialogFrag;
 
+    //要发送的图片的存储地址
     private String sendImgagePath;
+
+    //顶部菜单栏的弹出菜单
+    private ContextPopMenu popMenu;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -461,14 +472,20 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                 break;
             case R.id.img_home_hide:
                 //click hide menu on the top
-                if(contextMenuDialogFrag == null) {
-                    contextMenuDialogFrag = new ContextMenuDialogFrag();
-                    contextMenuDialogFrag.setTargetFragment(HomeFragment.this,REQUEST_CONTEXT_MENU);
-                }
-                try {
-                    contextMenuDialogFrag.show(getFragmentManager(),"contextMenu");
-                }catch (Exception e) {
-
+//                if(contextMenuDialogFrag == null) {
+//                    contextMenuDialogFrag = new ContextMenuDialogFrag();
+//                    contextMenuDialogFrag.setTargetFragment(HomeFragment.this,REQUEST_CONTEXT_MENU);
+//                }
+//                try {
+//                    contextMenuDialogFrag.show(getFragmentManager(),"contextMenu");
+//                }catch (Exception e) {
+//
+//                }
+                if(getActivity() != null) {
+                    if(popMenu == null) {
+                        popMenu = new ContextPopMenu(getActivity());
+                    }
+                    popMenu.show(top);
                 }
                 break;
             case R.id.tv_tip_home:
@@ -547,14 +564,17 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     @Override
     public void onLoad() {
         if(groupEntity == null) listView.loadComplete();
-        final long lastData = dataLists.get(0).getDateTime();
-        PoolThreadUtil.getInstance().addTask(new Runnable() {
-            @Override
-            public void run() {
-                loadConverationData(currentGroupId,myId,lastData,20,true);
-            }
-        });
-
+        try {
+            final long lastData = dataLists.get(0).getDateTime();
+            PoolThreadUtil.getInstance().addTask(new Runnable() {
+                @Override
+                public void run() {
+                    loadConverationData(currentGroupId, myId, lastData, 20, true);
+                }
+            });
+        }catch (Exception e) {
+            e.fillInStackTrace();
+        }
     }
 
     @Override

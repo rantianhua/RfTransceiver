@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="@dimen/popmenu_width" android:layout_height="@dimen/popmenu_height"
+    android:padding="10dp"
+    android:background="@drawable/corner_with_white">
+
+    <ImageView
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:id="@+id/img_popmenu_group"
+        android:src="@drawable/group"
+        android:layout_alignStart="@+id/tv_popmenu_seegroup"
+        android:layout_marginTop="15dp"
+        android:layout_marginStart="10dp"
+        />
+
+    <TextView
+        android:layout_width="120dp"
+        android:layout_height="60dp"
+        android:id="@+id/tv_popmenu_seegroup"
+        android:textColor="@android:color/black"
+        android:text="@string/see_group"
+        android:gravity="start|center_vertical"
+        android:paddingEnd="0dp"
+        android:paddingStart="50dp"
+        android:singleLine="true"
+        android:background="@drawable/click_with_color"/>
+
+    <TextView
+        android:layout_width="120dp"
+        android:layout_height="60dp"
+        android:id="@+id/tv_popmenu_real_time"
+        android:textColor="@android:color/black"
+        android:gravity="start|center_vertical"
+        android:paddingEnd="0dp"
+        android:paddingStart="50dp"
+        android:singleLine="true"
+        android:background="@drawable/click_with_color"
+        android:layout_below="@+id/tv_popmenu_seegroup"
+        android:text="@string/close_realtime_sounds"
+        />
+
+    <ImageView
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:id="@+id/img_popmenu_sounds"
+        android:src="@drawable/realtime_sounds"
+        android:layout_alignStart="@+id/tv_popmenu_real_time"
+        android:layout_alignTop="@+id/tv_popmenu_real_time"
+        android:layout_marginTop="15dp"
+        android:layout_marginStart="10dp"
+        />
+
+</RelativeLayout>

@@ -68,8 +68,6 @@
     <string name="hint_et_sent_text">请写一段消息</string>
     <string name="reconnecting">正在重新连接，请稍候</string>
     <string name="connect_success">连接成功</string>
-    <string name="mute">静音</string>
-    <string name="cancel_mute">解除静音</string>
     <string name="see_group">查看组</string>
     <string name="find_mydevice">查找我的设备</string>
     <string name="device_version">固定版本</string>
@@ -85,5 +83,6 @@
     <string name="clear_chat_record">清除聊天记录</string>
     <string name="delete_group">删除该小组</string>
     <string name="loading">正在加载...</string>
-
+    <string name="close_realtime_sounds">关闭实时语音</string>
+    <string name="open_realtime_sounds">开启实时语音</string>
 </resources>
