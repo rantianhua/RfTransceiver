@@ -3,9 +3,9 @@ package com.rftransceiver.datasets;
 public class AudioData
 {
 	int size;
-	short[] realData;
-	byte[] encodeData;
-	public void setSize(int size) //���ô�С 
+	short[] realData;	//实际采集到的原生语音数据
+	byte[] encodeData;	//经过编码后的语音数据
+	public void setSize(int size)
 	{
 		this.size = size;  		
 	}
