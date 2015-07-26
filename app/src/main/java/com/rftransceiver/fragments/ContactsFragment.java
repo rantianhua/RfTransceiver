@@ -65,7 +65,7 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
     /**
      * the dataset of expanableListView
      */
-    private Map<String,List<ContactsData>> mapContacts;
+    private Map<String,List<ContactsData>> mapContacts;//从数据库中查找的组的信息全部存入到该map中，map的类型为hashmap
 
     private ContactsAdapter adpter;
 
@@ -148,23 +148,24 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
         this.callback = callback;
     }
 
+
     private void loadContacts() {
-        rlLoading.setVisibility(View.VISIBLE);
+       // rlLoading.setVisibility(View.INVISIBLE);
         PoolThreadUtil.getInstance().addTask(new Runnable() {
             @Override
             public void run() {
                 final List<ContactsData> contactDatas = dbManager.getContacts();
-                if(contactDatas != null && contactDatas.size() > 0) {
-                    for(int j = 0;j < letterView.letters.length;j++) {
+                if (contactDatas != null && contactDatas.size() > 0) {
+                    for (int j = 0; j < letterView.letters.length; j++) {
                         String key = letterView.letters[j];
-                        for(int i =0;i < contactDatas.size();i++) {
+                        for (int i = 0; i < contactDatas.size(); i++) {
                             String itemKey = contactDatas.get(i).getFirstLetter();
-                            if(itemKey.equals(key)) {
+                            if (itemKey.equals(key)) {
                                 List<ContactsData> subData = null;
-                                if(!mapContacts.containsKey(key)) {
+                                if (!mapContacts.containsKey(key)) {
                                     subData = new ArrayList<ContactsData>();
-                                    mapContacts.put(key,subData);
-                                }else {
+                                    mapContacts.put(key, subData);
+                                } else {
                                     subData = mapContacts.get(key);
                                 }
                                 subData.add(contactDatas.get(i));
@@ -177,26 +178,28 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
                         @Override
                         public void run() {
                             rlLoading.setVisibility(View.GONE);
-                            adpter = new ContactsAdapter(mapContacts,getActivity());
+                            adpter = new ContactsAdapter(mapContacts, getActivity());
                             adpter.setCallback(ContactsFragment.this);
                             contacts.setAdapter(adpter);
-                            for(int i = 0;i < mapContacts.size();i++) {
+                            for (int i = 0; i < mapContacts.size(); i++) {
                                 contacts.expandGroup(i);
                             }
                         }
                     });
-                }else {
+                } else {
                     mainHan.post(new Runnable() {
                         @Override
                         public void run() {
                             rlLoading.setVisibility(View.GONE);
-                            if(getActivity() == null) return;
-                            Toast.makeText(getActivity(),"还没有联系人",Toast.LENGTH_SHORT).show();
+                            if (getActivity() == null) return;
+                            Toast.makeText(getActivity(), "还没有联系人", Toast.LENGTH_SHORT).show();
                         }
                     });
                 }
+
             }
         });
+        rlLoading.setVisibility(View.VISIBLE);
     }
 
     /**
@@ -204,7 +207,7 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
      * @param gid
      */
     @Override
-    public void getGroupId(int gid) {
+    public void getGroupId(final int gid,final String key,final int child) {
         //显示提示框进一步确认
         String message = "确定删除该组?";
         MyAlertDialogFragment myAlert = MyAlertDialogFragment.getInstance(0,0,message,true);
@@ -215,6 +218,22 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
                     @Override
                     public void run() {
                         //在此处执行删除组的操作
+                        dbManager = DBManager.getInstance(getActivity());
+                        dbManager.deleteGroup(gid);//更新数据库中的数据
+                        mainHan.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                mapContacts.get(key).remove(child);//把hashmap中的数据更新
+                                //更新该界面
+                                if (mapContacts.get(key).size() == 0) {//如果组信息的key键下的child组没有分组了，那么就不显示这个key键
+                                    mapContacts.remove(key);
+                                }
+                                if (mapContacts.size() == 0) {//如果通讯录中没有信息了，则显示没有联系人
+                                    Toast.makeText(getActivity(), "还没有联系人", Toast.LENGTH_SHORT).show();
+                                }
+                                adpter.notifyDataSetChanged();
+                            }
+                        });
                     }
                 });
             }
@@ -224,6 +243,7 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
 
             }
         });
+        myAlert.show(getFragmentManager(), null);
     }
 
     private final LetterView.SelectLetterListener selectLetterListener = new LetterView.SelectLetterListener() {
@@ -265,7 +285,7 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
     @Override
     public void onDestroy() {
         super.onDestroy();
-        adpter.setCallback(null);
+        if(adpter != null) adpter.setCallback(null);
         letterView.setListener(null);
         showLetter = null;
         mapContacts = null;

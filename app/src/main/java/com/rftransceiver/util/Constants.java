@@ -150,4 +150,5 @@ public class Constants {
     public static final String PRE_GROUP = "pre_group";
 
     public static boolean SAVE_SOUNDS = true;
+    public static boolean SOUNDS = true;
 }
