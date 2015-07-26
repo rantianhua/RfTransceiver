@@ -59,7 +59,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/listview_conversation"
-        android:layout_above="@+id/vp_home_expression"
+        android:layout_above="@+id/rl_home_input_message"
         android:layout_below="@+id/tv_tip_home"
         android:listSelector="@android:color/transparent"
         android:divider="#000000"
@@ -70,9 +70,10 @@
         android:paddingBottom="25dp"
         android:layout_width="match_parent"
         android:layout_height="100dp"
-        android:layout_above="@+id/rl_home_input_message"
+        android:layout_below="@+id/rl_home_input_message"
         android:id="@+id/vp_home_expression"
         android:background="@color/blue_with_press"
+        android:visibility="visible"
         />
 
     <LinearLayout
@@ -89,6 +90,7 @@
         android:layout_height="wrap_content"
         android:layout_above="@+id/rl_home_imgs_address"
         android:id="@+id/rl_home_input_message"
+        android:background="#dfdfdf"
         >
 
         <ImageView
@@ -103,22 +105,26 @@
 
         <EditText
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="30dp"
             android:layout_toEndOf="@+id/img_sounds_text"
-            android:layout_toStartOf="@+id/img_other"
+            android:layout_toStartOf="@+id/img_face"
             android:id="@+id/et_send_message"
             android:hint="@string/hint_et_sent_text"
+            android:textSize="20dp"
             android:layout_centerVertical="true"
-            android:gravity="top|start"
+            android:paddingLeft="5dp"
+            android:gravity="center|start"
+            android:background="#fff"
             />
 
         <Button
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="35dp"
             android:id="@+id/btn_sounds"
             android:layout_toEndOf="@+id/img_sounds_text"
-            android:layout_toStartOf="@+id/img_other"
+            android:layout_toStartOf="@+id/img_face"
             android:gravity="center"
+            android:layout_centerVertical="true"
             android:text="@string/touch_send_sounds"
             android:textColor="@color/white"
             android:background="@drawable/touch_with_stroke"
@@ -126,22 +132,39 @@
             />
 
         <ImageView
-            android:layout_width="60dp"
+            android:layout_width="48dp"
             android:layout_height="48dp"
             android:id="@+id/img_other"
             android:layout_centerVertical="true"
             android:layout_alignParentEnd="true"
-            android:padding="10dp"
+            android:paddingRight="10dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
             android:src="@drawable/drawable_other_data"
+            />
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:id="@+id/img_face"
+            android:layout_centerVertical="true"
+            android:layout_toLeftOf="@+id/img_other"
+            android:paddingLeft="5dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:src="@drawable/drawable_face"
             />
 
 
         <Button
-            android:layout_width="60dp"
-            android:layout_height="35dp"
+            android:layout_width="wrap_content"
+            android:layout_height="30dp"
             android:id="@+id/btn_send"
-            android:layout_alignParentEnd="true"
             android:gravity="center"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_toEndOf="@id/et_send_message"
+            android:layout_alignParentEnd="true"
             android:text="@string/send"
             android:textColor="@color/white"
             android:background="@drawable/tv_sure"
@@ -152,56 +175,112 @@
 
     </RelativeLayout>
 
-    <RelativeLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/rl_home_imgs_address"
-        android:layout_above="@+id/view_align_bottom"
+        android:layout_above="@+id/gv_home_expression"
         android:paddingStart="40dp"
         android:paddingEnd="40dp"
         android:paddingBottom="5dp"
         android:visibility="gone"
+        android:background="#efefef"
         >
 
-        <ImageView
-            android:layout_width="match_parent"
-            android:layout_height="35dp"
-            android:id="@+id/img_home_picture"
-            android:layout_toStartOf="@+id/view_home_1"
-            android:layout_centerVertical="true"
-            android:src="@drawable/picture"
-            android:scaleType="fitCenter"
-            android:paddingTop="5dp"
-            android:paddingBottom="5dp"
-            android:background="@drawable/tv_sure"
-            />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_weight="1">
 
-        <View
-            android:layout_width="15dp"
-            android:layout_height="40dp"
-            android:id="@+id/view_home_1"
-            android:layout_centerHorizontal="true"/>
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="80dp"
+                android:id="@+id/img_home_shoot"
+                android:layout_gravity="center"
+                android:src="@drawable/shoot_v2"
+                android:scaleType="fitCenter"
+                android:paddingTop="5dp"
 
-        <ImageView
-            android:layout_width="match_parent"
-            android:layout_height="35dp"
-            android:id="@+id/img_home_address"
-            android:layout_toEndOf="@+id/view_home_1"
-            android:layout_centerVertical="true"
-            android:background="@drawable/tv_sure"
-            android:src="@drawable/location"
-            android:scaleType="fitCenter"
-            android:paddingTop="5dp"
-            android:paddingBottom="5dp"
-            />
+                />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textSize="15dp"
+                android:text="拍照"
+                />
+        </LinearLayout>
 
-    </RelativeLayout>
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_weight="1"
+            android:layout_gravity="center"
+            >
 
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="80dp"
+                android:id="@+id/img_home_picture"
+                android:layout_gravity="center"
+                android:src="@drawable/picture_v2"
+                android:scaleType="fitCenter"
+                android:paddingTop="5dp"
+                android:paddingBottom="0dp"
+                />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textSize="15dp"
+                android:text="相册"
+                />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_weight="1">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="80dp"
+                android:id="@+id/img_home_address"
+                android:layout_weight="1"
+                android:src="@drawable/location_v2"
+                android:scaleType="fitCenter"
+                android:paddingTop="5dp"
+                android:layout_gravity="center"
+                />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textSize="15dp"
+                android:text="位置"
+                />
+        </LinearLayout>
+
+
+    </LinearLayout>
+
+    <GridView
+        android:id="@+id/gv_home_expression"
+        android:layout_width="match_parent"
+        android:layout_height="170dp"
+        android:background="#efefef"
+        android:layout_above="@id/view_align_bottom"
+        android:visibility="gone"
+        />
     <View
         android:layout_width="match_parent"
-        android:layout_height="2dp"
+        android:layout_height="0dp"
         android:id="@+id/view_align_bottom"
         android:layout_alignParentBottom="true"
-        android:visibility="invisible"/>
+        android:visibility="invisible"
+        android:background="#efefef"/>
 
 </RelativeLayout>
