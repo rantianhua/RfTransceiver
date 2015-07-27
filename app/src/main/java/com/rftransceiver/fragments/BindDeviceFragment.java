@@ -118,6 +118,8 @@ public class BindDeviceFragment extends ListFragment {
         super.onCreate(savedInstanceState);
         final BluetoothManager bluetoothManager =
                 (BluetoothManager) getActivity().getSystemService(Context.BLUETOOTH_SERVICE);
+        /////////////////////////////////////
+        //有时adapter获取的是NULL
         adapter = bluetoothManager.getAdapter();
         devices = new ArrayList<>();
         textResearch = getString(R.string.restart_search);

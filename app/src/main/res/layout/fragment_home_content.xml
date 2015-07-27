@@ -255,7 +255,7 @@
         android:paddingTop="5dp"
         android:paddingBottom="25dp"
         android:layout_width="match_parent"
-        android:layout_height="100dp"
+        android:layout_height="150dp"
         android:layout_above="@+id/view_align_bottom"
         android:id="@+id/vp_home_expression"
         android:background="@color/blue_with_press"

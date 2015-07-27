@@ -111,7 +111,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     @InjectView(R.id.img_home_address)
     ImageView imgAddress;
     @InjectView(R.id.rl_home_imgs_address)
-    RelativeLayout rlOthersData;
+    LinearLayout rlOthersData;
     @InjectView(R.id.vp_home_expression)
     ViewPager vp;
     @InjectView(R.id.ll_dots_home)
@@ -120,8 +120,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     TextView tvTitle;
     @InjectView(R.id.rl_top_home)
     RelativeLayout top;
-    @InjectView(R.id.img_face)
-    ImageView imgFace;
+//    @InjectView(R.id.img_face)
+//    ImageView imgFace;
     /**
      * the reference of callback interface
      */
@@ -466,14 +466,14 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.img_face:
-                if(imgFace.isSelected()){
+              /*  if(imgFace.isSelected()){
                     imgFace.setSelected(false);
                     //hide face-area view
                 }
                 else{
                     imgFace.setSelected(true);
                     //show face-area view
-                }
+                }*/
             case R.id.btn_send:
                 sendText();
                 break;
