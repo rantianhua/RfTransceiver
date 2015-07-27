@@ -2,7 +2,7 @@
 <GridView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="70dp"
     android:background="@android:color/transparent"
-    android:numColumns="8"
+    android:numColumns="7"
     android:scrollbars="none"
     android:verticalSpacing="10dp"
     android:horizontalSpacing="10dp"

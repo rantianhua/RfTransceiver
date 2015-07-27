@@ -65,25 +65,9 @@
         android:divider="#000000"
         />
 
-    <android.support.v4.view.ViewPager
-        android:paddingTop="5dp"
-        android:paddingBottom="25dp"
-        android:layout_width="match_parent"
-        android:layout_height="100dp"
-        android:layout_below="@+id/rl_home_input_message"
-        android:id="@+id/vp_home_expression"
-        android:background="@color/blue_with_press"
-        android:visibility="visible"
-        />
 
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="25dp"
-        android:orientation="horizontal"
-        android:layout_centerHorizontal="true"
-        android:layout_alignBottom="@+id/vp_home_expression"
-        android:id="@+id/ll_dots_home"
-        />
+
+
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -179,7 +163,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/rl_home_imgs_address"
-        android:layout_above="@+id/gv_home_expression"
+        android:layout_above="@+id/vp_home_expression"
         android:paddingStart="40dp"
         android:paddingEnd="40dp"
         android:paddingBottom="5dp"
@@ -267,14 +251,27 @@
 
     </LinearLayout>
 
-    <GridView
-        android:id="@+id/gv_home_expression"
+    <android.support.v4.view.ViewPager
+        android:paddingTop="5dp"
+        android:paddingBottom="25dp"
         android:layout_width="match_parent"
-        android:layout_height="170dp"
-        android:background="#efefef"
+        android:layout_height="100dp"
         android:layout_above="@id/view_align_bottom"
-        android:visibility="gone"
+        android:id="@+id/vp_home_expression"
+        android:background="@color/blue_with_press"
+        android:visibility="visible"
         />
+
+    <LinearLayout
+        android:layout_width="200dp"
+        android:layout_height="15dp"
+        android:orientation="horizontal"
+        android:layout_centerHorizontal="true"
+        android:layout_alignTop="@id/vp_home_expression"
+        android:id="@+id/ll_dots_home"
+        android:background="@color/blue"
+        />
+
     <View
         android:layout_width="match_parent"
         android:layout_height="0dp"

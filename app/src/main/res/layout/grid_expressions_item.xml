@@ -9,6 +9,6 @@
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true"
         android:id="@+id/img_expression"
-        android:background="@drawable/img_expression_bg"/>
+        android:background="#efefef"/>
 
 </RelativeLayout>
