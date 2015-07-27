@@ -28,7 +28,7 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import com.rftransceiver.db.ListTest;
 import com.baidu.mapapi.SDKInitializer;
 import com.brige.blutooth.le.BleService;
 import com.rftransceiver.R;
@@ -290,6 +290,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
         iniInterphone();
         //bind the ble service
         bindService(new Intent(this, BleService.class), serviceConnectionBle, BIND_AUTO_CREATE);
+
+
+        //测试中保存group信息-----------------------------
+       // ListTest.saveGroups(this);
 
     }
 

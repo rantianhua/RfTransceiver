@@ -204,7 +204,7 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
      * @param gid
      */
     @Override
-    public void getGroupId(int gid) {
+    public void getGroupId(final int gid,final String key,final int child) {
         //显示提示框进一步确认
         String message = "确定删除该组?";
         MyAlertDialogFragment myAlert = MyAlertDialogFragment.getInstance(0,0,message,true);
@@ -215,6 +215,22 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
                     @Override
                     public void run() {
                         //在此处执行删除组的操作
+                        dbManager = DBManager.getInstance(getActivity());
+                        dbManager.deleteGroup(gid);//更新数据库中的数据
+                        mainHan.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                mapContacts.get(key).remove(child);//把hashmap中的数据更新
+                                //更新该界面
+                                if (mapContacts.get(key).size() == 0) {//如果组信息的key键下的child组没有分组了，那么就不显示这个key键
+                                    mapContacts.remove(key);
+                                }
+                                if (mapContacts.size() == 0) {//如果通讯录中没有信息了，则显示没有联系人
+                                    Toast.makeText(getActivity(), "还没有联系人", Toast.LENGTH_SHORT).show();
+                                }
+                                adpter.notifyDataSetChanged();
+                            }
+                        });
                     }
                 });
             }
@@ -224,6 +240,7 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
 
             }
         });
+        myAlert.show(getFragmentManager(), null);
     }
 
     private final LetterView.SelectLetterListener selectLetterListener = new LetterView.SelectLetterListener() {
@@ -265,7 +282,7 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
     @Override
     public void onDestroy() {
         super.onDestroy();
-        adpter.setCallback(null);
+        if(adpter != null) adpter.setCallback(null);
         letterView.setListener(null);
         showLetter = null;
         mapContacts = null;

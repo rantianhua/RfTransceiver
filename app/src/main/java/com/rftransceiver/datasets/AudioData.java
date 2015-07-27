@@ -1,6 +1,6 @@
 package com.rftransceiver.datasets;
 
-public class AudioData
+public class AudioData//存储音频信息的类
 {
 	int size;
 	short[] realData;	//实际采集到的原生语音数据

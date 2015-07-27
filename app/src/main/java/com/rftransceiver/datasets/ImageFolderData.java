@@ -8,7 +8,7 @@ import java.util.List;
  * Created by rantianhua on 15-6-11.
  * this class used to save every image folder's information
  */
-public class ImageFolderData {
+public class ImageFolderData {//头像数据类
 
     /**
      * the name of folder

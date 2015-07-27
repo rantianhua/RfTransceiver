@@ -6,7 +6,7 @@ import java.util.Queue;
 /**
  * Created by Rth on 2015/4/24.
  */
-public class MyDataQueue {
+public class MyDataQueue {//实现语音信息实时发送的类
 
     private static MyDataQueue dataQueue1,dataQueue2,dataQueue3,dataQueue4;
 
