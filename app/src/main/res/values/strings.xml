@@ -11,8 +11,8 @@
     <string name="send">发送</string>
     <string name="clear_cache">清除缓存</string>
     <string name="reset_scm">复位</string>
-    <string name="touch_send_sounds">按住 说话</string>
-    <string name="loose_stop_sounds">松开 停止</string>
+    <string name="touch_send_sounds">按住说话</string>
+    <string name="loose_stop_sounds">松开停止</string>
 
     <string name="connected">已连接%1s</string>
     <string name="disconnected">连接丢失</string>

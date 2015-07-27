@@ -3,12 +3,13 @@
     android:layout_width="match_parent" android:layout_height="match_parent">
 
     <ImageView
-        android:layout_width="30dp"
-        android:layout_height="30dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:padding="6dp"
         android:scaleType="fitCenter"
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true"
         android:id="@+id/img_expression"
-        android:background="#efefef"/>
+        />
 
 </RelativeLayout>

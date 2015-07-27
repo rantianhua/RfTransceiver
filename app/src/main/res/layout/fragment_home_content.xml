@@ -74,7 +74,7 @@
         android:layout_height="wrap_content"
         android:layout_above="@+id/rl_home_imgs_address"
         android:id="@+id/rl_home_input_message"
-        android:background="#dfdfdf"
+        android:background="@drawable/stroke_home_bottom"
         >
 
         <ImageView
@@ -94,22 +94,24 @@
             android:layout_toStartOf="@+id/img_face"
             android:id="@+id/et_send_message"
             android:hint="@string/hint_et_sent_text"
-            android:textSize="20dp"
+            android:textSize="17dp"
             android:layout_centerVertical="true"
             android:paddingLeft="5dp"
             android:gravity="center|start"
-            android:background="#fff"
+            android:background="@drawable/stroke_home_text"
+            android:focusable="true"
             />
 
         <Button
             android:layout_width="match_parent"
-            android:layout_height="35dp"
+            android:layout_height="30dp"
             android:id="@+id/btn_sounds"
             android:layout_toEndOf="@+id/img_sounds_text"
             android:layout_toStartOf="@+id/img_face"
             android:gravity="center"
             android:layout_centerVertical="true"
             android:text="@string/touch_send_sounds"
+            android:textSize="15dp"
             android:textColor="@color/white"
             android:background="@drawable/touch_with_stroke"
             android:visibility="invisible"
@@ -166,7 +168,8 @@
         android:layout_above="@+id/vp_home_expression"
         android:paddingStart="40dp"
         android:paddingEnd="40dp"
-        android:paddingBottom="5dp"
+        android:paddingBottom="15dp"
+        android:paddingTop="8dp"
         android:visibility="gone"
         android:background="#efefef"
         >
@@ -212,13 +215,12 @@
                 android:src="@drawable/picture_v2"
                 android:scaleType="fitCenter"
                 android:paddingTop="5dp"
-                android:paddingBottom="0dp"
                 />
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:textSize="15dp"
+                android:layout_gravity="center_horizontal|top"
+                android:textSize="14dp"
                 android:text="相册"
                 />
         </LinearLayout>
@@ -252,24 +254,27 @@
     </LinearLayout>
 
     <android.support.v4.view.ViewPager
-        android:paddingTop="5dp"
-        android:paddingBottom="25dp"
+        android:paddingTop="6dp"
         android:layout_width="match_parent"
-        android:layout_height="150dp"
+        android:layout_height="142dp"
         android:layout_above="@+id/view_align_bottom"
         android:id="@+id/vp_home_expression"
-        android:background="@color/blue_with_press"
-        android:visibility="visible"
+        android:background="#efefef"
+        android:visibility="gone"
         />
 
     <LinearLayout
-        android:layout_width="200dp"
-        android:layout_height="15dp"
+        android:layout_width="100dp"
+        android:layout_height="20dp"
         android:orientation="horizontal"
+        android:divider="@drawable/dot_divider"
+        android:showDividers="middle"
+        android:gravity="center"
         android:layout_centerHorizontal="true"
-        android:layout_alignTop="@id/vp_home_expression"
+        android:layout_alignBottom="@id/vp_home_expression"
+        android:paddingBottom="2dp"
         android:id="@+id/ll_dots_home"
-        android:background="@color/blue"
+        android:visibility="gone"
         />
 
     <View

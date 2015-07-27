@@ -1,8 +1,5 @@
 package com.rftransceiver.fragments;
 
-import android.animation.Animator;
-import android.animation.AnimatorSet;
-import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
@@ -12,7 +9,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
-import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Bundle;
@@ -24,16 +20,12 @@ import android.text.Editable;
 import android.text.Html;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.text.format.DateFormat;
 import android.util.Base64;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
-import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -41,11 +33,8 @@ import android.widget.EditText;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.rftransceiver.R;
 import com.rftransceiver.activity.LocationActivity;
@@ -63,25 +52,17 @@ import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.ExpressionUtil;
 import com.rftransceiver.util.ImageUtil;
 import com.rftransceiver.util.PoolThreadUtil;
-import com.source.DataPacketOptions;
 
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.sql.Timestamp;
-import java.text.FieldPosition;
-import java.text.ParsePosition;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.jar.Attributes;
-import java.util.logging.Handler;
-import java.util.logging.LogRecord;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
-import butterknife.internal.ListenerClass;
 
 /**
  * Created by rantianhua on 15-6-14.
@@ -111,7 +92,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     @InjectView(R.id.img_home_address)
     ImageView imgAddress;
     @InjectView(R.id.rl_home_imgs_address)
-    LinearLayout rlOthersData;
+    LinearLayout llOthersData;
     @InjectView(R.id.vp_home_expression)
     ViewPager vp;
     @InjectView(R.id.ll_dots_home)
@@ -120,8 +101,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     TextView tvTitle;
     @InjectView(R.id.rl_top_home)
     RelativeLayout top;
-//    @InjectView(R.id.img_face)
-//    ImageView imgFace;
+    @InjectView(R.id.img_face)
+    ImageView imgFace;
     /**
      * the reference of callback interface
      */
@@ -241,8 +222,12 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                     //get expression's id
-                    int epId = ExpressionUtil.epDatas.get(currentEpIndex).get(i);
-                    insertExpression(epId,etSendMessage);
+                    if(i==20)
+                        deleteBack(etSendMessage);
+                    else{
+                        int epId = ExpressionUtil.epDatas.get(currentEpIndex).get(i);
+                        insertExpression(epId,etSendMessage);
+                    }
                     if(btnSounds.getVisibility() == View.VISIBLE) {
                         btnSounds.setVisibility(View.INVISIBLE);
                         etSendMessage.setVisibility(View.VISIBLE);
@@ -254,6 +239,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             if(i == 0) {
                 imgDot.setSelected(true);
             }
+
             llDots.addView(imgDot);
             imgDots.add(imgDot);
         }
@@ -315,6 +301,18 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         }else if(view instanceof TextView) {
             TextView tv = (TextView)view;
             tv.append(cs);
+        }
+    }
+
+    /**
+     * editText内容回删
+     * @param view
+     */
+    private void deleteBack(View view) {
+        if(view instanceof EditText) {
+            EditText editText = (EditText)view;
+            int len = editText.length();
+            if(len!=0) editText.getText().delete(len - 1, len);
         }
     }
 
@@ -391,7 +389,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         imgAdd.setOnClickListener(this);
         imgPicture.setOnClickListener(this);
         imgAddress.setOnClickListener(this);
-
+        imgFace.setOnClickListener(this);
         etSendMessage.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i2, int i3) {
@@ -466,14 +464,33 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.img_face:
-              /*  if(imgFace.isSelected()){
+                if(imgFace.isSelected()){
                     imgFace.setSelected(false);
-                    //hide face-area view
+                    vp.setVisibility(View.GONE);
+                    llDots.setVisibility(View.GONE);
+                    if(imgAdd.isSelected()){
+                        llOthersData.setVisibility(View.GONE);
+                        imgAdd.setSelected(false);
+                    }if(imgMessageType.isSelected()){
+                        imgMessageType.setSelected(false);
+                        etSendMessage.setVisibility(View.VISIBLE);
+                        btnSounds.setVisibility(View.INVISIBLE);
+                    }
                 }
                 else{
                     imgFace.setSelected(true);
-                    //show face-area view
-                }*/
+                    vp.setVisibility(View.VISIBLE);
+                    llDots.setVisibility(View.VISIBLE);
+                    if(imgAdd.isSelected()){
+                        llOthersData.setVisibility(View.GONE);
+                        imgAdd.setSelected(false);
+                    }
+                    if(imgMessageType.isSelected()){
+                        imgMessageType.setSelected(false);
+                        etSendMessage.setVisibility(View.VISIBLE);
+                        btnSounds.setVisibility(View.INVISIBLE);
+                    }
+                }
             case R.id.btn_send:
                 sendText();
                 break;
@@ -527,16 +544,33 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                     btnSounds.setVisibility(View.VISIBLE);
                     btnSend.setVisibility(View.INVISIBLE);
                     imgAdd.setVisibility(View.VISIBLE);
+                    if(imgAdd.isSelected()){
+                        imgAdd.setSelected(false);
+                        llOthersData.setVisibility(View.GONE);
+                    }
+                    else if(imgFace.isSelected()){
+                        imgFace.setSelected(false);
+                        vp.setVisibility(View.GONE);
+                    }
                 }
                 break;
             case R.id.img_other:
                 //want to send other data,address or picture
                 if(imgAdd.isSelected()) {
                     imgAdd.setSelected(false);
-                    rlOthersData.setVisibility(View.GONE);
+                    llOthersData.setVisibility(View.GONE);
                 }else {
                     imgAdd.setSelected(true);
-                    rlOthersData.setVisibility(View.VISIBLE);
+                    llOthersData.setVisibility(View.VISIBLE);
+                    if(imgFace.isSelected()){
+                        vp.setVisibility(View.GONE);
+                        imgFace.setSelected(false);
+                    }
+                    if(imgMessageType.isSelected()){
+                        imgMessageType.setSelected(false);
+                        etSendMessage.setVisibility(View.VISIBLE);
+                        btnSounds.setVisibility(View.INVISIBLE);
+                    }
                 }
                 break;
             case R.id.img_home_picture:

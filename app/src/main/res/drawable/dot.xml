@@ -2,11 +2,23 @@
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item android:state_selected="false">
-        <bitmap android:src="@drawable/dot_white"/>
+        <shape
+            android:shape="oval"
+            android:useLevel="false">
+            <size android:width="5dp"
+                android:height="5dp"/>
+            <solid android:color="#aaa"/>
+        </shape>
     </item>
 
     <item android:state_selected="true">
-        <bitmap android:src="@drawable/dot_blue"/>
+        <shape
+            android:shape="oval"
+            android:useLevel="false">
+            <size android:width="5dp"
+                android:height="5dp"/>
+            <solid android:color="#02203c"/>
+        </shape>
     </item>
 
 </selector>
