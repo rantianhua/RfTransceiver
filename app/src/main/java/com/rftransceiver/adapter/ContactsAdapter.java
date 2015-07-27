@@ -109,15 +109,12 @@ public class ContactsAdapter extends BaseExpandableListAdapter {
                 @Override
                 public boolean onLongClick(View view) {
                     //先根据父视图的索引得到其对应的子视图的数据源
-                    String key = getKeyByIndex(group);
-                    List<ContactsData> cont = mapDatas.get(key);
+                    List<ContactsData> cont = mapDatas.get(getKeyByIndex(group));
                     if(cont != null) {
                         //再根据数据源和子视图的索引得到子视图对应组的id
                         int gid = cont.get(child).getGroupId();
                         //通过接口将组id传到调用方
-                        if(callback != null) {
-                            callback.getGroupId(gid,key,child);
-                        }
+                        if(callback != null) callback.getGroupId(gid);
                     }
                     return true;
                 }
@@ -139,7 +136,7 @@ public class ContactsAdapter extends BaseExpandableListAdapter {
         return true;
     }
 
-    public String getKeyByIndex(int i) {
+    private String getKeyByIndex(int i) {
         int index = 0;
         String res = null;
         for(String key : mapDatas.keySet()) {
@@ -160,9 +157,9 @@ public class ContactsAdapter extends BaseExpandableListAdapter {
         TextView tvName;
     }
 
-    //该接口用来回调传递获取的组的id，hashmap中的key值，和child<List>的下标
+    //该接口用来回调传递获取的组的id
     public interface CallbackInContactsAdpter {
-        void getGroupId(int gid,String key,int childId);
+        void getGroupId(int gid);
     }
 
 }

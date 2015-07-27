@@ -125,24 +125,6 @@ public class DBManager {
         }
     }
 
-
-    public void deleteGroup(int gid) {//通过组的id删除组的操作
-
-           try{
-                openReadDB();
-               db.beginTransaction();
-                db.delete(DatabaseHelper.TABLE_DATA,"_gid = ?",new String[]{String.valueOf(gid)});
-                db.delete(DatabaseHelper.TABLE_MEMBER,"_gid = ?",new String[]{String.valueOf(gid)});
-                db.delete(DatabaseHelper.TABLE_GROUP,"_gid = ?",new String[]{String.valueOf(gid)});
-                db.setTransactionSuccessful();
-        }catch (Exception e) {
-            Log.e("saveGroup","error in save group base info or members info",e);
-        }finally {
-             db.endTransaction();
-               db.close();
-            closeDB();
-        }
-    }
     /**
      * save current shown group id,
      * @param gid
@@ -179,7 +161,7 @@ public class DBManager {
      * @param gid
      * @return
      */
-    public GroupEntity getAgroup(int gid) {//把组的信息从数据库中提取出来，然后封装到groupEntity类中
+    public GroupEntity getAgroup(int gid) {
         GroupEntity groupEntity = null;
         openReadDB();
         db.beginTransaction();
@@ -391,7 +373,7 @@ public class DBManager {
         return conversationDatas;
     }
 
-    public List<ContactsData> getContacts() {//从数据库中查找组的名字和id
+    public List<ContactsData> getContacts() {
         String sql = "select _gname,_gid from " + DatabaseHelper.TABLE_GROUP;
         openReadDB();
         List<ContactsData> contactsDatas = null;
