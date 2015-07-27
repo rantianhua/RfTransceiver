@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:id="@+id/action_see_group"
+        android:title="@string/see_group"
+        android:icon="@drawable/group"
+        android:orderInCategory="100"/>
+
+
+    <item android:id="@+id/action_realtime_play"
+        android:title="@string/close_realtime_sounds"
+        android:icon="@drawable/realtime_sounds"
+        android:orderInCategory="200"/>
+</menu>

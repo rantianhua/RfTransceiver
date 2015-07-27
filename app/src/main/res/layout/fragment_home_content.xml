@@ -80,11 +80,11 @@
         <ImageView
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:padding="10dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
             android:id="@+id/img_sounds_text"
             android:layout_centerVertical="true"
             android:src="@drawable/drawble_sounds_text"
-            android:scaleType="centerCrop"
             />
 
         <EditText
@@ -118,24 +118,23 @@
             />
 
         <ImageView
-            android:layout_width="48dp"
+            android:layout_width="40dp"
             android:layout_height="48dp"
             android:id="@+id/img_other"
             android:layout_centerVertical="true"
             android:layout_alignParentEnd="true"
+            android:paddingLeft="0dp"
             android:paddingRight="10dp"
-            android:paddingTop="10dp"
-            android:paddingBottom="10dp"
             android:src="@drawable/drawable_other_data"
             />
 
         <ImageView
-            android:layout_width="48dp"
+            android:layout_width="40dp"
             android:layout_height="48dp"
             android:id="@+id/img_face"
             android:layout_centerVertical="true"
             android:layout_toLeftOf="@+id/img_other"
-            android:paddingLeft="5dp"
+            android:paddingLeft="0dp"
             android:paddingTop="10dp"
             android:paddingBottom="10dp"
             android:src="@drawable/drawable_face"
@@ -147,8 +146,8 @@
             android:layout_height="30dp"
             android:id="@+id/btn_send"
             android:gravity="center"
-            android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
             android:layout_toEndOf="@id/et_send_message"
             android:layout_alignParentEnd="true"
             android:text="@string/send"

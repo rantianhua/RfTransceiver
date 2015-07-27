@@ -1,92 +1,71 @@
 package com.rftransceiver.customviews;
 
+import android.annotation.TargetApi;
 import android.content.Context;
+import android.support.v7.internal.view.menu.MenuBuilder;
 import android.util.AttributeSet;
+import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.PopupWindow;
-import android.widget.TextView;
 
 import com.rftransceiver.R;
-import com.rftransceiver.datasets.ConversationData;
-import com.rftransceiver.util.BasePopwindow;
 
-import org.w3c.dom.Text;
 
 /**
  * Created by rth on 15-7-25.
  */
-public class ContextPopMenu extends PopupWindow {
+public class ContextPopMenu extends MyPopuMenu {
 
-    private TextView tvSeeGroup;    //点击查看组信息
-    private TextView tvRealSounds;  //点击设置实时播放语音
-    private ImageView imgRealSounds;    //显示是否在实时播放语音
-
-    private int screenHeight;   //屏幕宽度
-    private int popWidth;
 
     //保存string资源文件中的字符串
     private String textOpenRealSounds,textCloseRealSouds;
+    private boolean isRealTimePlaying = true;   //实时播放语音的标识
 
-    public ContextPopMenu(Context context) {
-        super(context);
-        //设置popwindow的宽高
+    @TargetApi(19)
+    public ContextPopMenu(Context context,View anchor) {
+        super(context,anchor, Gravity.END);
+        //获取资源文件的文字信息
         textOpenRealSounds = context.getString(R.string.open_realtime_sounds);
         textCloseRealSouds = context.getString(R.string.close_realtime_sounds);
-
-        screenHeight = context.getResources().getDisplayMetrics().widthPixels;
-
-        popWidth = context.getResources().getDimensionPixelSize(R.dimen.popmenu_width);
-        int height = context.getResources().getDimensionPixelSize(R.dimen.popmenu_width);
-        setHeight(height);
-        setWidth(popWidth);
-        initView(context);
+        initView();
     }
 
-    private void initView(Context context) {
-        View view = LayoutInflater.from(context).inflate(R.layout.popmenu_view, null);
-
-        tvRealSounds = (TextView) view.findViewById(R.id.tv_popmenu_real_time);
-        tvSeeGroup = (TextView) view.findViewById(R.id.tv_popmenu_seegroup);
-        imgRealSounds = (ImageView) view.findViewById(R.id.img_popmenu_group);
-
-        initEvent();
-        setContentView(view);
-        setBackgroundDrawable(null);
-        setOutsideTouchable(true);
+    private void initView() {
+        inflate(R.menu.popup_menu);
     }
 
-    /**
-     * 设置动作事件
-     */
-    private void initEvent() {
-        tvRealSounds.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                dismiss();
-            }
-        });
-
-        tvSeeGroup.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                dismiss();
-            }
-        });
+    @Override
+    public boolean onMenuItemSelected(MenuBuilder menu, MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_see_group:
+                //查看组的详细信息
+                break;
+            case R.id.action_realtime_play:
+                //设置实时播放语音
+                updateMenu(item);
+                break;
+        }
+        return super.onMenuItemSelected(menu, item);
     }
 
     /**
-     * 根据传入的参考 view 设置popwindow的显示
-     * @param anchor
+     * 根据点击事件更新菜单项的显示
+     * @param item
      */
-    public void show(View anchor) {
-        showAsDropDown(anchor,screenHeight-popWidth,0);
-        View parent = (View)anchor.getParent();
-        if(parent != null) {
-            parent.setAlpha(0.6f);
+    private void updateMenu(MenuItem item) {
+        if(isRealTimePlaying) {
+            //关闭实时播放语音
+            isRealTimePlaying = false;
+            item.setTitle(textOpenRealSounds);
+            item.setIcon(R.drawable.open_real_sounds);
+
+        }else{
+            //开启语音实时播放
+            isRealTimePlaying = true;
+            item.setTitle(textCloseRealSouds);
+            item.setIcon(R.drawable.close_real_sounds);
+
         }
     }
-
 }

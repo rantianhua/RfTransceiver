@@ -87,6 +87,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     ImageView imgMessageType;
     @InjectView(R.id.img_other)
     ImageView imgAdd;
+    @InjectView(R.id.img_home_shoot)
+    ImageView imgShoot;
     @InjectView(R.id.img_home_picture)
     ImageView imgPicture;
     @InjectView(R.id.img_home_address)
@@ -491,6 +493,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                         btnSounds.setVisibility(View.INVISIBLE);
                     }
                 }
+                break;
             case R.id.btn_send:
                 sendText();
                 break;
@@ -510,9 +513,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
 //                }
                 if(getActivity() != null) {
                     if(popMenu == null) {
-                        popMenu = new ContextPopMenu(getActivity());
+                        popMenu = new ContextPopMenu(getActivity(),top);
                     }
-                    popMenu.show(top);
+                    popMenu.show();
                 }
                 break;
             case R.id.tv_tip_home:
@@ -551,6 +554,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                     else if(imgFace.isSelected()){
                         imgFace.setSelected(false);
                         vp.setVisibility(View.GONE);
+                        llDots.setVisibility(View.GONE);
                     }
                 }
                 break;
@@ -564,6 +568,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                     llOthersData.setVisibility(View.VISIBLE);
                     if(imgFace.isSelected()){
                         vp.setVisibility(View.GONE);
+                        llDots.setVisibility(View.GONE);
                         imgFace.setSelected(false);
                     }
                     if(imgMessageType.isSelected()){
@@ -573,6 +578,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                     }
                 }
                 break;
+            case R.id.img_home_shoot:
+                //want to take picture
+
             case R.id.img_home_picture:
                 //want to send picture
                 ImagesFragment imagesFragment = ImagesFragment.getInstance(REQUEST_HOME);
