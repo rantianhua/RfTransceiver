@@ -131,74 +131,13 @@ public class ExpressionUtil {
         list4.add(R.drawable.e87);
         list4.add(R.drawable.e88);
         list4.add(R.drawable.e89);
+        list4.add(R.drawable.delete_v2);
         preSize = expressions.size();
         for(int i = preSize;i < list1.size() + preSize;i ++) {
             expressions.put(i,list1.get(i-preSize));
         }
         epDatas.put(3, list4);
-        List<Integer> list5 = new ArrayList<>();
-        list5.add(R.drawable.ep_65);
-        list5.add(R.drawable.ep_66);
-        list5.add(R.drawable.ep_67);
-        list5.add(R.drawable.ep_68);
-        list5.add(R.drawable.ep_69);
-        list5.add(R.drawable.ep_70);
-        list5.add(R.drawable.ep_71);
-        list5.add(R.drawable.ep_72);
-        list5.add(R.drawable.ep_73);
-        list5.add(R.drawable.ep_74);
-        list5.add(R.drawable.ep_75);
-        list5.add(R.drawable.ep_76);
-        list5.add(R.drawable.ep_77);
-        list5.add(R.drawable.ep_78);
-        list5.add(R.drawable.ep_79);
-        list5.add(R.drawable.ep_80);
-        preSize = expressions.size();
-        for(int i = preSize;i < list1.size() + preSize;i ++) {
-            expressions.put(i,list1.get(i-preSize));
-        }
-        epDatas.put(4, list5);
-        List<Integer> list6 = new ArrayList<>();
-        list6.add(R.drawable.ep_81);
-        list6.add(R.drawable.ep_82);
-        list6.add(R.drawable.ep_83);
-        list6.add(R.drawable.ep_84);
-        list6.add(R.drawable.ep_85);
-        list6.add(R.drawable.ep_86);
-        list6.add(R.drawable.ep_87);
-        list6.add(R.drawable.ep_88);
-        list6.add(R.drawable.ep_89);
-        list6.add(R.drawable.ep_90);
-        list6.add(R.drawable.ep_91);
-        list6.add(R.drawable.ep_92);
-        list6.add(R.drawable.ep_93);
-        list6.add(R.drawable.ep_94);
-        list6.add(R.drawable.ep_95);
-        list6.add(R.drawable.ep_96);
-        preSize = expressions.size();
-        for(int i = preSize;i < list1.size() + preSize;i ++) {
-            expressions.put(i,list1.get(i-preSize));
-        }
-        epDatas.put(5, list6);
-        List<Integer> list7 = new ArrayList<>();
-        list7.add(R.drawable.ep_97);
-        list7.add(R.drawable.ep_98);
-        list7.add(R.drawable.ep_99);
-        list7.add(R.drawable.ep_100);
-        list7.add(R.drawable.ep_101);
-        list7.add(R.drawable.ep_102);
-        list7.add(R.drawable.ep_103);
-        list7.add(R.drawable.ep_104);
-        list7.add(R.drawable.ep_105);
-        list7.add(R.drawable.ep_106);
-        list7.add(R.drawable.ep_107);
-        list7.add(R.drawable.ep_108);
-        list7.add(R.drawable.ep_109);
-        list7.add(R.drawable.ep_110);
-        preSize = expressions.size();
-        for(int i = preSize;i < list1.size() + preSize;i ++) {
-            expressions.put(i,list1.get(i-preSize));
-        }
-        epDatas.put(6,list7);
+
+
     }
 }
