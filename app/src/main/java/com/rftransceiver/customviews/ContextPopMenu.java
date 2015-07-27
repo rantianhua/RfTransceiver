@@ -55,6 +55,7 @@ public class ContextPopMenu extends PopupWindow {
         initEvent();
         setContentView(view);
         setBackgroundDrawable(null);
+        setOutsideTouchable(true);
     }
 
     /**

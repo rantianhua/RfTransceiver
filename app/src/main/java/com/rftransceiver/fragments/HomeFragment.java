@@ -120,7 +120,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     TextView tvTitle;
     @InjectView(R.id.rl_top_home)
     RelativeLayout top;
-
+    @InjectView(R.id.img_face)
+    ImageView imgFace;
     /**
      * the reference of callback interface
      */
@@ -464,6 +465,15 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
+            case R.id.img_face:
+                if(imgFace.isSelected()){
+                    imgFace.setSelected(false);
+                    //hide face-area view
+                }
+                else{
+                    imgFace.setSelected(true);
+                    //show face-area view
+                }
             case R.id.btn_send:
                 sendText();
                 break;
