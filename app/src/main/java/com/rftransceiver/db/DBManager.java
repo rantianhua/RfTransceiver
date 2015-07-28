@@ -124,7 +124,7 @@ public class DBManager {
             closeDB();
         }
     }
-    public void deleteGroup(int gid) {//É¾³ı²Ù×÷£¬¸ù¾İ×éµÄid½øĞĞÉ¾³ı
+    public void deleteGroup(int gid) {//É¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½idï¿½ï¿½ï¿½ï¿½É¾ï¿½ï¿½
 
         try{
             openReadDB();
@@ -299,6 +299,21 @@ public class DBManager {
                 }
             }
         });
+    }
+    public void deleteMessage(int gid) {//æ ¹æ®ç»„çš„idæ¥åˆ é™¤å…¶èŠå¤©è®°å½•
+
+        try{
+            openReadDB();
+            db.beginTransaction();
+            db.delete(DatabaseHelper.TABLE_DATA,"_gid = ?",new String[]{String.valueOf(gid)});
+            db.setTransactionSuccessful();
+        }catch (Exception e) {
+            Log.e("saveGroup","error in save group base info or members info",e);
+        }finally {
+            db.endTransaction();
+            db.close();
+            closeDB();
+        }
     }
 
     /**

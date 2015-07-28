@@ -293,7 +293,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
 
         //测试中保存group信息-----------------------------
-       // ListTest.saveGroups(this);
+        ListTest.saveGroups(this);
 
     }
 

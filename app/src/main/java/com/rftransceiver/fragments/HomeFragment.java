@@ -534,6 +534,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                                     }
                                 };
                         popMenu.setCallBack(callbackInContextMenu);
+                        showG();
                     }
                     popMenu.show();
                 }
@@ -1196,6 +1197,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             switch (resultCode) {
                 case 0:
                     //clear chat records
+                    deleteMessage(currentGroupId);//调用下文实现的方法
                     break;
                 case 1:
                     //open scroll
@@ -1206,6 +1208,26 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         else {
             super.onActivityResult(requestCode, resultCode, data);
         }
+    }
+    public  void showG() {//回调接口的实现  实例化查看组的类
+        ContextPopMenu.CallbackInPopMenue callbackInPopMenue = new ContextPopMenu.CallbackInPopMenue() {
+            @Override
+            public void showGroup() {
+                if (groupEntity != null && groupEntity.getMembers().size() > 0) {
+                    Fragment groupFragment = GroupDetailFragment.getInstance(groupEntity);
+                    groupFragment.setTargetFragment(HomeFragment.this, REQUEST_GROUP_DETAIL);
+                    getFragmentManager().beginTransaction().replace(R.id.frame_content,
+                            groupFragment)
+                            .addToBackStack(null)
+                            .commit();
+
+                }
+            }
+        };
+        popMenu.setCallbackInPopMenue(callbackInPopMenue);
+    }
+    public void deleteMessage(int gid){//对数据库操作实现删除聊天记录的功能
+        dbManager.deleteMessage(gid);
     }
 
     public static final int REQUEST_LOCATION = 302;
