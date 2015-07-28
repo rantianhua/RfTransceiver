@@ -58,14 +58,33 @@ public class ContextPopMenu extends MyPopuMenu {
             //关闭实时播放语音
             isRealTimePlaying = false;
             item.setTitle(textOpenRealSounds);
+            setRealTimePlay(false);
             item.setIcon(R.drawable.open_real_sounds);
 
         }else{
             //开启语音实时播放
             isRealTimePlaying = true;
             item.setTitle(textCloseRealSouds);
+            setRealTimePlay(true);
             item.setIcon(R.drawable.close_real_sounds);
 
         }
+    }
+
+    private CallbackInContextMenu callbackInContextMenu;
+
+    public void setCallBack(CallbackInContextMenu callBack){
+        this.callbackInContextMenu = callBack;
+    }
+
+    private void setRealTimePlay(boolean isPlay){
+        if(callbackInContextMenu != null){
+            callbackInContextMenu.isRealTimePlay(isPlay);
+        }
+    }
+
+    //用于操作HomeFragment--设置groupEntity实例中的实时语音标识
+    public interface CallbackInContextMenu{
+        void isRealTimePlay(boolean isPlay);
     }
 }

@@ -382,6 +382,15 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         return currentGroupId;
     }
 
+    /**
+     * 获得是否进行实时语音标识
+     * @return
+     */
+    public boolean getRealTimePlay() {
+        if(groupEntity == null) return false;
+        return groupEntity.getIsRealTimePlay();
+    }
+
     private void initEvent() {
         btnSend.setOnClickListener(this);
         imgTroggle.setOnClickListener(this);
@@ -462,6 +471,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         });
     }
 
+
+
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
@@ -514,6 +525,15 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                 if(getActivity() != null) {
                     if(popMenu == null) {
                         popMenu = new ContextPopMenu(getActivity(),top);
+                        ContextPopMenu.CallbackInContextMenu callbackInContextMenu =
+                                new ContextPopMenu.CallbackInContextMenu() {
+                                    @Override
+                                    public void isRealTimePlay(boolean isPlay) {
+                                        //设置是否进行实时语音
+                                        groupEntity.setIsRealTimePlay(isPlay);
+                                    }
+                                };
+                        popMenu.setCallBack(callbackInContextMenu);
                     }
                     popMenu.show();
                 }
@@ -710,7 +730,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         receiveData.setPhotoDrawable(drawable);
         String receTime = checkDataTime(time,true);
         if(receTime != null) {
-            ConversationData timeData = new ConversationData(ListConversationAdapter.ConversationType.TIME,receTime);
+            ConversationData timeData = new ConversationData(ListConversationAdapter.ConversationType.TIME, receTime);
             dataLists.add(timeData);
         }
         dataLists.add(receiveData);
@@ -1035,6 +1055,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         expressions.clear();
         imgDots.clear();
         dataLists.clear();
+        if(popMenu!=null){
+            popMenu.setCallBack(null);
+        }
     }
 
     private void saveCurrentGid() {

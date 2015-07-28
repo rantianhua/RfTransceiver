@@ -33,6 +33,17 @@ public class GroupEntity implements Parcelable{
         members = new ArrayList<>();
     }
 
+    public boolean isRealTimePlay = true;//标识是够进行实时播放
+
+    public boolean getIsRealTimePlay() {
+        return this.isRealTimePlay;
+    }
+
+    public void setIsRealTimePlay(boolean isRealTimePlay) {
+        this.isRealTimePlay = isRealTimePlay;
+    }
+
+
     public String getName() {
         return name;
     }

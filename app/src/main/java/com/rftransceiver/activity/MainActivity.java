@@ -476,7 +476,14 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                 switch (msg.arg2) {
                                     case 0:
                                         //start to receive sounds data
-                                        receiver.startReceiver();
+                                        if(homeFragment != null){
+                                            //是否实时接收语音
+                                            if(homeFragment.getRealTimePlay()){
+                                                receiver.startReceiver();
+                                            }else {
+                                                receiver.stopReceiver();
+                                            }
+                                        }
                                         if(homeFragment != null) {
                                             homeFragment.receivingData(0,null,(int)msg.obj);
                                         }
