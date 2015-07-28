@@ -124,7 +124,7 @@ public class DBManager {
             closeDB();
         }
     }
-    public void deleteGroup(int gid) {//删除操作，根据组的id进行删除
+    public void deleteGroup(int gid) {
 
         try{
             openReadDB();

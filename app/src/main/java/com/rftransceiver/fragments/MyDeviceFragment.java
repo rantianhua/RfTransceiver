@@ -25,26 +25,25 @@ import butterknife.InjectView;
  */
 public class MyDeviceFragment extends Fragment {
 
-    private boolean haveBindDevice = false;
-    private SharedPreferences sp;
-    private CallbackInMyDevice callback;
-
     @InjectView(R.id.btn_handle_device)
-    Button btnHandle;
+    Button btnHandle;       //处理“解除绑定”和“绑定设备”的事件
     @InjectView(R.id.img_top_left)
-    ImageView imgBack;
+    ImageView imgBack;  //标题栏的返回按钮
     @InjectView(R.id.tv_title_left)
     TextView tvTitle;
     @InjectView(R.id.tv_mydevice_name)
-    TextView tvMydevice;
+    TextView tvMydevice;    //显示当前设备的名称
+
+
+    private String bindDeviceName ; //已绑定设备的名称
+    private CallbackInMyDevice callback;    //回调接口
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        sp = getActivity().getSharedPreferences(Constants.SP_USER,0);
-        String binAddress = sp
-                .getString(Constants.BIND_DEVICE_ADDRESS,null);
-        haveBindDevice = !TextUtils.isEmpty(binAddress);
+        //从SharedPrefernce中获取当前设备的名称
+        bindDeviceName = getActivity().getSharedPreferences(Constants.SP_USER,0).getString(Constants.BIND_DEVICE_NAME,
+                null);
     }
 
     @Nullable
@@ -61,10 +60,9 @@ public class MyDeviceFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 if (btnHandle.isSelected()) {
-                    //to bind a device
+                    //绑定设备
                     if (callback != null) callback.bindDevice();
-                } else {
-                    //to unbind bounded device
+                } else {//解绑当前设备
                     unbindDevice();
                 }
             }
@@ -72,6 +70,7 @@ public class MyDeviceFragment extends Fragment {
         imgBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                //退出当前页面
                 getFragmentManager().popBackStackImmediate();
             }
         });
@@ -79,7 +78,8 @@ public class MyDeviceFragment extends Fragment {
 
     private void initView(View view) {
         ButterKnife.inject(this, view);
-        if(haveBindDevice) {
+        //若已绑定设备，则按钮显示“解除绑定”，否则显示“绑定设备”
+        if(!TextUtils.isEmpty(bindDeviceName)) {
             btnHandle.setText(R.string.unbind_device);
             btnHandle.setSelected(false);
         }else {
@@ -87,19 +87,19 @@ public class MyDeviceFragment extends Fragment {
             btnHandle.setSelected(true);
         }
 
+        //为回退按钮添加图片资源
         imgBack.setImageResource(R.drawable.back);
         tvTitle.setText(R.string.my_device);
-
-        String name = sp.getString(Constants.BIND_DEVICE_NAME,"未绑定任何设备");
-        tvMydevice.setText(name);
-        name = null;
+        //显示绑定设备名称
+        tvMydevice.setText(TextUtils.isEmpty(bindDeviceName) ? "未绑定任何设备" : bindDeviceName );
     }
 
     /**
-     * unbind have bounded device
+     * 解除绑定的实现
      */
     private void unbindDevice() {
         if(callback == null) return;
+        //利用回调接口执行具体的解绑操作
         callback.unbindDevice();
         btnHandle.setText(R.string.bind_device);
         tvMydevice.setText("已解绑" + tvMydevice.getText().toString());
@@ -113,14 +113,12 @@ public class MyDeviceFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        Log.e("mydevie", "onresume...");
         if(callback != null) callback.openScrollLockView(false);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.e("mydevie", "ondestroy...");
         if(callback != null) callback.openScrollLockView(true);
         setCallback(null);
     }

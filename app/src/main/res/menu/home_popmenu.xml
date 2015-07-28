@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    >
+
+    <item android:id="@+id/tv_popmenu_gg"
+        android:title="@string/see_group"
+        android:orderInCategory="100"
+        android:icon="@drawable/group"
+        />
+
+
+    <item android:id="@+id/tv_popmenu_tt"
+        android:title="@string/close_realtime_sounds"
+        android:icon="@drawable/realtime_sounds"
+        android:orderInCategory="200"
+        />
+
+</menu>
