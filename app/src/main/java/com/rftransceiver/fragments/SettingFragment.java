@@ -59,6 +59,8 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
     private CallbackInSF callbackInSF;
     private DBManager dbManager;
 
+
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -115,8 +117,10 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
                 //save or not save sounds data
                 if(imgSwitch.isSelected()) {
                     imgSwitch.setSelected(false);
+//                    setSaveAllSounds(false);
                 }else {
                     imgSwitch.setSelected(true);
+//                    setSaveAllSounds(true);
                 }
                 break;
             case R.id.tv_change_channel:
@@ -135,6 +139,23 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
         }
 
     }
+
+//    private void setSaveAllSounds(boolean isSave){
+//        if(callbackInSettingFragment != null){
+//            callbackInSettingFragment.isSaveAllSounds(isSave);
+//        }
+//    }
+
+//    private CallbackInSettingFragment callbackInSettingFragment;
+//
+//    public void setCallback(CallbackInSettingFragment callbackInSettingFragment){
+//        this.callbackInSettingFragment = callbackInSettingFragment;
+//    }
+//
+//    public interface CallbackInSettingFragment{
+//        void isSaveAllSounds(boolean isSave);
+//    }
+
 
     @Override
     public void onDestroy() {

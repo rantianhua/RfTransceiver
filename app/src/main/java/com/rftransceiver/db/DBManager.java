@@ -126,6 +126,7 @@ public class DBManager {
             closeDB();
         }
     }
+
     public void deleteGroup(int gid) {//很据组的id删除表的信息
         try{
             openReadDB();
@@ -273,7 +274,6 @@ public class DBManager {
         if(listChats.size() > 9) {
             saveMessage();
         }
-
     }
 
     //save data to db
@@ -289,6 +289,7 @@ public class DBManager {
                 db.beginTransaction();
                 try {
                     for (ContentValues values : saveValues) {
+
                         long re = db.insert(DatabaseHelper.TABLE_DATA, "_data", values);
                     }
                     db.setTransactionSuccessful();
@@ -315,6 +316,7 @@ public class DBManager {
             closeDB();
         }
     }
+
     public String getCacheInformation(){//得到Message表中的信息大小
         StringBuffer stringBuffer = new StringBuffer();
         long size = 0;
@@ -351,6 +353,7 @@ public class DBManager {
         }
         return DataClearnManager.getFormatSize((double)size);
     }
+
     public void deleteCache(){//删除存放data的表
         try{
             openReadDB();
@@ -366,6 +369,7 @@ public class DBManager {
         }
 
     }
+
     //for test
 //   public void insertMessage(){
 //       try{
@@ -385,6 +389,7 @@ public class DBManager {
 //       }
 //
 //   }
+
     /**
      * get message data saved in db
      * @param gid group id of the data

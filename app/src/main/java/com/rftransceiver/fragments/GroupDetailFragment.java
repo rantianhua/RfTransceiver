@@ -106,16 +106,18 @@ public class GroupDetailFragment extends Fragment {
             public void onClick(View view) {
                 if (imgSounds.isSelected()) {
                     imgSounds.setSelected(false);
+                    groupEntity.setIsSaveSoundOfGroup(false);
 
                 } else {
                     imgSounds.setSelected(true);
+                    groupEntity.setIsSaveSoundOfGroup(true);
                 }
             }
         });
         btnClearChat.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                sendAction(0, null);//Ïòhomefragment´«³öÉ¾³ýÏûÏ¢ÐÅÏ¢
+                sendAction(0, null);//ï¿½ï¿½homefragmentï¿½ï¿½ï¿½ï¿½É¾ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½Ï¢
             }
         });
         btnExitGroup.setOnClickListener(new View.OnClickListener() {
