@@ -124,7 +124,7 @@ public class DBManager {
             closeDB();
         }
     }
-    public void deleteGroup(int gid) {
+    public void deleteGroup(int gid) {//ɾ���������������id����ɾ��
 
         try{
             openReadDB();
@@ -299,6 +299,21 @@ public class DBManager {
                 }
             }
         });
+    }
+    public void deleteMessage(int gid) {//根据组的id来删除其聊天记录
+
+        try{
+            openReadDB();
+            db.beginTransaction();
+            db.delete(DatabaseHelper.TABLE_DATA,"_gid = ?",new String[]{String.valueOf(gid)});
+            db.setTransactionSuccessful();
+        }catch (Exception e) {
+            Log.e("saveGroup","error in save group base info or members info",e);
+        }finally {
+            db.endTransaction();
+            db.close();
+            closeDB();
+        }
     }
 
     /**

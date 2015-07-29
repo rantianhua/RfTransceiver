@@ -13,7 +13,7 @@ import java.util.List;
 public class GroupEntity implements Parcelable{
 
     private String name;    //the group's name
-
+    private int groupId;    //this group's id
     private byte[] asyncWord;   //the async word to distinguish different group
 
     private String picFilePath; //the file path of picture
@@ -26,12 +26,28 @@ public class GroupEntity implements Parcelable{
         members = new ArrayList<>();
     }
 
-
+   public void  setGroupId(int gid ){
+       this.groupId = gid;
+   }
+    public int getGroupId(){
+        return this.groupId;
+    }
     public GroupEntity(String name,byte[] asyncWord) {
         setAsyncWord(asyncWord);
         setName(name);
         members = new ArrayList<>();
     }
+
+    public boolean isRealTimePlay = true;//标识是够进行实时播放
+
+    public boolean getIsRealTimePlay() {
+        return this.isRealTimePlay;
+    }
+
+    public void setIsRealTimePlay(boolean isRealTimePlay) {
+        this.isRealTimePlay = isRealTimePlay;
+    }
+
 
     public String getName() {
         return name;
