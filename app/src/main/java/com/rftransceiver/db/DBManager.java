@@ -126,7 +126,7 @@ public class DBManager {
             closeDB();
         }
     }
-    public void deleteGroup(int gid) {//ɾ���������������id����ɾ��
+    public void deleteGroup(int gid) {//很据组的id删除表的信息
         try{
             openReadDB();
             db.beginTransaction();
