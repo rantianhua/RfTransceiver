@@ -652,7 +652,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     @Override
     public void onPause() {
         super.onPause();
-        dbManager.saveMessage();
+            dbManager.saveMessage();
     }
 
 
@@ -737,7 +737,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         conversationAdapter.updateData(dataLists);
         listView.setSelection(conversationAdapter.getCount() - 1);
         Object oj = recevBitmap != null ? recevBitmap : data;
-        saveMessage(oj,tye,memberId,time);
+        //接受语音，检查是否保存组语音信息
+        if (groupEntity.getIsSaveSoundOfGroup() == false || tye != 0) {
+            saveMessage(oj,tye,memberId,time);
+        }
         recevBitmap = null;
     }
 
@@ -845,7 +848,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
 
     private void saveMessage(Object message,int type,int mid,long time) {
         if(groupEntity != null) {
-            dbManager.readyMessage(message, type, mid, currentGroupId, time);
+                dbManager.readyMessage(message, type, mid, currentGroupId, time);
         }
     }
 
@@ -917,7 +920,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         conversationAdapter.updateData(dataLists);
         listView.setSelection(conversationAdapter.getCount() - 1);
         Object object = sendBitmap == null ? sendText : sendBitmap;
-        saveMessage(object,sendAction.ordinal(),myId,time);
+        //发送语音，检查是否保存组语音消息
+        if(groupEntity.getIsSaveSoundOfGroup() == false || sendAction.ordinal() != 0) {
+            saveMessage(object, sendAction.ordinal(), myId, time);
+        }
         sendBitmap = null;
     }
 

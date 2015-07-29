@@ -124,7 +124,7 @@ public class DBManager {
             closeDB();
         }
     }
-    public void deleteGroup(int gid) {//É¾³ý²Ù×÷£¬¸ù¾Ý×éµÄid½øÐÐÉ¾³ý
+    public void deleteGroup(int gid) {//É¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½idï¿½ï¿½ï¿½ï¿½É¾ï¿½ï¿½
 
         try{
             openReadDB();
@@ -272,7 +272,6 @@ public class DBManager {
         if(listChats.size() > 9) {
             saveMessage();
         }
-
     }
 
     //save data to db
@@ -288,6 +287,7 @@ public class DBManager {
                 db.beginTransaction();
                 try {
                     for (ContentValues values : saveValues) {
+
                         long re = db.insert(DatabaseHelper.TABLE_DATA, "_data", values);
                     }
                     db.setTransactionSuccessful();
@@ -300,6 +300,8 @@ public class DBManager {
             }
         });
     }
+
+
 
     /**
      * get message data saved in db

@@ -100,8 +100,11 @@ public class GroupDetailFragment extends Fragment {
             public void onClick(View view) {
                 if (imgSounds.isSelected()) {
                     imgSounds.setSelected(false);
+                    groupEntity.setIsSaveSoundOfGroup(false);
+
                 } else {
                     imgSounds.setSelected(true);
+                    groupEntity.setIsSaveSoundOfGroup(true);
                 }
             }
         });
