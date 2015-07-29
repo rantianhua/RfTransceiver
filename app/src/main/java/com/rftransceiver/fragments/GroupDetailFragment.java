@@ -1,7 +1,9 @@
 package com.rftransceiver.fragments;
 
 import android.app.Fragment;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -12,6 +14,7 @@ import android.widget.Button;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.rftransceiver.R;
 import com.rftransceiver.activity.MainActivity;
@@ -19,6 +22,8 @@ import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.group.GroupMember;
 import com.rftransceiver.util.CommonAdapter;
 import com.rftransceiver.util.CommonViewHolder;
+
+import javax.security.auth.callback.Callback;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -56,6 +61,7 @@ public class GroupDetailFragment extends Fragment {
         groupEntity = getArguments().getParcelable("group");
         textBack = getString(R.string.back);
     }
+
 
     @Nullable
     @Override
@@ -111,7 +117,7 @@ public class GroupDetailFragment extends Fragment {
         btnClearChat.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                sendAction(0, null);
+                sendAction(0, null);//��homefragment����ɾ����Ϣ��Ϣ
             }
         });
         btnExitGroup.setOnClickListener(new View.OnClickListener() {
@@ -126,7 +132,7 @@ public class GroupDetailFragment extends Fragment {
 
             }
         });
-    }
+   }
 
     /**
      * all actions  handled by HomeFragment
@@ -155,4 +161,5 @@ public class GroupDetailFragment extends Fragment {
         groupEntity = null;
         sendAction(1,null);
     }
+
 }

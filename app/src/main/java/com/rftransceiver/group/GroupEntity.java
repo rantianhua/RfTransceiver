@@ -13,7 +13,7 @@ import java.util.List;
 public class GroupEntity implements Parcelable{
 
     private String name;    //the group's name
-
+    private int groupId;    //this group's id
     private byte[] asyncWord;   //the async word to distinguish different group
 
     private String picFilePath; //the file path of picture
@@ -26,7 +26,12 @@ public class GroupEntity implements Parcelable{
         members = new ArrayList<>();
     }
 
-
+   public void  setGroupId(int gid ){
+       this.groupId = gid;
+   }
+    public int getGroupId(){
+        return this.groupId;
+    }
     public GroupEntity(String name,byte[] asyncWord) {
         setAsyncWord(asyncWord);
         setName(name);
