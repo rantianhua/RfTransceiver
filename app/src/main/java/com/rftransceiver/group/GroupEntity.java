@@ -26,12 +26,13 @@ public class GroupEntity implements Parcelable{
         members = new ArrayList<>();
     }
 
-   public void  setGroupId(int gid ){
+    public void  setGroupId(int gid ){
        this.groupId = gid;
    }
     public int getGroupId(){
         return this.groupId;
     }
+
     public GroupEntity(String name,byte[] asyncWord) {
         setAsyncWord(asyncWord);
         setName(name);
