@@ -5,18 +5,53 @@
     android:paddingBottom="10dp"
     >
 
+    <ImageView
+        android:layout_width="10dp"
+        android:layout_height="20dp"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:background="@drawable/corner_right"
+        android:layout_marginEnd="5dp"
+        />
+
     <com.rftransceiver.customviews.SoundsTextView
-        android:layout_width="wrap_content"
+        android:layout_width="50dp"
         android:layout_height="wrap_content"
-        android:background="@drawable/tv_conversation_bg"
+        android:background="@drawable/tv_conversation_bg_right"
         android:layout_centerVertical="true"
         android:layout_alignParentEnd="true"
         android:layout_marginEnd="15dp"
         android:padding="10dp"
-        android:gravity="center"
         android:id="@+id/tv_right_sounds"
-        android:text="[语音]"
         android:textColor="@color/white"
         />
+
+    <ImageView
+        android:id="@+id/img_sound_anim"
+        android:layout_width="10dp"
+        android:layout_height="15dp"
+        android:layout_centerVertical="true"
+        android:layout_marginStart="15dp"
+        android:layout_alignStart="@id/tv_right_sounds"
+        android:background="@anim/sound_play"/>
+
+    <ImageView
+        android:id="@+id/img_sound_play"
+        android:layout_width="10dp"
+        android:layout_height="15dp"
+        android:layout_centerVertical="true"
+        android:layout_marginStart="15dp"
+        android:layout_alignStart="@id/tv_right_sounds"
+        android:background="@drawable/sound_play"
+        />
+    <TextView
+        android:id="@+id/tv_sound_time_right"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:textSize="10dp"
+        android:paddingEnd="3dp"
+        android:layout_alignBottom="@id/tv_right_sounds"
+        android:gravity="bottom|end"
+        android:layout_toStartOf="@id/tv_right_sounds"/>
 
 </RelativeLayout>

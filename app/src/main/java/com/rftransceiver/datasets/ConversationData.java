@@ -50,6 +50,7 @@ public class ConversationData {//消息信息类，用来存储交流的信息
      * my id in group
      */
     private int mid;
+    private long soundsTime;
 
     public ConversationData(ListConversationAdapter.ConversationType type) {
         setConversationType(type);
@@ -59,6 +60,13 @@ public class ConversationData {//消息信息类，用来存储交流的信息
                             String text) {
         this(type);
         setContent(text);
+    }
+
+    public ConversationData(ListConversationAdapter.ConversationType type,
+                            String text,long soundsTime) {
+        this(type);
+        setContent(text);
+        setSoundsTime(soundsTime);
     }
 
     public ConversationData(ListConversationAdapter.ConversationType type,
@@ -87,6 +95,14 @@ public class ConversationData {//消息信息类，用来存储交流的信息
 
     public Drawable getPhotoDrawable() {
         return photoDrawable;
+    }
+
+    public void setSoundsTime(long time){
+        this.soundsTime=time;
+    }
+
+    public long getSoundsTime(){
+        return soundsTime;
     }
 
     public void setPhotoDrawable(Bitmap bitmap) {
