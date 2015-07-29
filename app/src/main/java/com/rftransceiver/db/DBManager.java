@@ -126,8 +126,7 @@ public class DBManager {
             closeDB();
         }
     }
-    public void deleteGroup(int gid) {//很据组的id删除表的信息
-
+    public void deleteGroup(int gid) {//ɾ���������������id����ɾ��
         try{
             openReadDB();
             db.beginTransaction();
@@ -303,7 +302,6 @@ public class DBManager {
         });
     }
     public void deleteMessage(int gid) {//根据组的id来删除其聊天记录
-
         try{
             openReadDB();
             db.beginTransaction();

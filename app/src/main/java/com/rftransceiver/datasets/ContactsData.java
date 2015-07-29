@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 /**
  * Created by rth on 15-7-23.
  */
-public class ContactsData {//保存通讯录中的信息的类
+public class ContactsData {
 
     private String groupName;
 

@@ -542,8 +542,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             case R.id.tv_tip_home:
                 if(tvTip.getText().toString().equals(tipConnectLose)) {
                     if(callback != null) {
+                        //重新连接设备
                         callback.reconnectDevice();
                         tvTip.setText(tipReconnecting);
+                        //5秒之后还没有连上即显示连接失败
                         mainHandler.postDelayed(new Runnable() {
                             @Override
                             public void run() {
