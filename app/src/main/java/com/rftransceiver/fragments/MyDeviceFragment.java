@@ -102,7 +102,6 @@ public class MyDeviceFragment extends Fragment {
         //利用回调接口执行具体的解绑操作
         callback.unbindDevice();
         btnHandle.setText(R.string.bind_device);
-        tvMydevice.setText("已解绑" + tvMydevice.getText().toString());
         btnHandle.setSelected(true);
     }
 

@@ -12,7 +12,9 @@ import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
+import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
@@ -40,6 +42,7 @@ import com.rftransceiver.R;
 import com.rftransceiver.activity.LocationActivity;
 import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.adapter.ListConversationAdapter;
+import com.rftransceiver.customviews.CircleImageDrawable;
 import com.rftransceiver.customviews.ContextPopMenu;
 import com.rftransceiver.customviews.MyListView;
 import com.rftransceiver.datasets.ConversationData;
@@ -173,8 +176,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
 
     private String homeTitle;
 
-    private static final android.os.Handler mainHandler = new android.os.Handler(Looper.getMainLooper());
-
+    private static Handler mainHandler;
     /**
      * to play sounds for button click
      */
@@ -202,14 +204,16 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     //顶部菜单栏的弹出菜单
     private ContextPopMenu popMenu;
 
+    private boolean isPublicChannel = false;    //标识是否在公共频道
+    private Drawable drawableDef;   //默认头像
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        initHandler();
         expressions = new ArrayList<>();
         imgDots = new ArrayList<>();
         initImageGetter();
-//        imgSendSize = getResources().getDimensionPixelSize(R.dimen.img_data_height)
-//             * getResources().getDimensionPixelSize(R.dimen.img_data_width);
 
         imgSendSize = 100 * 120;
         tipConnectLose = getResources().getString(R.string.connection_lose);
@@ -223,6 +227,35 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         soundPool = new SoundPool(3, AudioManager.STREAM_SYSTEM,1);
         soundsId = soundPool.load(getActivity(),R.raw.btn_down,1);
      }
+
+    private void initHandler() {
+        mainHandler = new Handler(Looper.getMainLooper(), new Handler.Callback() {
+            @Override
+            public boolean handleMessage(Message msg) {
+                switch (msg.what) {
+                    case LOAD_GROUP:
+                        GroupEntity ge = (GroupEntity)msg.obj;
+                        updateGroup(ge);
+                        break;
+                    case CHANGE_GROUP:
+                        int gid = msg.arg1;
+                        if(gid == currentGroupId) return false;
+                        currentGroupId = gid;
+                        dataLists.clear();
+                        conversationAdapter.updateData(dataLists);
+                        groupEntity = null;
+                        loadGroup(gid);
+                        break;
+                    case UPDATE_IMAGE:
+                        int percent = msg.arg1;
+                        conversationAdapter.updateImgageProgress(percent);
+                        break;
+                }
+                return true;
+            }
+        });
+
+    }
 
     private void initExpressions(LayoutInflater inflater) {
         for(int i = 0; i < ExpressionUtil.epDatas.size();i ++) {
@@ -366,17 +399,35 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         if(!TextUtils.isEmpty(homeTitle)) {
             tvTitle.setText(homeTitle);
             homeTitle = null;
+            isPublicChannel = false;
+        }else {
+            tvTitle.setText("处于公共频道");
+            isPublicChannel = true;
+            initDefDrawable();
         }
+    }
+
+    /**
+     * 实例化默认图片
+     */
+    private void initDefDrawable() {
+        int size = 150 * 150;
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(),R.drawable.photo);
+        drawableDef = new CircleImageDrawable(bitmap);
     }
 
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         if(groupEntity == null) {
+            isPublicChannel = true;
             if(getCurrentGroupId() != -1) {
                 loadGroup(currentGroupId);
+            }else {
+                Log.e("onViewCreated","没有组要加载");
             }
         }else {
+            isPublicChannel = false;
             updateGroup(groupEntity);
         }
     }
@@ -401,7 +452,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
      * @return
      */
     public boolean getRealTimePlay() {
-        if(groupEntity == null) return false;
+        if(groupEntity == null) return true;
         return groupEntity.getIsRealTimePlay();
     }
 
@@ -537,16 +588,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                 if(callback != null) callback.toggleMenu();
                 break;
             case R.id.img_home_hide:
-                //click hide menu on the top
-//                if(contextMenuDialogFrag == null) {
-//                    contextMenuDialogFrag = new ContextMenuDialogFrag();
-//                    contextMenuDialogFrag.setTargetFragment(HomeFragment.this,REQUEST_CONTEXT_MENU);
-//                }
-//                try {
-//                    contextMenuDialogFrag.show(getFragmentManager(),"contextMenu");
-//                }catch (Exception e) {
-//
-//                }
                 if(getActivity() != null) {
                     if(popMenu == null) {
                         popMenu = new ContextPopMenu(getActivity(),top);
@@ -649,13 +690,12 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         }
     }
 
+    /**
+     * 更新发送图片的进度
+     * @param percent
+     */
     public void upteImageProgress(final int percent) {
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                conversationAdapter.updateImgageProgress(percent);
-            }
-        });
+        mainHandler.obtainMessage(UPDATE_IMAGE,percent,-1,null).sendToTarget();
     }
 
     /**
@@ -728,13 +768,17 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                     break;
                 }
             }
+        }else if(isPublicChannel) {
+            drawable = drawableDef;
         }
         long time = new Date().getTime();
         Bitmap recevBitmap = null;
         switch (tye) {
             case 0:
-                receiveData = new ConversationData(ListConversationAdapter.ConversationType.LEFT_SOUNDS,
-                        data,soundsReceivingTime);
+                if(data != null) {
+                    receiveData = new ConversationData(ListConversationAdapter.ConversationType.LEFT_SOUNDS,
+                            data,soundsReceivingTime);
+                }
                 break;
             case 1:
                 receiveData = new ConversationData(ListConversationAdapter.ConversationType.LEFT_TEXT,
@@ -766,7 +810,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         listView.setSelection(conversationAdapter.getCount() - 1);
         Object oj = recevBitmap != null ? recevBitmap : data;
         //接受语音，检查是否保存组语音信息
-        if (groupEntity.getIsSaveSoundOfGroup() == false || tye != 0) {
+        if(groupEntity == null) return;
+        if(!(tye == 0 && !groupEntity.getIsSaveSoundOfGroup())) {
             saveMessage(oj,tye,memberId,time);
         }
         recevBitmap = null;
@@ -949,7 +994,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         listView.setSelection(conversationAdapter.getCount() - 1);
         Object object = sendBitmap == null ? sendText : sendBitmap;
         //发送语音，检查是否保存组语音消息
-        if(groupEntity.getIsSaveSoundOfGroup() == false || sendAction.ordinal() != 0) {
+        if(groupEntity == null) return;
+        if(!(sendAction.ordinal() == 0 && !groupEntity.getIsSaveSoundOfGroup())) {
             saveMessage(object, sendAction.ordinal(), myId, time);
         }
         sendBitmap = null;
@@ -1010,30 +1056,25 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             }
         });
     }
-
     /**
      * update the group of talk
      * @param groupEntity
      */
     public void updateGroup(final GroupEntity groupEntity) {
         this.groupEntity = groupEntity;
-        if(groupEntity == null) return;
+        if(groupEntity == null) {
+            isPublicChannel = true;
+            return;
+        }
         myId = groupEntity.getTempId();
         if(callback != null) callback.setMyId(groupEntity.getTempId());
-        final String name = groupEntity.getName();
+        String name = groupEntity.getName();
         homeTitle = name
                 +"(" + groupEntity.getMembers().size() + "人" + ")";
         if(tvTitle != null) {
-            if(!this.isAdded()) return;
-            Activity activity = getActivity();
-            if (activity == null) return;
-            activity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    tvTitle.setText(homeTitle);
-                }
-            });
+            tvTitle.setText(homeTitle);
         }
+        isPublicChannel = false;
     }
 
     /**
@@ -1041,13 +1082,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
      * @param gid
      */
     public void changeGroup(int gid) {
-        if(gid == currentGroupId) return;
-        dataLists.clear();
-        conversationAdapter.updateData(dataLists);
-        groupEntity = null;
-        loadGroup(gid);
-        currentGroupId = gid;
-
+        mainHandler.obtainMessage(CHANGE_GROUP,gid,-1,null).sendToTarget();
     }
 
     public interface CallbackInHomeFragment {
@@ -1111,7 +1146,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             public void run() {
                 GroupEntity ge = dbManager.getAgroup(gid);
                 if (ge != null) {
-                    updateGroup(ge);
+                    mainHandler.obtainMessage(LOAD_GROUP,-1,-1,ge).sendToTarget();
                     loadConverationData(gid, ge.getTempId(), -1, 20, false);
                 }
             }
@@ -1268,4 +1303,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     public static final int REQUEST_CONTEXT_MENU = 304;
     public static final int REQUEST_GROUP_DETAIL = 305;
     public static final String EXTRA_LOCATION = "address";
+    public static final int LOAD_GROUP = 0; //加载到一个组
+    public static final int CHANGE_GROUP = 1;   //改变组
+    public static final int UPDATE_IMAGE = 2;   //更新图片发送进度
 }

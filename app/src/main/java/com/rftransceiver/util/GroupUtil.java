@@ -246,7 +246,7 @@ public class GroupUtil {
         String res = null;
         try {
             JSONObject object = new JSONObject();
-            object.put(RECEIVE_GROUP,"");
+            object.put("msg",RECEIVE_GROUP);
             object.put(GROUP_MEMBER_ID,id);
             res = object.toString();
         }catch (Exception e) {

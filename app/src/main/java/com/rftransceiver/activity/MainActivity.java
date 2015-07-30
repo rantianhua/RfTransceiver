@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -49,6 +50,8 @@ import com.source.sounds.Audio_Reciver;
 import com.source.sounds.Audio_Recorder;
 import com.source.sounds.SoundsEntity;
 import com.source.text.TextEntity;
+
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -96,8 +99,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
      */
     private long seconds;
 
-    private final String TAG = getClass().getSimpleName();
-
     /**
      * the reference of BlueLeService
      */
@@ -111,7 +112,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     /**
      * the handler to interactive between child thread and Ui thread
      */
-    private Handler dataExchangeHandler =  null;
+    private static Handler dataExchangeHandler =  null;
     /**
      * the text entity to decide how packet text data to be sent
      */
@@ -212,6 +213,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
      * true if open application add have bounded device before
      */
     private boolean needConnectDevice = false;
+    private boolean needReBind = false; //需要重新绑定的标识
+    private ProgressDialog pd ; //加载等待
 
     public static final int REQUEST_GROUP = 301;
     public static final int REQUEST_CHANGECHANNEL = 305;
@@ -230,8 +233,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                 finish();
             }else {
                 if(!bluetoothLeService.isBluetoothEnable()) {
-                    loadDialogFragment = LoadDialogFragment.getInstance("正在打开蓝牙");
-                    loadDialogFragment.show(getFragmentManager(),null);
+                    loaingOpenBle(true, "正在打开蓝牙");
                     bluetoothLeService.openBluetooth();
                 }else {
                     connectDeviceAuto();
@@ -256,17 +258,19 @@ public class MainActivity extends Activity implements View.OnClickListener,
                 switch (state) {
                     case BluetoothAdapter.STATE_OFF:
                         showToast(getString(R.string.bluetooth_closed));
-                        if(bluetoothLeService != null) {
-                            bluetoothLeService.disconnect();
+                        if(bluetoothLeService != null && needReBind) {
+                            bluetoothLeService.openBluetooth();
                         }
                         break;
                     case BluetoothAdapter.STATE_ON:
-                        if(loadDialogFragment != null && loadDialogFragment.isVisible()) {
-                            loadDialogFragment.dismiss();
-                        }
+                        //关闭提示
+                        loaingOpenBle(false,"");
                         if(needSearchDevice && bindDeviceFragment != null) {
                             needSearchDevice = false;
                             bindDeviceFragment.searchDevices();
+                        }
+                        if(needReBind) {
+                            needReBind = false;
                         }
                         connectDeviceAuto();
                         break;
@@ -274,6 +278,21 @@ public class MainActivity extends Activity implements View.OnClickListener,
             }
         }
     };
+
+    /**
+     * 显示正在打开蓝牙的提示
+     */
+    private void loaingOpenBle(boolean show,String message) {
+        if(pd == null) {
+            pd = new ProgressDialog(this);
+        }
+        pd.setMessage(message);
+        if(show) {
+            if(!pd.isShowing()) pd.show();
+        }else {
+            if(pd.isShowing()) pd.dismiss();
+        }
+    }
 
     public static int CURRENT_CHANNEL = 0;
 
@@ -296,6 +315,22 @@ public class MainActivity extends Activity implements View.OnClickListener,
         iniInterphone();
         //bind the ble service
         bindService(new Intent(this, BleService.class), serviceConnectionBle, BIND_AUTO_CREATE);
+
+        //开启录音权限
+        openRecordPer();
+    }
+
+    /**
+     *
+     */
+    private void openRecordPer() {
+        record.startRecording();
+        dataExchangeHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                record.stopRecording();
+            }
+        },100);
     }
 
     private void initView() {
@@ -424,9 +459,14 @@ public class MainActivity extends Activity implements View.OnClickListener,
      * 根据neesConnectDevice的值判断是否自动连接设备
      */
     private void connectDeviceAuto() {
+        if(needSearchDevice) {
+            needSearchDevice = false;
+            bindDeviceFragment.searchDevices();
+            return;
+        }
         if(needConnectDevice && bluetoothLeService != null) {
             if(!bluetoothLeService.connect(bindAddress,true)) {
-                if(homeFragment != null) {
+                if (homeFragment != null) {
                     homeFragment.deviceConnected(false);
                 }
             }
@@ -464,9 +504,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
             @Override
             public void unbindDevice() {
                 //解除绑定
-                if(bluetoothLeService != null && deviceBinded) {
-                    bluetoothLeService.disconnect();
+                if(bluetoothLeService != null) {
+                    loaingOpenBle(true,"正在解除绑定...");
+                    bluetoothLeService.unBindDevice();
                 }
+                needReBind = true;
                 //清空SharedPreference中保存的历史设备
                 updateBoundedDevice("", "");
                 deviceBinded = false;
@@ -485,18 +527,15 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     private void initDataExchangeHandler() {
-        dataExchangeHandler = new Handler(Looper.getMainLooper()) {
+        dataExchangeHandler = new Handler(Looper.getMainLooper(), new Handler.Callback() {
             @Override
-            public void handleMessage(Message msg) {
-                super.handleMessage(msg);
+            public boolean handleMessage(Message msg) {
                 switch (msg.what) {
                     case Constants.MESSAGE_READ:
                         switch (msg.arg1) {
                             case Constants.READ_SOUNDS:
                                 switch (msg.arg2) {
                                     case 0:
-                                        //start to receive sounds data
-                                        receiver.startReceiver();
                                         //preTime为接受消息的起始时间，用于计算消息时长
                                         preTime=System.currentTimeMillis();
                                         if(homeFragment != null){
@@ -506,8 +545,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                             }else {
                                                 receiver.stopReceiver();
                                             }
-                                        }
-                                        if(homeFragment != null) {
                                             homeFragment.receivingData(0,null,(int)msg.obj,0);
                                         }
                                         soundsRecords.clear();
@@ -541,7 +578,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                             case Constants.READ_WORDS:
                                 //receive text data
                                 byte[] data = (byte[]) msg.obj;
-                                if(data == null) return;
+                                if(data == null) return false;
                                 if(homeFragment != null) {
                                     homeFragment.receivingData(1,new String(data),msg.arg2,0);
                                 }
@@ -579,6 +616,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
                             case Constants.READ_SETASYNCWORD:
                                 showToast("设置同步字成功");
                                 haveSetAsyncWord = true;
+                                break;
+                            case Constants.READ_UNKNOWN:
+                                stopReceiveSounds();
+                                resetCms(true);
+                                showToast("收到未知数据");
                                 break;
                             case Constants.READ_RSSI:
                                 showToast("读到rssi值是：" + msg.arg2);
@@ -624,8 +666,9 @@ public class MainActivity extends Activity implements View.OnClickListener,
                         }
                         break;
                 }
+                return false;
             }
-        };
+        });
     }
 
     /**
@@ -766,6 +809,15 @@ public class MainActivity extends Activity implements View.OnClickListener,
                 lockerView.closeMenu();
                 break;
         }
+    }
+
+    /**
+     * BindDeviceFragment的回调方法
+     * @param b
+     */
+    @Override
+    public void setNeedSearch(boolean b) {
+        needSearchDevice = true;
     }
 
     /**

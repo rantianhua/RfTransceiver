@@ -95,9 +95,10 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
      */
     private String groupName;
 
-    /**
-     * the timer to get searched wifi device
-     */
+    //按时循环扫描的timer
+    private Timer scanTimer;
+
+    //按时获取扫描结果的timer
     private Timer resultTimer;
 
     /**
@@ -162,8 +163,7 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
 
     private List<GroupMember> listMembers;
 
-    private boolean stopScan = false;
-
+    //记录自己在各个组中的id
     private HashMap<String,Integer> subIds;
 
     private static Handler handler;
@@ -186,13 +186,73 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
                 50,getResources().getDisplayMetrics());
         memberHeight = (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
                 70,getResources().getDisplayMetrics());
+
+        if(action == GroupActivity.GroupAction.ADD) {
+            initTimers();
+        }
     }
+
+    /**
+     * 初始化timers
+     */
+    private void initTimers() {
+        resultTimer = new Timer();
+        //每隔1.5秒获取一次扫描结果
+        resultTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                refreshWifiAp();
+            }
+        },0,1500);
+        scanTimer = new Timer();
+        //每隔2秒扫描一次热点
+        scanTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (callback != null) callback.startScan();
+            }
+        },0, 2000);
+    }
+
+    /**
+     * 获取扫描结果
+     */
+    private void refreshWifiAp() {
+        if(callback != null) {
+            List<ScanResult> scans = callback.getScanResult();
+            Log.e("refreshWifiAp","得到一次热点结果");
+            if(scans == null) return;
+            //根据wifi信号的强度排序
+            for(int i=0;i<scans.size();i++) {
+                for(int j=1;j<scans.size();j++)
+                {
+                    if(scans.get(i).level<scans.get(j).level)    //level属性即为强度
+                    {
+                        ScanResult temp = null;
+                        temp = scans.get(i);
+                        scans.set(i, scans.get(j));
+                        scans.set(j, temp);
+                    }
+                }
+            }
+            for(int i = 0; i < scans.size();i++) {
+                ScanResult result = scans.get(i);
+                String ssid = result.SSID.toLowerCase();
+                if(WifiNetService.isSSIDValid(ssid)
+                        && !containResult(result)) {
+                    Log.e("refreshWifiAp","扫描到" + result.SSID);
+                    handler.obtainMessage(ADD_DATA, -1, -1, result).sendToTarget();
+                }
+            }
+        }
+    }
+
 
     /**
      * 连接wifi热点
      */
     private void connectWifi() {
-        if(!isConnecting && count < scanResults.size()-1 && callback != null) {
+        if(!isConnecting && count < scanResults.size() && callback != null) {
             ScanResult result = scanResults.get(count);
             isConnecting = true;
             callback.connectWifiAp(result.SSID);
@@ -280,11 +340,6 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
     @Override
     public void onResume() {
         super.onResume();
-        if(action == GroupActivity.GroupAction.ADD) {
-            if(!getStopScan()) {
-                initTimer();
-            }
-        }
         arcView1.startRipple(0);
         arcView2.startRipple(1300);
         arcView3.startRipple(2600);
@@ -293,57 +348,9 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
     @Override
     public void onPause() {
         super.onPause();
-        if(action == GroupActivity.GroupAction.ADD) {
-            if(resultTimer != null) {
-                resultTimer.cancel();
-                resultTimer = null;
-            }
-        }
         arcView1.stopRipple();
         arcView2.stopRipple();
         arcView3.stopRipple();
-    }
-
-    /**
-     * the timer get scan result per 2 second
-     */
-    private void initTimer() {
-        if(resultTimer == null) {
-            resultTimer = new Timer();
-            setStopScan(false);
-            resultTimer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    if(callback != null) {
-                        List<ScanResult> scans = callback.getScanResult();
-                        if(scans == null) return;
-                        //根据wifi信号的强度排序
-                        for(int i=0;i<scans.size();i++) {
-                            for(int j=1;j<scans.size();j++)
-                            {
-                                if(scans.get(i).level<scans.get(j).level)    //level属性即为强度
-                                {
-                                    ScanResult temp = null;
-                                    temp = scans.get(i);
-                                    scans.set(i, scans.get(j));
-                                    scans.set(j, temp);
-                                }
-                            }
-                        }
-                        for(int i = 0; i < scans.size();i++) {
-                            ScanResult result = scans.get(i);
-                            if((result.SSID.startsWith(WifiNetService.WIFI_HOT_HEADER)
-                                    || result.SSID.startsWith("\""+WifiNetService.WIFI_HOT_HEADER))
-                                    && !containResult(result)) {
-                                if(!getStopScan()) {
-                                    handler.obtainMessage(ADD_DATA, -1, -1, result).sendToTarget();
-                                }
-                            }
-                        }
-                    }
-                }
-            },10,10000);
-        }
     }
 
     /**
@@ -351,10 +358,9 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
      * @return true if the result is contained in scanResults
      */
     private boolean containResult(ScanResult result) {
-        for(int i = 0;i < scanResults.size();i++) {
-            if(scanResults.get(i).SSID.equalsIgnoreCase(result.SSID)) {
-                return true;
-            }
+        int size = scanResults.size();
+        for(int i = 0;i < size;i++) {
+            return WifiNetService.compareTwoSsid(scanResults.get(i).SSID,result.SSID);
         }
         return false;
     }
@@ -365,6 +371,7 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
 
     @Override
     public void onDestroy() {
+        stopScanWifiAp();
         super.onDestroy();
         setCallback(null);
         scanResults = null;
@@ -384,17 +391,15 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
             int size = scanResults.size();
             if(size <= 0 || count >= size) return;
             ScanResult connectResult = scanResults.get(count);
-            if(ssid.equals(connectResult.SSID)) {
-                //建立socket连接
-                if(callback == null) return;
-                callback.getSocketConnect(ssid,true);
-            }
+            //建立socket连接
+            if(callback == null) return;
+            callback.getSocketConnect(ssid,true);
         }
     }
 
     /**
      *
-     * @param object JsonObject saved group base info
+     * @param object JsonObject 保存组的基本信息
      */
     public void showGroupBaseInfo(JSONObject object) {
         handler.obtainMessage(RECEIVED_A_GROUP,-1,-1,object).sendToTarget();
@@ -455,17 +460,16 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
                 view.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        setStopScan(true);
-                        //stop scan wifiAp
-                        if(resultTimer != null) {
-                            resultTimer.cancel();
-                            resultTimer = null;
+                        if(chooseView.getVisibility() == View.INVISIBLE) {
+                            chooseView.setVisibility(View.VISIBLE);
+                            hideOtherViews();
+                            String idKey = (String)view.getTag();
+                            memberId = subIds.get(idKey);
+                            finalConnect((String)view.getTag());
+                            tvTip.setText(getString(R.string.wait_group_owner_sure));
+                            //停止扫描wifi热点
+                            stopScanWifiAp();
                         }
-                        chooseView.setVisibility(View.VISIBLE);
-                        hideOtherViews();
-                        memberId = subIds.get(view.getTag());
-                        finalConnect((String)view.getTag());
-                        tvTip.setText(getString(R.string.wait_group_owner_sure));
                     }
                 });
                 memberLayout.addView(view);
@@ -489,12 +493,18 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
 
     }
 
-    private synchronized void setStopScan(boolean scan) {
-        this.stopScan = scan;
-    }
-
-    private synchronized boolean getStopScan() {
-        return this.stopScan;
+    /**
+     * 停止查找和更新wifi热点
+     */
+    private void stopScanWifiAp() {
+        if(scanTimer != null) {
+            scanTimer.cancel();
+            scanTimer = null;
+        }
+        if(resultTimer != null) {
+            resultTimer.cancel();
+            resultTimer = null;
+        }
     }
 
     /**
@@ -510,7 +520,7 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
 
     /**
      *
-     * @param ssid socket established under this ssid
+     * @param ssid socket连接已经建立
      */
     public void socketConnected(String ssid) {
         socketedSsid = ssid;
@@ -526,17 +536,17 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
      */
     private void finalConnect(String ssid) {
         if(callback == null) return;
-        if(ssid.equals(connectedSsid)) {
-            //Ap has connected
-            if(ssid.equals(socketedSsid)) {
-                //pre socket is what needed, no need to reconnect
+        if(WifiNetService.compareTwoSsid(ssid, connectedSsid)) {
+            //热点已连接
+            if(WifiNetService.compareTwoSsid(ssid, socketedSsid)) {
+                //当前的socket就是最终要连的socket
                 callback.writeMemberInfo();
             }else {
                 needWriteMember = true;
                 callback.getSocketConnect(ssid,false);
             }
         }else {
-            //need reconnect wifiAp
+            //重连wifi热点
             callback.connectWifiAp(ssid);
             needWriteMember = true;
         }
@@ -572,11 +582,11 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
     }
 
     /**
-     * socket connect failed
+     * socket连接建立失败
      * @param ssid
      */
     public void scoketConnectFailed(String ssid) {
-        if(ssid.equals(scanResults.get(count).SSID)) {
+        if(WifiNetService.compareTwoSsid(ssid,scanResults.get(count).SSID)) {
             Log.e("scoketConnectFailed"," in ssid " + ssid);
             connectWifi();
         }
@@ -619,20 +629,22 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
     }
 
     /**
-     * cancel establish group
+     * 得到自己在当前组的id
+     * @return
+     */
+    public int getCurrentId() {
+        if(connectedSsid != null) {
+            return subIds.get(connectedSsid);
+        }
+        return -1;
+    }
+    /**
+     * 取消建组或者加组
      */
     private void cancelEstablish() {
         if(callback == null) return;
         if(action == GroupActivity.GroupAction.ADD) {
-            if(getStopScan()) {
-                callback.cancelAddGroup(subIds.get(connectedSsid));
-            }else {
-                setStopScan(true);
-                if(resultTimer != null) {
-                    resultTimer.cancel();
-                    resultTimer = null;
-                }
-            }
+            callback.cancelAddGroup(getCurrentId());
         }else {
             callback.cancelCreateGroup();
         }
@@ -650,9 +662,9 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
                 connectWifi();
                 break;
             case RECEIVED_A_GROUP:
-                isConnecting = false;
                 addGroupInUI((JSONObject)message.obj);
-                if(!getStopScan()) {
+                isConnecting = false;
+                if(scanTimer != null) {
                     count ++;
                     connectWifi();
                 }
@@ -670,7 +682,7 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
                 break;
             case CANCEL_CREATE_GROUP:
                 String ssid = (String)message.obj;
-                if(ssid != null && ssid.equals(socketedSsid)) {
+                if(ssid != null && WifiNetService.compareTwoSsid(ssid, socketedSsid)) {
                     Toast.makeText(getActivity(),"群主已取消",Toast.LENGTH_SHORT).show();
                     getActivity().finish();
                 }
@@ -679,11 +691,9 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
                 Bitmap bitmap = (Bitmap)message.obj;
                 if(bitmap != null) {
                     Drawable drawable = new CircleImageDrawable(bitmap);
-                    if(drawable != null) {
-                        imgPhoto.setImageDrawable(drawable);
-                    }
+                    imgPhoto.setImageDrawable(drawable);
                     if(action == GroupActivity.GroupAction.CREATE && callback != null) {
-                        if(drawable != null) imgOwner.setImageDrawable(drawable);
+                        imgOwner.setImageDrawable(drawable);
                         SharedPreferences sp = getActivity().getSharedPreferences(Constants.SP_USER,0);
                         String name = sp.getString(Constants.NICKNAME, "");
                         GroupMember member = new GroupMember(name,0,bitmap);
@@ -709,48 +719,59 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
     private final int CANCEL_CREATE_GROUP = 3;  //cancel create group
     private final int GET_BITMAP = 4;   //get bitmap of user photo by url
 
+
     public interface CallBackInRawGroup {
         /**
-         * @return the searched wifi devices
+         * 扫描热点
+         */
+        void startScan();
+        /**
+         * @return 搜索到的wifi热点
          */
         List<ScanResult> getScanResult();
         /**
-         * call to establish socket connection with the wifiAP
+         * 和指定的热点建立socket连接
          */
         void getSocketConnect(String ssid,boolean requestGroupInfo);
 
         /**
-         * call to connect wifiAp
+         * 连接wifi热点
          */
         void connectWifiAp(String ssid);
 
         /**
-         * call to add a member for a group
+         * 添加一个组员
          * @param member
          */
         void addMember(GroupMember member);
 
         /**
-         * call to write own info to group owner
+         * 向群主发送自己的信息
          */
         void writeMemberInfo();
 
         /**
-         * call to cancel add group
-         * @param id
+         *取消加组
+         * @param id 要取消成员的id
          */
         void cancelAddGroup(int id);
 
         /**
-         * call to cancel create group
+         * 取消建组
          */
         void cancelCreateGroup();
 
         /**
-         * call after all members in
+         * 完成建组
          */
         void finishCreateGruop();
 
+
+        /**
+         * 设置组的名字和同步字
+         * @param name
+         * @param asyncWord
+         */
         void setGroupBaseINfo(String name,byte[] asyncWord);
     }
 }

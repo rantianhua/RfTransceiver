@@ -81,6 +81,8 @@ public class BindDeviceFragment extends ListFragment implements ScanBle.ScanBleL
     private static final Handler mainHandler = new Handler(Looper.getMainLooper());
     //在资源文件中定义好的文字信息
     private String textSure,textResearch;
+    //用来定时关闭搜索
+    private Runnable scaRun;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -117,7 +119,7 @@ public class BindDeviceFragment extends ListFragment implements ScanBle.ScanBleL
     //搜索设备
     private void startSearch() {
         if(!adapter.isEnabled() || adapter.getState() == BluetoothAdapter.STATE_TURNING_ON) {
-            MainActivity.needSearchDevice = true;
+            callback.setNeedSearch(true);
         }else {
             searchDevices();
         }
@@ -153,6 +155,9 @@ public class BindDeviceFragment extends ListFragment implements ScanBle.ScanBleL
         }
         if(pbSearching.getVisibility() == View.VISIBLE) {
             cancelSearch();
+            if(scaRun != null) {
+                mainHandler.removeCallbacks(scaRun);
+            }
         }
         tvHandle.setText(textSure);
         selectedView = v.findViewById(R.id.tv_device_name_list);
@@ -184,11 +189,11 @@ public class BindDeviceFragment extends ListFragment implements ScanBle.ScanBleL
 
     //定时搜索设备
     public void searchDevices() {
-        Runnable run = scanBle.startScan();
-        if(run != null ) {
+        scaRun = scanBle.startScan();
+        if(scaRun != null ) {
             tvHandle.setVisibility(View.INVISIBLE);
             pbSearching.setVisibility(View.VISIBLE);
-            new Handler(Looper.myLooper()).postDelayed(run, 10000);
+            new Handler(Looper.myLooper()).postDelayed(scaRun, 10000);
         }
     }
 
@@ -236,6 +241,8 @@ public class BindDeviceFragment extends ListFragment implements ScanBle.ScanBleL
          * @param device ble device
          */
         void connectDevice(BluetoothDevice device);
+
+        void setNeedSearch(boolean b);
     }
 
     @Override

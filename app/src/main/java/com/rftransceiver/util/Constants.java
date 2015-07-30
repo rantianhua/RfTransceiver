@@ -61,6 +61,8 @@ public class Constants {
     public static final int READ_ERROR = 8;
 
     public static final int GET_BITMAP = 9;
+
+    public static final int READ_UNKNOWN = 10;  //接收到位置数据
     /**
      * the every data packet's length
      */
@@ -149,5 +151,7 @@ public class Constants {
 
     public static final String PRE_GROUP = "pre_group";
 
-    public static boolean SAVE_SOUNDS = true;
+    //调试，打印log的开关
+    public static boolean DEBUG = true;
+
 }
