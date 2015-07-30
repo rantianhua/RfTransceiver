@@ -47,10 +47,6 @@ public class GroupDetailFragment extends Fragment {
     ImageView imgSounds;
     @InjectView(R.id.btn_clear_chat)
     Button btnClearChat;
-    @InjectView(R.id.btn_exit_group)
-    Button btnExitGroup;
-    @InjectView(R.id.btn_delete_group)
-    Button btnDeleteGroup;
 
     private GroupEntity groupEntity;
     private String textBack;
@@ -88,7 +84,8 @@ public class GroupDetailFragment extends Fragment {
             }
         });
         tvGroupName.setText(groupEntity.getName());
-        imgSounds.setSelected(!groupEntity.getIsSaveSoundOfGroup());
+        //初始化是否选择组语音信息保存，与前一次修改保存一致
+        imgSounds.setSelected(groupEntity.getIsSaveSoundOfGroup());
         String[] channels = getResources().getStringArray(R.array.channel);
         tvChannel.setText(channels[MainActivity.CURRENT_CHANNEL]);
         channels = null;
@@ -105,13 +102,13 @@ public class GroupDetailFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 if (imgSounds.isSelected()) {
-                    //开启保存语音信息功能
+                    //关闭保存组语音消息
                     imgSounds.setSelected(false);
-                    groupEntity.setIsSaveSoundOfGroup(true);
-                } else {
-                    //关闭
-                    imgSounds.setSelected(true);
                     groupEntity.setIsSaveSoundOfGroup(false);
+                } else {
+                    //开启
+                    imgSounds.setSelected(true);
+                    groupEntity.setIsSaveSoundOfGroup(true);
                 }
             }
         });
@@ -121,18 +118,7 @@ public class GroupDetailFragment extends Fragment {
                 sendAction(0, null);//��homefragment����ɾ����Ϣ��Ϣ
             }
         });
-        btnExitGroup.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
 
-            }
-        });
-        btnDeleteGroup.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-            }
-        });
    }
 
     /**
