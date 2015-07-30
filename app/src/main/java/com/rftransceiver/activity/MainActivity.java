@@ -84,6 +84,21 @@ public class MainActivity extends Activity implements View.OnClickListener,
     TextView tvContacts;
 
     /**
+     *计算所接受的消息时长的起始时间
+     */
+    private long preTime;
+    /**
+     *计算所接受的消息时长的终止时间
+     */
+    private long curTime;
+    /**
+     *所接受的消息时长
+     */
+    private long seconds;
+
+    private final String TAG = getClass().getSimpleName();
+
+    /**
      * the reference of BlueLeService
      */
     private BleService bluetoothLeService;
@@ -481,6 +496,9 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                 switch (msg.arg2) {
                                     case 0:
                                         //start to receive sounds data
+                                        receiver.startReceiver();
+                                        //preTime为接受消息的起始时间，用于计算消息时长
+                                        preTime=System.currentTimeMillis();
                                         if(homeFragment != null){
                                             //是否实时接收语音
                                             if(homeFragment.getRealTimePlay()){
@@ -490,13 +508,15 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                             }
                                         }
                                         if(homeFragment != null) {
-                                            homeFragment.receivingData(0,null,(int)msg.obj);
+                                            homeFragment.receivingData(0,null,(int)msg.obj,0);
                                         }
                                         soundsRecords.clear();
                                         break;
                                     case 1:
                                         //end to receive sounds data
                                         stopReceiveSounds();
+                                        //curTime为接受消息的终止时间，用于计算消息时长
+                                        curTime=System.currentTimeMillis();
                                         byte[] receSounds = new byte[soundsRecords.size() * Constants.Small_Sounds_Packet_Length];
                                         int index = 0;
                                         for(byte[] s : soundsRecords) {
@@ -507,7 +527,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                         String rcvSounds = Base64.encodeToString(receSounds,Base64.DEFAULT);
                                         receSounds = null;
                                         if(homeFragment != null) {
-                                            homeFragment.endReceiveSounds(rcvSounds, (int) (msg.obj));
+                                            homeFragment.endReceiveSounds(rcvSounds, (int) (msg.obj),curTime-preTime);
                                         }
                                         break;
                                     case 2:
@@ -523,7 +543,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                 byte[] data = (byte[]) msg.obj;
                                 if(data == null) return;
                                 if(homeFragment != null) {
-                                    homeFragment.receivingData(1,new String(data),msg.arg2);
+                                    homeFragment.receivingData(1,new String(data),msg.arg2,0);
                                 }
                                 break;
                             case Constants.READ_ADDRESS:
@@ -535,7 +555,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                 if(address != null) {
                                     String[] addrs = address.split("\\|");
                                     if(addrs.length == 2 && homeFragment != null) {
-                                        homeFragment.receivingData(2,new String(add),msg.arg2);
+                                        homeFragment.receivingData(2,new String(add),msg.arg2,0);
                                     }
                                     addrs = null;
                                     address = null;
@@ -545,7 +565,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                 byte[] image = (byte[]) msg.obj;
                                 if(image != null) {
                                     if(homeFragment != null) {
-                                        homeFragment.receivingData(3,new String(image),msg.arg2);
+                                        homeFragment.receivingData(3,new String(image),msg.arg2,0);
                                     }
                                 }
                                 break;
@@ -954,10 +974,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
      */
     @Override
     public void send(SendAction sendAction,String text) {
-        if(action != SendAction.NONE) {
-            showToast("上一条消息还在发送，请等待！");
-            return;
-        }
+//        if(action != SendAction.NONE) {
+//            showToast("上一条消息还在发送，请等待！");
+//            return;
+//        }
         action = sendAction;
         sendText = text;
         chenckChannel();

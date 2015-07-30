@@ -1,15 +1,18 @@
 package com.rftransceiver.adapter;
 
+import android.app.ActionBar;
 import android.app.FragmentManager;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
 import android.text.Html;
 import android.text.Spannable;
 import android.text.Spanned;
 import android.text.SpannedString;
 import android.text.TextUtils;
+import android.util.ArrayMap;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,16 +20,20 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.rftransceiver.customviews.SoundsTextView;
 import com.rftransceiver.datasets.ConversationData;
 import com.rftransceiver.R;
 import com.rftransceiver.fragments.MapViewFragment;
 
+import java.net.InterfaceAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
@@ -34,12 +41,16 @@ import java.util.concurrent.TimeoutException;
 /**
  * Created by Rth on 2015/4/27.
  */
-public class ListConversationAdapter extends BaseAdapter {
+public class ListConversationAdapter extends BaseAdapter{
 
     private List<ConversationData> listData = new ArrayList<>();
     private LayoutInflater inflater = null;
     private FragmentManager fm;
     private TextView tvImgProgress;
+    private Map<Integer,RelativeLayout> soundTimeList = new HashMap<>();
+
+    AnimationDrawable soundPlayAnim;
+    ImageView soundImg,soundPlay;
 
     /**
      * parse expression data from content
@@ -76,6 +87,7 @@ public class ListConversationAdapter extends BaseAdapter {
     public View getView(int position, View convertView, ViewGroup parent) {
         ViewHodler hodler = null;
         ConversationData data = listData.get(position);
+
         if(convertView == null) {
             hodler = new ViewHodler();
             switch (data.getConversationType()) {
@@ -96,8 +108,9 @@ public class ListConversationAdapter extends BaseAdapter {
                     break;
                 case LEFT_SOUNDS:
                     convertView = inflater.inflate(R.layout.list_left_sounds,null);
-                    hodler.tvSounds = (TextView) convertView.findViewById(R.id.tv_left_sounds);
+                    hodler.tvSounds = (SoundsTextView) convertView.findViewById(R.id.tv_left_sounds);
                     hodler.imgPhoto = (ImageView) convertView.findViewById(R.id.img_conversation_photo);
+                    hodler.soundsTime=(TextView) convertView.findViewById(R.id.tv_sound_time_left);
                     break;
                 case RIGHT_TEXT:
                     convertView = inflater.inflate(R.layout.list_right_text,null);
@@ -114,7 +127,8 @@ public class ListConversationAdapter extends BaseAdapter {
                     break;
                 case RIGHT_SOUNDS:
                     convertView = inflater.inflate(R.layout.list_right_sounds,null);
-                    hodler.tvSounds = (TextView) convertView.findViewById(R.id.tv_right_sounds);
+                    hodler.tvSounds = (SoundsTextView) convertView.findViewById(R.id.tv_right_sounds);
+                    hodler.soundsTime=(TextView) convertView.findViewById(R.id.tv_sound_time_right);
                     break;
                 case TIME:
                     convertView = inflater.inflate(R.layout.list_item_time,null);
@@ -169,6 +183,9 @@ public class ListConversationAdapter extends BaseAdapter {
             case LEFT_SOUNDS:
             case RIGHT_SOUNDS:
                 hodler.tvSounds.setTag(data.getContent());
+                hodler.tvSounds.setSoundsTime(data.getSoundsTime());
+                //œ‘ æ”Ô“Ù≥§∂»
+                hodler.soundsTime.setText(data.getSoundsTime() / 1000 + "." + (data.getSoundsTime() / 100) % 10 + "s");
                 break;
             case TIME:
                 hodler.tvTime.setText(data.getContent());
@@ -201,7 +218,8 @@ public class ListConversationAdapter extends BaseAdapter {
 
 
     class ViewHodler {
-        TextView tvContent,tvSounds,tvImgProgress,tvTime;
+        TextView tvContent,tvImgProgress,tvTime,soundsTime;
+        SoundsTextView tvSounds;
         ImageView imgPhoto,imgData;
         FrameLayout container;
     }

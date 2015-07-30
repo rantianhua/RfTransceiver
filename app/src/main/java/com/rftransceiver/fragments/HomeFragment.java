@@ -56,6 +56,7 @@ import com.rftransceiver.util.PoolThreadUtil;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -105,6 +106,19 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     RelativeLayout top;
     @InjectView(R.id.img_face)
     ImageView imgFace;
+    /**
+     * curTime,to calculate soundsTimes
+     */
+    private long curTime;
+    /**
+     * preTime,to calculate soundsTimes
+     */
+    private long preTime;
+    /**
+     * soundsTime
+     */
+    private long seconds;
+    private SoundsTimeCallbacks timeCallbacks;
     /**
      * the reference of callback interface
      */
@@ -448,6 +462,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                                             callback.send(MainActivity.SendAction.SOUNDS, null);
                                             tvTip.setVisibility(View.VISIBLE);
                                             tvTip.setText("我正在说话...");
+                                            preTime=System.currentTimeMillis();
                                         }
                                     }
                                 }
@@ -457,12 +472,16 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                     case MotionEvent.ACTION_CANCEL:
                         return false;
                     case MotionEvent.ACTION_UP:
+                        curTime=System.currentTimeMillis();
+                        seconds = (curTime-preTime);
+
                         btnSounds.setSelected(false);
                         if (sendSounds && callback != null) callback.stopSendSounds();
                         sendSounds = false;
                         btnSounds.setText(tipSendSounds);
                         tvTip.setText("");
                         tvTip.setVisibility(View.GONE);
+
                         return true;
                     default:
                         return true;
@@ -471,7 +490,13 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         });
     }
 
+    private interface SoundsTimeCallbacks{
+        public void onCalculateSoundsTime(long seconds);
+    }
 
+    public void setTimeCallbacks(SoundsTimeCallbacks timeCallbacks){
+        this.timeCallbacks=timeCallbacks;
+    }
 
     @Override
     public void onClick(View view) {
@@ -686,7 +711,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
      *            2 is address data
      *            3 is image data
      */
-    public void receivingData(int tye,String data,int memberId) {
+    public void receivingData(int tye,String data,int memberId,long soundsReceivingTime) {
         ConversationData receiveData = null;
         Drawable drawable = null;
         if(groupEntity != null) {
@@ -709,7 +734,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         switch (tye) {
             case 0:
                 receiveData = new ConversationData(ListConversationAdapter.ConversationType.LEFT_SOUNDS,
-                        data);
+                        data,soundsReceivingTime);
                 break;
             case 1:
                 receiveData = new ConversationData(ListConversationAdapter.ConversationType.LEFT_TEXT,
@@ -834,7 +859,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         }else {
             result.append("晚上");
         }
-        result.append(calendar.get(Calendar.HOUR_OF_DAY))
+        result.append(calendar.get(Calendar.HOUR))
             .append(":").append(calendar.get(Calendar.MINUTE));
         return result.toString();
     }
@@ -845,8 +870,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
      * @param sounds
      * @param memberId
      */
-    public void endReceiveSounds(String sounds, int memberId) {
-        receivingData(0, sounds, memberId);
+    public void endReceiveSounds(String sounds, int memberId,long receivingSoundsTime) {
+        receivingData(0, sounds, memberId,receivingSoundsTime);
     }
 
     private void saveMessage(Object message,int type,int mid,long time) {
@@ -909,7 +934,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                 break;
             case SOUNDS:
                 subData = new ConversationData(ListConversationAdapter.ConversationType.RIGHT_SOUNDS
-                        ,sendText);
+                        ,sendText,seconds);
                 break;
         }
         if(subData == null) return;
