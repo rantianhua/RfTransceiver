@@ -2,6 +2,7 @@ package com.rftransceiver.fragments;
 
 import android.app.Activity;
 import android.app.Fragment;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
@@ -15,12 +16,18 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.rftransceiver.R;
 import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.customviews.CircleImageDrawable;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.ImageUtil;
+import com.rftransceiver.db.DBManager;
+import com.rftransceiver.util.DataClearnManager;
+
+import java.io.File;
+import java.util.ArrayList;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -50,13 +57,17 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
     TextView tvCurrentChannel;
 
     private CallbackInSF callbackInSF;
+    private DBManager dbManager;
+
+
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_setting,container,false);
+        View view = inflater.inflate(R.layout.fragment_setting, container, false);
         initView(view);
         initEvent();
+        getSize();
         return view;
     }
 
@@ -106,8 +117,10 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
                 //save or not save sounds data
                 if(imgSwitch.isSelected()) {
                     imgSwitch.setSelected(false);
+//                    setSaveAllSounds(false);
                 }else {
                     imgSwitch.setSelected(true);
+//                    setSaveAllSounds(true);
                 }
                 break;
             case R.id.tv_change_channel:
@@ -115,21 +128,61 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
                 if(callbackInSF != null) callbackInSF.chageChannelRequest();
                 break;
             case R.id.tv_clear_cache:
-                //clear cache
+                //clear cache清除缓存
+                deleteC();
+                getSize();
                 break;
             case R.id.tv_about:
                 //about
+             //  ins();
                 break;
         }
 
     }
+
+//    private void setSaveAllSounds(boolean isSave){
+//        if(callbackInSettingFragment != null){
+//            callbackInSettingFragment.isSaveAllSounds(isSave);
+//        }
+//    }
+
+//    private CallbackInSettingFragment callbackInSettingFragment;
+//
+//    public void setCallback(CallbackInSettingFragment callbackInSettingFragment){
+//        this.callbackInSettingFragment = callbackInSettingFragment;
+//    }
+//
+//    public interface CallbackInSettingFragment{
+//        void isSaveAllSounds(boolean isSave);
+//    }
+
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         setCallbackInSF(null);
     }
-
+    public void getSize(){
+        dbManager = DBManager.getInstance(getActivity());
+        String s = dbManager.getCacheInformation();
+        cacheSize.setText(s);
+    }
+    public void deleteC(){//删除缓存操作
+      if(dbManager.getFileList().size() > 0)
+      {
+           ArrayList<File> files = dbManager.getFileList();
+           for(int i=files.size()-1;i >= 0;i--)
+          {
+              DataClearnManager.deleteDir(files.get(i));
+          }
+      }
+        dbManager.deleteCache();
+    }
+    //for test
+//    public void ins(){
+//        dbManager=DBManager.getInstance(getActivity());
+//        dbManager.insertMessage();
+//    }
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if(requestCode == REQUEST_CHANNEL && resultCode == Activity.RESULT_OK && data != null) {

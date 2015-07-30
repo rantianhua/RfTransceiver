@@ -396,6 +396,15 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         return currentGroupId;
     }
 
+    /**
+     * 获得是否进行实时语音标识
+     * @return
+     */
+    public boolean getRealTimePlay() {
+        if(groupEntity == null) return false;
+        return groupEntity.getIsRealTimePlay();
+    }
+
     private void initEvent() {
         btnSend.setOnClickListener(this);
         imgTroggle.setOnClickListener(this);
@@ -541,6 +550,16 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                 if(getActivity() != null) {
                     if(popMenu == null) {
                         popMenu = new ContextPopMenu(getActivity(),top);
+                        ContextPopMenu.CallbackInContextMenu callbackInContextMenu =
+                                new ContextPopMenu.CallbackInContextMenu() {
+                                    @Override
+                                    public void isRealTimePlay(boolean isPlay) {
+                                        //设置是否进行实时语音
+                                        groupEntity.setIsRealTimePlay(isPlay);
+                                    }
+                                };
+                        popMenu.setCallBack(callbackInContextMenu);
+                        showG();
                     }
                     popMenu.show();
                 }
@@ -548,8 +567,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             case R.id.tv_tip_home:
                 if(tvTip.getText().toString().equals(tipConnectLose)) {
                     if(callback != null) {
+                        //重新连接设备
                         callback.reconnectDevice();
                         tvTip.setText(tipReconnecting);
+                        //5秒之后还没有连上即显示连接失败
                         mainHandler.postDelayed(new Runnable() {
                             @Override
                             public void run() {
@@ -659,7 +680,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     @Override
     public void onPause() {
         super.onPause();
-        dbManager.saveMessage();
+            dbManager.saveMessage();
     }
 
 
@@ -737,14 +758,17 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         receiveData.setPhotoDrawable(drawable);
         String receTime = checkDataTime(time,true);
         if(receTime != null) {
-            ConversationData timeData = new ConversationData(ListConversationAdapter.ConversationType.TIME,receTime);
+            ConversationData timeData = new ConversationData(ListConversationAdapter.ConversationType.TIME, receTime);
             dataLists.add(timeData);
         }
         dataLists.add(receiveData);
         conversationAdapter.updateData(dataLists);
         listView.setSelection(conversationAdapter.getCount() - 1);
         Object oj = recevBitmap != null ? recevBitmap : data;
-        saveMessage(oj,tye,memberId,time);
+        //接受语音，检查是否保存组语音信息
+        if (groupEntity.getIsSaveSoundOfGroup() == false || tye != 0) {
+            saveMessage(oj,tye,memberId,time);
+        }
         recevBitmap = null;
     }
 
@@ -852,7 +876,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
 
     private void saveMessage(Object message,int type,int mid,long time) {
         if(groupEntity != null) {
-            dbManager.readyMessage(message, type, mid, currentGroupId, time);
+                dbManager.readyMessage(message, type, mid, currentGroupId, time);
         }
     }
 
@@ -924,7 +948,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         conversationAdapter.updateData(dataLists);
         listView.setSelection(conversationAdapter.getCount() - 1);
         Object object = sendBitmap == null ? sendText : sendBitmap;
-        saveMessage(object,sendAction.ordinal(),myId,time);
+        //发送语音，检查是否保存组语音消息
+        if(groupEntity.getIsSaveSoundOfGroup() == false || sendAction.ordinal() != 0) {
+            saveMessage(object, sendAction.ordinal(), myId, time);
+        }
         sendBitmap = null;
     }
 
@@ -1062,6 +1089,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         expressions.clear();
         imgDots.clear();
         dataLists.clear();
+        if(popMenu!=null){
+            popMenu.setCallBack(null);
+        }
     }
 
     private void saveCurrentGid() {
@@ -1200,6 +1230,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             switch (resultCode) {
                 case 0:
                     //clear chat records
+                    deleteMessage(currentGroupId);//调用下文实现的方法
                     break;
                 case 1:
                     //open scroll
@@ -1210,6 +1241,26 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         else {
             super.onActivityResult(requestCode, resultCode, data);
         }
+    }
+    public  void showG() {//回调接口的实现  实例化查看组的类
+        ContextPopMenu.CallbackInPopMenue callbackInPopMenue = new ContextPopMenu.CallbackInPopMenue() {
+            @Override
+            public void showGroup() {
+                if (groupEntity != null && groupEntity.getMembers().size() > 0) {
+                    Fragment groupFragment = GroupDetailFragment.getInstance(groupEntity);
+                    groupFragment.setTargetFragment(HomeFragment.this, REQUEST_GROUP_DETAIL);
+                    getFragmentManager().beginTransaction().replace(R.id.frame_content,
+                            groupFragment)
+                            .addToBackStack(null)
+                            .commit();
+
+                }
+            }
+        };
+        popMenu.setCallbackInPopMenue(callbackInPopMenue);
+    }
+    public void deleteMessage(int gid){//对数据库操作实现删除聊天记录的功能
+        dbManager.deleteMessage(gid);
     }
 
     public static final int REQUEST_LOCATION = 302;

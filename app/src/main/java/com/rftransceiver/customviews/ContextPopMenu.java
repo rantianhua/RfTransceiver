@@ -19,16 +19,21 @@ public class ContextPopMenu extends MyPopuMenu {
 
 
     //保存string资源文件中的字符串
-    private String textOpenRealSounds,textCloseRealSouds;
+    private String textOpenRealSounds, textCloseRealSouds;
     private boolean isRealTimePlaying = true;   //实时播放语音的标识
+    private CallbackInPopMenue callbackInPopMenue;
 
     @TargetApi(19)
-    public ContextPopMenu(Context context,View anchor) {
-        super(context,anchor, Gravity.END);
+    public ContextPopMenu(Context context, View anchor) {
+        super(context, anchor, Gravity.END);
         //获取资源文件的文字信息
         textOpenRealSounds = context.getString(R.string.open_realtime_sounds);
         textCloseRealSouds = context.getString(R.string.close_realtime_sounds);
         initView();
+    }
+
+    public void setCallbackInPopMenue(CallbackInPopMenue callbackInPopMenue) {
+        this.callbackInPopMenue = callbackInPopMenue;
     }
 
     private void initView() {
@@ -40,6 +45,9 @@ public class ContextPopMenu extends MyPopuMenu {
         switch (item.getItemId()) {
             case R.id.action_see_group:
                 //查看组的详细信息
+                if (callbackInPopMenue != null)
+                    callbackInPopMenue.showGroup();//回调接口，在HomeFragment中实现该接口
+                dismiss();
                 break;
             case R.id.action_realtime_play:
                 //设置实时播放语音
@@ -51,21 +59,45 @@ public class ContextPopMenu extends MyPopuMenu {
 
     /**
      * 根据点击事件更新菜单项的显示
+     *
      * @param item
      */
     private void updateMenu(MenuItem item) {
-        if(isRealTimePlaying) {
+        if (isRealTimePlaying) {
             //关闭实时播放语音
             isRealTimePlaying = false;
             item.setTitle(textOpenRealSounds);
+            setRealTimePlay(false);
             item.setIcon(R.drawable.open_real_sounds);
 
-        }else{
+        } else {
             //开启语音实时播放
             isRealTimePlaying = true;
             item.setTitle(textCloseRealSouds);
+            setRealTimePlay(true);
             item.setIcon(R.drawable.close_real_sounds);
 
         }
+    }
+
+    private CallbackInContextMenu callbackInContextMenu;
+
+    public void setCallBack(CallbackInContextMenu callBack) {
+        this.callbackInContextMenu = callBack;
+    }
+
+    private void setRealTimePlay(boolean isPlay) {
+        if (callbackInContextMenu != null) {
+            callbackInContextMenu.isRealTimePlay(isPlay);
+        }
+    }
+    //用于操作HomeFragment--设置groupEntity实例中的实时语音标识
+    public interface CallbackInContextMenu {
+        void isRealTimePlay(boolean isPlay);
+    }
+
+    public interface CallbackInPopMenue {//定义回调接口显示组的信息
+
+        void showGroup();
     }
 }

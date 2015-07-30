@@ -106,5 +106,4 @@ public class SettingActivity extends Activity {
         }
         transcation.commit();
     }
-
 }

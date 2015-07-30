@@ -13,7 +13,7 @@ import java.util.List;
 public class GroupEntity implements Parcelable{
 
     private String name;    //the group's name
-
+    private int groupId;    //this group's id
     private byte[] asyncWord;   //the async word to distinguish different group
 
     private String picFilePath; //the file path of picture
@@ -26,12 +26,45 @@ public class GroupEntity implements Parcelable{
         members = new ArrayList<>();
     }
 
+    public void  setGroupId(int gid ){
+       this.groupId = gid;
+   }
+    public int getGroupId(){
+        return this.groupId;
+    }
 
     public GroupEntity(String name,byte[] asyncWord) {
         setAsyncWord(asyncWord);
         setName(name);
         members = new ArrayList<>();
     }
+
+    public boolean isRealTimePlay = true;//标识是够进行实时播放
+
+    /**
+     * 标识是否保存组的语音信息，要与全局设置中保存语音信息结合
+     * 二者都为true时，保存组语音信息；isSaveSoundOfGroup为false时，不保存组语音信息
+     * 实现：1、当不保存时：先将语音一起存入，再删除数据库中此组的语音信息
+     *      2、保存数据时，直接不保存词组的语音信息
+     */
+    public boolean isSaveSoundOfGroup = true;
+
+    public boolean getIsSaveSoundOfGroup() {
+        return this.isSaveSoundOfGroup;
+    }
+
+    public void setIsSaveSoundOfGroup(boolean isSaveSoundOfGroup) {
+        this.isSaveSoundOfGroup = isSaveSoundOfGroup;
+    }
+
+    public boolean getIsRealTimePlay() {
+        return this.isRealTimePlay;
+    }
+
+    public void setIsRealTimePlay(boolean isRealTimePlay) {
+        this.isRealTimePlay = isRealTimePlay;
+    }
+
 
     public String getName() {
         return name;

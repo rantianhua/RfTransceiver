@@ -14,7 +14,7 @@ import com.rftransceiver.customviews.CircleImageDrawable;
 /**
  * Created by Rth on 2015/4/27.
  */
-public class ConversationData {//消息信息类，用来存储交流的信息
+public class ConversationData {
 
     /**
      * the content of conversation data
