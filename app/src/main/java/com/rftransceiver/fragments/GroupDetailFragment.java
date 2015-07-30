@@ -106,16 +106,21 @@ public class GroupDetailFragment extends Fragment {
             public void onClick(View view) {
                 if (imgSounds.isSelected()) {
                     imgSounds.setSelected(false);
+                    groupEntity.setIsSaveSoundOfGroup(false);
 
                 } else {
                     imgSounds.setSelected(true);
+                    groupEntity.setIsSaveSoundOfGroup(true);
                 }
             }
         });
         btnClearChat.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
                 sendAction(0, null);//向homefragment中传递清除聊天信息的命令
+
+
             }
         });
         btnExitGroup.setOnClickListener(new View.OnClickListener() {

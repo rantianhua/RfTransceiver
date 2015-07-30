@@ -50,6 +50,7 @@ public class ConversationData {
      * my id in group
      */
     private int mid;
+    private long soundsTime;
 
     public ConversationData(ListConversationAdapter.ConversationType type) {
         setConversationType(type);
@@ -59,6 +60,13 @@ public class ConversationData {
                             String text) {
         this(type);
         setContent(text);
+    }
+
+    public ConversationData(ListConversationAdapter.ConversationType type,
+                            String text,long soundsTime) {
+        this(type);
+        setContent(text);
+        setSoundsTime(soundsTime);
     }
 
     public ConversationData(ListConversationAdapter.ConversationType type,
@@ -87,6 +95,14 @@ public class ConversationData {
 
     public Drawable getPhotoDrawable() {
         return photoDrawable;
+    }
+
+    public void setSoundsTime(long time){
+        this.soundsTime=time;
+    }
+
+    public long getSoundsTime(){
+        return soundsTime;
     }
 
     public void setPhotoDrawable(Bitmap bitmap) {

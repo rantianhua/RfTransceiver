@@ -8,5 +8,6 @@
     <color name="red">#ffa40000</color>
     <color name="red_with_press">#ffff762c</color>
     <color name="blue">#ff2231ff</color>
+    <color name="light_blue">#ff0082ff</color>
 </resources>
 

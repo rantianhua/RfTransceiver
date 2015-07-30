@@ -25,6 +25,7 @@
         android:layout_margin="1dp"
         android:id="@+id/img_data_right"
         android:scaleType="centerCrop"
+        android:background="@color/light_blue"
         />
 
     <TextView

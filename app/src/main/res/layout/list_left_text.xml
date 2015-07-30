@@ -7,19 +7,25 @@
 
     <include layout="@layout/view_conversation_person"
         android:id="@+id/include_person_left_text"
-        android:layout_width="70dp"
-        android:layout_height="wrap_content"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
         android:layout_centerVertical="true"
-        android:layout_marginStart="15dp"/>
-
+        android:layout_marginStart="10dp"/>
+    <ImageView
+        android:layout_width="10dp"
+        android:layout_height="20dp"
+        android:layout_centerVertical="true"
+        android:layout_toEndOf="@+id/include_person_left_text"
+        android:background="@drawable/corner_left"
+       />
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
-        android:padding="5dp"
+        android:padding="10dp"
         android:id="@+id/tv_list_left"
         android:layout_toEndOf="@+id/include_person_left_text"
-        android:layout_marginStart="5dp"
+        android:layout_marginStart="10dp"
         android:background="@drawable/tv_conversation_bg"
         android:textColor="@color/white"
         android:gravity="center"
