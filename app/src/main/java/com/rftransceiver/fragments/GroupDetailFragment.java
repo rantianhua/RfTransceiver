@@ -115,7 +115,7 @@ public class GroupDetailFragment extends Fragment {
         btnClearChat.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                sendAction(0, null);//向homefragment传出删除消息信息
+                sendAction(0, null);//鍚慼omefragment涓紶閫掓竻闄よ亰澶╀俊鎭殑鍛戒护
             }
         });
         btnExitGroup.setOnClickListener(new View.OnClickListener() {

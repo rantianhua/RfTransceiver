@@ -33,6 +33,7 @@ import com.rftransceiver.R;
 import com.rftransceiver.customviews.CircleImageDrawable;
 import com.rftransceiver.customviews.LockerView;
 import com.rftransceiver.db.DBManager;
+import com.rftransceiver.db.ListTest;
 import com.rftransceiver.fragments.BindDeviceFragment;
 import com.rftransceiver.fragments.ContactsFragment;
 import com.rftransceiver.fragments.HomeFragment;
@@ -278,6 +279,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
         initView();
         initEvent();
 
+
+        //
         iniInterphone();
         //bind the ble service
         bindService(new Intent(this, BleService.class), serviceConnectionBle, BIND_AUTO_CREATE);
@@ -394,6 +397,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                     contactsFragment = null;
                     if(homeFragment != null) {
                         homeFragment.changeGroup(gid);
+
                     }
                 }
 
@@ -1017,6 +1021,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
         if(requestCode == REQUEST_GROUP && resultCode == Activity.RESULT_OK && data != null) {
             /**
              * in GroupActivity,after finish create or add group,send a GroupEntity

@@ -35,6 +35,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.rftransceiver.R;
 import com.rftransceiver.activity.LocationActivity;
@@ -352,6 +353,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         if(!TextUtils.isEmpty(homeTitle)) {
             tvTitle.setText(homeTitle);
             homeTitle = null;
+
         }
     }
 
@@ -361,9 +363,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         if(groupEntity == null) {
             if(getCurrentGroupId() != -1) {
                 loadGroup(currentGroupId);
+
             }
         }else {
             updateGroup(groupEntity);
+
         }
     }
 
@@ -375,6 +379,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         if(currentGroupId == -1) {
             try {
                 currentGroupId = getActivity().getSharedPreferences(Constants.SP_USER,0).getInt(Constants.PRE_GROUP,-1);
+
             }catch (Exception e ){
 
             }
@@ -985,6 +990,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
      * @param groupEntity
      */
     public void updateGroup(final GroupEntity groupEntity) {
+
         this.groupEntity = groupEntity;
         if(groupEntity == null) return;
         myId = groupEntity.getTempId();
@@ -1000,6 +1006,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                 @Override
                 public void run() {
                     tvTitle.setText(homeTitle);
+
                 }
             });
         }
@@ -1010,12 +1017,12 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
      * @param gid
      */
     public void changeGroup(int gid) {
+        Constants.GROUPID = currentGroupId;
         if(gid == currentGroupId) return;
         dataLists.clear();
         conversationAdapter.updateData(dataLists);
         groupEntity = null;
         loadGroup(gid);
-        currentGroupId = gid;
 
     }
 
@@ -1199,7 +1206,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             switch (resultCode) {
                 case 0:
                     //clear chat records
-                    deleteMessage(currentGroupId);//调用下文实现的方法
+                    deleteMessage(currentGroupId);//调用下文实现的方法删除聊天记录
+                    Toast.makeText(getActivity(), "成功删除聊天记录", Toast.LENGTH_SHORT).show();
+                    dataLists.clear();//删除聊天界面上的聊天记录
+                    conversationAdapter.updateData(dataLists);
                     break;
                 case 1:
                     //open scroll

@@ -22,6 +22,7 @@ import com.rftransceiver.adapter.ContactsAdapter;
 import com.rftransceiver.customviews.LetterView;
 import com.rftransceiver.datasets.ContactsData;
 import com.rftransceiver.db.DBManager;
+import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.PoolThreadUtil;
 
 import java.util.ArrayList;
@@ -211,28 +212,33 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
         myAlert.setListener(new MyAlertDialogFragment.CallbackInMyAlert() {
             @Override
             public void onClickSure() {
-                PoolThreadUtil.getInstance().addTask(new Runnable() {
-                    @Override
-                    public void run() {
-                        //在此处执行删除组的操作
-                        dbManager = DBManager.getInstance(getActivity());
-                        dbManager.deleteGroup(gid);//更新数据库中的数据
-                        mainHan.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                mapContacts.get(key).remove(child);//把hashmap中的数据更新
-                                //更新该界面
-                                if (mapContacts.get(key).size() == 0) {//如果组信息的key键下的child组没有分组了，那么就不显示这个key键
-                                    mapContacts.remove(key);
+
+                if (Constants.GROUPID != gid) {
+                    PoolThreadUtil.getInstance().addTask(new Runnable() {
+                        @Override
+                        public void run() {
+                            //在此处执行删除组的操作
+                            dbManager = DBManager.getInstance(getActivity());
+                            dbManager.deleteGroup(gid);//更新数据库中的数据
+                            mainHan.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mapContacts.get(key).remove(child);//把hashmap中的数据更新
+                                    //更新该界面
+                                    if (mapContacts.get(key).size() == 0) {//如果组信息的key键下的child组没有分组了，那么就不显示这个key键
+                                        mapContacts.remove(key);
+                                    }
+                                    if (mapContacts.size() == 0) {//如果通讯录中没有信息了，则显示没有联系人
+                                        Toast.makeText(getActivity(), "还没有联系人", Toast.LENGTH_SHORT).show();
+                                    }
+                                    adpter.notifyDataSetChanged();
                                 }
-                                if (mapContacts.size() == 0) {//如果通讯录中没有信息了，则显示没有联系人
-                                    Toast.makeText(getActivity(), "还没有联系人", Toast.LENGTH_SHORT).show();
-                                }
-                                adpter.notifyDataSetChanged();
-                            }
-                        });
-                    }
-                });
+                            });
+                        }
+                    });
+                }
+                else
+                    Toast.makeText(getActivity(), "不能删除正在聊天的组", Toast.LENGTH_SHORT).show();
             }
 
             @Override
