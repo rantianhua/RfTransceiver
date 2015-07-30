@@ -765,8 +765,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         conversationAdapter.updateData(dataLists);
         listView.setSelection(conversationAdapter.getCount() - 1);
         Object oj = recevBitmap != null ? recevBitmap : data;
-        //接受语音，检查是否保存组语音信息
-        if (groupEntity.getIsSaveSoundOfGroup() == false || tye != 0) {
+        //接收语音，检查是否保存组语音信息
+        if(groupEntity == null) return;
+        if (!(tye == 0 && !groupEntity.getIsSaveSoundOfGroup())) {
             saveMessage(oj,tye,memberId,time);
         }
         recevBitmap = null;
@@ -949,7 +950,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         listView.setSelection(conversationAdapter.getCount() - 1);
         Object object = sendBitmap == null ? sendText : sendBitmap;
         //发送语音，检查是否保存组语音消息
-        if(groupEntity.getIsSaveSoundOfGroup() == false || sendAction.ordinal() != 0) {
+        if(groupEntity == null) return;
+        if(!(sendAction.ordinal() == 0 && !groupEntity.getIsSaveSoundOfGroup())) {
             saveMessage(object, sendAction.ordinal(), myId, time);
         }
         sendBitmap = null;
