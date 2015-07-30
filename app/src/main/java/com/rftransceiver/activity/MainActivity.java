@@ -14,6 +14,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -38,6 +39,7 @@ import com.rftransceiver.fragments.ContactsFragment;
 import com.rftransceiver.fragments.HomeFragment;
 import com.rftransceiver.fragments.LoadDialogFragment;
 import com.rftransceiver.fragments.MyDeviceFragment;
+import com.rftransceiver.fragments.SelfInfoFragment;
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.ImageUtil;
@@ -91,10 +93,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
      *计算所接受的消息时长的终止时间
      */
     private long curTime;
-    /**
-     *所接受的消息时长
-     */
-    private long seconds;
 
     private final String TAG = getClass().getSimpleName();
 
@@ -146,6 +144,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
      *  the reference of HomeFragment
      */
     private HomeFragment homeFragment;
+
+    /**
+     * 个人中心fragment
+     */
+    private SelfInfoFragment selfInfoFragment;
 
     /**
      * MyDeviceFragment to look,bind or unbind device
@@ -204,10 +207,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
      */
     private int myId;
 
-//    /**
-//     * cache the receive sounds data
-//     */
-//    private List<byte[]> receiSounds;
+
     /**
      * true if open application add have bounded device before
      */
@@ -277,6 +277,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
     public static int CURRENT_CHANNEL = 0;
 
+    //自己的头像
+    private Drawable dwHead;
+    //自己的昵称
+    private String name;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -301,12 +306,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private void initView() {
 
         ButterKnife.inject(this);
-        sp = getSharedPreferences(Constants.SP_USER,0);
-        String name = sp.getString(Constants.NICKNAME,"");
+        sp = getSharedPreferences(Constants.SP_USER, 0);
+        name = sp.getString(Constants.NICKNAME,"");
         if(!TextUtils.isEmpty(name)) {
             tvName.setText(name);
         }
-        name = null;
         final float dentisy = getResources().getDisplayMetrics().density;
         final String photoPath = sp.getString(Constants.PHOTO_PATH,"");
         if(!TextUtils.isEmpty(photoPath)) {
@@ -336,6 +340,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     private void  initEvent(){
+        imgPhoto.setOnClickListener(this);
         tvAddGroup.setOnClickListener(this);
         tvCreateGruop.setOnClickListener(this);
         tvMyDevice.setOnClickListener(this);
@@ -352,7 +357,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private void changeFragment(Fragment fragment) {
         FragmentTransaction transaction = getFragmentManager().beginTransaction();
         transaction.replace(R.id.frame_content, fragment);
-        if(fragment instanceof MyDeviceFragment || fragment instanceof ContactsFragment) {
+        if(fragment instanceof MyDeviceFragment || fragment instanceof ContactsFragment
+                || fragment instanceof SelfInfoFragment) {
             transaction.addToBackStack(null);
         }
         transaction.commitAllowingStateLoss();
@@ -444,6 +450,14 @@ public class MainActivity extends Activity implements View.OnClickListener,
         }
     }
 
+    /**
+     * 实例化SelfInfoFragment对象，并设置其头像与名字
+     */
+    private void initSelfInfoFragment(){
+        selfInfoFragment = new SelfInfoFragment();
+        selfInfoFragment.setHead(dwHead);
+        selfInfoFragment.setName(name);
+    }
     /**
      * 实例化MyDeviceFragment对象，实例化后为其设置回调接口
      */
@@ -617,10 +631,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
                         showToast(msg.getData().getString(Constants.TOAST));
                         break;
                     case Constants.GET_BITMAP:
-                        Bitmap bitmap = (Bitmap) msg.obj;
-                        if(bitmap != null) {
-                            imgPhoto.setImageDrawable(new CircleImageDrawable(
-                                    bitmap));
+                        Bitmap bmHead = (Bitmap) msg.obj;
+                        if(bmHead  != null) {
+                            dwHead = new CircleImageDrawable(bmHead);
+                            imgPhoto.setImageDrawable(dwHead);
                         }
                         break;
                 }
@@ -739,6 +753,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
     @Override
     public void onClick(View v) {
         switch (v.getId()){
+            case R.id.img_menu_photo:
+                initSelfInfoFragment();
+                changeFragment(selfInfoFragment);
+                lockerView.closeMenu();
+                break;
             case R.id.tv_menu_add_group:
                 groupAction(1);
                 break;

@@ -34,7 +34,6 @@ public class SettingActivity extends Activity {
     @InjectView(R.id.tv_title_left)
     TextView tvTitle;
 
-    private String titleChannel;
     private String titleSetting;
 
     private SettingFragment settingFrag;
@@ -44,7 +43,6 @@ public class SettingActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_setting);
-        titleChannel = getResources().getString(R.string.choose_channel);
         titleSetting = getResources().getString(R.string.setting);
         initView();
         initEvent();

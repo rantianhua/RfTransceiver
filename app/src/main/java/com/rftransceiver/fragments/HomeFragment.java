@@ -10,6 +10,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
+import android.media.Image;
 import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Looper;
@@ -31,6 +32,7 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridView;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -77,7 +79,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     @InjectView(R.id.btn_send)
     Button btnSend;
     @InjectView(R.id.btn_sounds)
-    Button btnSounds;
+    ImageView btnSounds;
     @InjectView(R.id.img_home_troggle)
     ImageView imgTroggle;
     @InjectView(R.id.img_home_hide)
@@ -359,6 +361,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
 
     private void initView(View v) {
         ButterKnife.inject(this,v);
+        imgMessageType.setSelected(true);
         listView.setInterface(this);
         conversationAdapter = new ListConversationAdapter(getActivity(),imgageGetter,getFragmentManager());
         listView.setAdapter(conversationAdapter);
@@ -445,7 +448,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                         btnSounds.setSelected(true);
                         soundPool.play(soundsId, 1, 1, 1, 0, 1);
                         sendSounds = true;
-                        btnSounds.setText(tipStopSounds);
                         if (tvTip.getVisibility() == View.VISIBLE) {
                             String text = tvTip.getText().toString();
                             if (text.endsWith("正在说话...") || text.equals(tipConnectLose) ||
@@ -454,6 +456,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                                 return false;
                             }
                         } else {
+                            btnSounds.setImageResource(R.drawable.press);
                             mainHandler.postDelayed(new Runnable() {
                                 @Override
                                 public void run() {
@@ -465,6 +468,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                                             preTime=System.currentTimeMillis();
                                         }
                                     }
+
                                 }
                             }, 1000);
                         }
@@ -478,9 +482,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                         btnSounds.setSelected(false);
                         if (sendSounds && callback != null) callback.stopSendSounds();
                         sendSounds = false;
-                        btnSounds.setText(tipSendSounds);
                         tvTip.setText("");
                         tvTip.setVisibility(View.GONE);
+                        btnSounds.setImageResource(R.drawable.up);
 
                         return true;
                     default:
@@ -588,7 +592,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                 if(imgMessageType.isSelected()) {
                     imgMessageType.setSelected(false);
                     etSendMessage.setVisibility(View.VISIBLE);
-                    btnSounds.setVisibility(View.INVISIBLE);
+                    btnSounds.setVisibility(View.GONE);
                 }else {
                     imgMessageType.setSelected(true);
                     etSendMessage.setVisibility(View.INVISIBLE);
