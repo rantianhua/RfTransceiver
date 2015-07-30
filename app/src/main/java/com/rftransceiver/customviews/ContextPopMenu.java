@@ -91,7 +91,6 @@ public class ContextPopMenu extends MyPopuMenu {
             callbackInContextMenu.isRealTimePlay(isPlay);
         }
     }
-
     //用于操作HomeFragment--设置groupEntity实例中的实时语音标识
     public interface CallbackInContextMenu {
         void isRealTimePlay(boolean isPlay);

@@ -12,7 +12,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
-
+import com.rftransceiver.util.DataClearnManager;
 import com.rftransceiver.adapter.ListConversationAdapter;
 import com.rftransceiver.datasets.ContactsData;
 import com.rftransceiver.datasets.ConversationData;
@@ -39,7 +39,7 @@ public class DBManager {
      * to manipulate database
      */
     private SQLiteDatabase db;
-
+    private ArrayList<File> fileList = new ArrayList<>();
     /**
      * the dir to save picture
      */
@@ -63,7 +63,9 @@ public class DBManager {
         }
         return dbManager;
     }
-
+    public ArrayList<File> getFileList(){
+        return fileList;
+    }
     private synchronized void openWriteDB() {
         db = helper.getWritableDatabase();
     }
@@ -124,8 +126,8 @@ public class DBManager {
             closeDB();
         }
     }
-    public void deleteGroup(int gid) {//ɾ���������������id����ɾ��
 
+    public void deleteGroup(int gid) {//很据组的id删除表的信息
         try{
             openReadDB();
             db.beginTransaction();
@@ -272,7 +274,6 @@ public class DBManager {
         if(listChats.size() > 9) {
             saveMessage();
         }
-
     }
 
     //save data to db
@@ -288,6 +289,7 @@ public class DBManager {
                 db.beginTransaction();
                 try {
                     for (ContentValues values : saveValues) {
+
                         long re = db.insert(DatabaseHelper.TABLE_DATA, "_data", values);
                     }
                     db.setTransactionSuccessful();
@@ -301,7 +303,6 @@ public class DBManager {
         });
     }
     public void deleteMessage(int gid) {//根据组的id来删除其聊天记录
-
         try{
             openReadDB();
             db.beginTransaction();
@@ -315,6 +316,79 @@ public class DBManager {
             closeDB();
         }
     }
+
+    public String getCacheInformation(){//得到Message表中的信息大小
+        StringBuffer stringBuffer = new StringBuffer();
+        long size = 0;
+        try{
+            openReadDB();
+            db.beginTransaction();
+            Cursor cursor = db.rawQuery("select * from " + DatabaseHelper.TABLE_DATA,
+                    null);
+            while(cursor.moveToNext())
+            {
+                int type = cursor.getInt(cursor.getColumnIndex("_type"));
+                String data = cursor.getString(cursor.getColumnIndex("_data"));
+                if(type == 3)
+                {
+                    File f = new File(data);
+                    if(f.isFile()) {
+                        size = size + DataClearnManager.getFolderSize(f);
+                        fileList.add(f);
+                    }
+                    else
+                        stringBuffer.append(data);
+                }
+                else
+                    stringBuffer.append(data);
+            }
+            db.setTransactionSuccessful();
+            size = size + DataClearnManager.getStringSize(stringBuffer.toString());
+        }catch (Exception e) {
+            Log.e("saveGroup","error in save group base info or members info",e);
+        }finally {
+            db.endTransaction();
+            db.close();
+            closeDB();
+        }
+        return DataClearnManager.getFormatSize((double)size);
+    }
+
+    public void deleteCache(){//删除存放data的表
+        try{
+            openReadDB();
+            db.beginTransaction();
+            db.execSQL("DELETE FROM "+DatabaseHelper.TABLE_DATA);
+            db.setTransactionSuccessful();
+        }catch (Exception e) {
+            Log.e("saveGroup","error in save group base info or members info",e);
+        }finally {
+            db.endTransaction();
+            db.close();
+            closeDB();
+        }
+
+    }
+
+    //for test
+//   public void insertMessage(){
+//       try{
+//           openWriteDB();
+//           db.beginTransaction();
+//           String sql = "INSERT INTO " + DatabaseHelper.TABLE_DATA + " VALUES(?,?,?,?,?,?)";
+//           db.execSQL(sql, new Object[]{2, "HGF", 5, 7, 1, "TDTDFGDG"});
+//           sql = "INSERT INTO " + DatabaseHelper.TABLE_DATA + " VALUES(?,?,?,?,?,?)";
+//           db.execSQL(sql, new Object[]{3, "HGF", 6, 4, 1, "好好"});
+//           db.setTransactionSuccessful();
+//       }catch (Exception e) {
+//           Log.e("saveGroup","error in save group base info or members info",e);
+//       }finally {
+//           db.endTransaction();
+//           db.close();
+//           closeDB();
+//       }
+//
+//   }
 
     /**
      * get message data saved in db
