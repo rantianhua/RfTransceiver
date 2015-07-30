@@ -88,7 +88,7 @@ public class GroupDetailFragment extends Fragment {
             }
         });
         tvGroupName.setText(groupEntity.getName());
-
+        imgSounds.setSelected(!groupEntity.getIsSaveSoundOfGroup());
         String[] channels = getResources().getStringArray(R.array.channel);
         tvChannel.setText(channels[MainActivity.CURRENT_CHANNEL]);
         channels = null;
@@ -105,12 +105,13 @@ public class GroupDetailFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 if (imgSounds.isSelected()) {
+                    //开启保存语音信息功能
                     imgSounds.setSelected(false);
-                    groupEntity.setIsSaveSoundOfGroup(false);
-
-                } else {
-                    imgSounds.setSelected(true);
                     groupEntity.setIsSaveSoundOfGroup(true);
+                } else {
+                    //关闭
+                    imgSounds.setSelected(true);
+                    groupEntity.setIsSaveSoundOfGroup(false);
                 }
             }
         });
