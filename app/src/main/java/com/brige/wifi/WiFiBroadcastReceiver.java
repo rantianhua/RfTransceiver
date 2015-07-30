@@ -27,9 +27,11 @@ public class WiFiBroadcastReceiver extends BroadcastReceiver{
         if(WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) {
             int state = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE,-1);
             if(state == WifiManager.WIFI_STATE_ENABLED) {
+                //wifi开启
                 service.wifiEnabled();
             }else if(state == WifiManager.WIFI_STATE_DISABLED) {
-
+                //wifi关闭
+                service.wifiDisable();
             }
         }else if(WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
             //Log.e("WiFiBroadcastReceiver", "NETWORK_STATE_CHANGED_ACTION");

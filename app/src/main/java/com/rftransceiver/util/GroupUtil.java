@@ -17,6 +17,7 @@ import org.w3c.dom.Text;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Created by rantianhua on 15-6-4.
@@ -194,6 +195,8 @@ public class GroupUtil {
                 return getMsgCancel(o).toString();
             case GROUP_FULL_INFO:
                 return getGroupFullInfo(o,context);
+            case RECEIVE_GROUP:
+                return getSureRcvMsg((int)o);
         }
         return null;
     }
@@ -224,7 +227,7 @@ public class GroupUtil {
     }
 
     /**
-     * recycle add unused bitmap
+     *回收bitmap
      * @param list
      */
     public static void recycle(List<GroupMember> list) {
@@ -236,18 +239,36 @@ public class GroupUtil {
         }
     }
 
-    public static final String NAME = "name";   //the key of group's or member's name
-    public static final String PIC = "pic";     //the key of group owner's or member's picture
-    public static final String GROUP_MEMBER_ID = "memberId";    //the key of group member's id
-    public static final String GROUP_ASYNC_WORD = "async_word"; //the key of group's async word
-    public static final String GROUP_SSID = "ssid"; //the key of group's async word
+    /**
+     * @return 返回 组成员已收到组信息的 确认消息
+     */
+    public static String getSureRcvMsg(int id) {
+        String res = null;
+        try {
+            JSONObject object = new JSONObject();
+            object.put(RECEIVE_GROUP,"");
+            object.put(GROUP_MEMBER_ID,id);
+            res = object.toString();
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        return res;
+    }
 
-    public static final String REQUEST_GBI = "request_base_info"; //the value of msg,to rewuest group base info
-    public static final String GROUP_BASEINFO = "group_base_info"; //the value of msg
-    public static final String MEMBER_BASEINFO = "member_base_info"; //the value of msg
-    public static final String CLOSE_SOCKET = "close_socket"; //the value of msg
-    public static final String CANCEL_ADD = "cancel_add";   //cancel add group
-    public static final String CANCEL_CREATE = "cancel_create";   //cancel create group
-    public static final String GROUP_FULL_INFO = "group_full_info";   //cancel create group
+    //json 数据的key值
+    public static final String NAME = "name";
+    public static final String PIC = "pic";
+    public static final String GROUP_MEMBER_ID = "memberId";
+    public static final String GROUP_ASYNC_WORD = "async_word";
+    public static final String GROUP_SSID = "ssid";
+
+    public static final String REQUEST_GBI = "request_base_info"; //请求组的基本信息
+    public static final String GROUP_BASEINFO = "group_base_info"; //得到组的基本信息
+    public static final String MEMBER_BASEINFO = "member_base_info"; //得到一个组成员的基本信息
+    public static final String CLOSE_SOCKET = "close_socket"; //关闭连接
+    public static final String CANCEL_ADD = "cancel_add";   //取消加组
+    public static final String CANCEL_CREATE = "cancel_create";   //取消建组
+    public static final String GROUP_FULL_INFO = "group_full_info";   //得到整个组的详细信息
+    public static final String RECEIVE_GROUP = "receive_group"; //组成员确认收到整个组的信息
 
 }

@@ -175,9 +175,6 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
                 GroupActivity.GroupAction.CREATE : GroupActivity.GroupAction.ADD;
         if(action == GroupActivity.GroupAction.CREATE) {
             groupName = getArguments().getString(GROUP_NAME);
-            if(callback != null) {
-
-            }
         }
 
         handler = new Handler(Looper.getMainLooper(),RawGroupFragment.this);
@@ -192,15 +189,13 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
     }
 
     /**
-     * connect the wifiAp
+     * 连接wifi热点
      */
     private void connectWifi() {
-        if(count < scanResults.size()) {
+        if(!isConnecting && count < scanResults.size()-1 && callback != null) {
             ScanResult result = scanResults.get(count);
-            if(!isConnecting) {
-                isConnecting = true;
-                if(callback != null) callback.connectWifiAp(result.SSID);
-            }
+            isConnecting = true;
+            callback.connectWifiAp(result.SSID);
         }
     }
 
@@ -322,7 +317,21 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
                     if(callback != null) {
                         List<ScanResult> scans = callback.getScanResult();
                         if(scans == null) return;
-                        for (ScanResult result : scans) {
+                        //根据wifi信号的强度排序
+                        for(int i=0;i<scans.size();i++) {
+                            for(int j=1;j<scans.size();j++)
+                            {
+                                if(scans.get(i).level<scans.get(j).level)    //level属性即为强度
+                                {
+                                    ScanResult temp = null;
+                                    temp = scans.get(i);
+                                    scans.set(i, scans.get(j));
+                                    scans.set(j, temp);
+                                }
+                            }
+                        }
+                        for(int i = 0; i < scans.size();i++) {
+                            ScanResult result = scans.get(i);
                             if((result.SSID.startsWith(WifiNetService.WIFI_HOT_HEADER)
                                     || result.SSID.startsWith("\""+WifiNetService.WIFI_HOT_HEADER))
                                     && !containResult(result)) {
@@ -333,7 +342,7 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
                         }
                     }
                 }
-            },100,8000);
+            },10,10000);
         }
     }
 
@@ -363,7 +372,7 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
     }
 
     /**
-     * the wifiAp has connected
+     * 已有设备连接到热点
      * @param ssid
      */
     public void wifiApConnected(String ssid) {
@@ -371,11 +380,12 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
         if(needWriteMember) {
             callback.getSocketConnect(ssid,false);
         }else {
+            //
             int size = scanResults.size();
             if(size <= 0 || count >= size) return;
             ScanResult connectResult = scanResults.get(count);
             if(ssid.equals(connectResult.SSID)) {
-                //to establish socket connect
+                //建立socket连接
                 if(callback == null) return;
                 callback.getSocketConnect(ssid,true);
             }
@@ -633,7 +643,7 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
     public boolean handleMessage(Message message) {
         switch (message.what) {
             case ADD_DATA:
-                //add a wifi hot to list
+                //搜索到一个可用的wifi热点
                 ScanResult result = (ScanResult)message.obj;
                 if(result == null) return false;
                 scanResults.add(result);
