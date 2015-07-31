@@ -2,6 +2,7 @@ package com.rftransceiver.fragments;
 
 import android.app.Activity;
 import android.app.Fragment;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -57,9 +58,7 @@ import com.rftransceiver.util.ImageUtil;
 import com.rftransceiver.util.PoolThreadUtil;
 
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -109,108 +108,69 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     RelativeLayout top;
     @InjectView(R.id.img_face)
     ImageView imgFace;
-    /**
-     * curTime,to calculate soundsTimes
-     */
+    //计算发送语音的时长
     private long curTime;
-    /**
-     * preTime,to calculate soundsTimes
-     */
     private long preTime;
-    /**
-     * soundsTime
-     */
     private long seconds;
+
+    //SoundsTextView中回调函数
     private SoundsTimeCallbacks timeCallbacks;
-    /**
-     * the reference of callback interface
-     */
+    //本类的回调函数
     private CallbackInHomeFragment callback;
-
-    private ListConversationAdapter conversationAdapter = null; //the adapter of listView
-
+    //MyListView的适配器
+    private ListConversationAdapter conversationAdapter;
+    //适配器的数据源
     private List<ConversationData> dataLists;
-
-    /**
-     * save all gridView filled with expressions
-     */
+    //保存所有表情的GridView
     private List<GridView> expressions;
-
-    /**
-     * current displayed gridview's index in viewpager
-     */
+    //当前展示的表情的GridView在vp中的索引
     private int currentEpIndex;
-
-    /**
-     * save all dots to indicate which gridview is selected in vp
-     */
+    //GridView的指示器，指示当前在第几页表情
     private List<ImageView> imgDots;
-
-    /**
-     * to parse expression
-     */
+    //从文字中解析表情
     private Html.ImageGetter imgageGetter;
-
-    /**
-     * a instance of a GroupEntity
-     */
+    //当前所在的组
     private GroupEntity groupEntity;
 
     private Editable.Factory editableFactory = Editable.Factory.getInstance();
-
+    //记录控件所在的区域
     private Rect rect = new Rect();
-
+    //发送图片的大小
     private int imgSendSize;
-
+    //资源文件中定义好的文字资源
     private String tipConnectLose,tipReconnecting,tipConnecSuccess,tipSendSounds,tipStopSounds;
-
-    /**
-     * decide send or not sent for touch event on btnSounds
-     */
+    //标志是否发送语音
     private boolean sendSounds = false;
-
-    /**
-     * to manipulate database
-     */
+    //数据库管理
     private DBManager dbManager;
-
+    //当前视图的标题
     private String homeTitle;
-
+    //处理异步消息
     private static Handler mainHandler;
-    /**
-     * to play sounds for button click
-     */
+    //播放音效
     private SoundPool soundPool;
-    /**
-     * the play sounds' id
-     */
+    //要播放的声音资源的id
     private int soundsId;
-
-    /**
-     * my id in group
-     */
+    //我在组里的id
     private int myId = -1;
-
-    /**
-     * current group's id in db
-     */
+    //当前组在数据库中的id
     private int currentGroupId = -1;
-
-    //private ContextMenuDialogFrag contextMenuDialogFrag;
-
     //要发送的图片的存储地址
     private String sendImgagePath;
-
     //顶部菜单栏的弹出菜单
     private ContextPopMenu popMenu;
 
     private boolean isPublicChannel = false;    //标识是否在公共频道
     private Drawable drawableDef;   //默认头像
-
+    //显示正在处理一些事情
+    private ProgressDialog pd;
+    //标识是否需要自动连接设备
+    private boolean needConnecAuto = false;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         initHandler();
+
         expressions = new ArrayList<>();
         imgDots = new ArrayList<>();
         initImageGetter();
@@ -226,7 +186,55 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
 
         soundPool = new SoundPool(3, AudioManager.STREAM_SYSTEM,1);
         soundsId = soundPool.load(getActivity(),R.raw.btn_down,1);
+        pd = new ProgressDialog(getActivity());
+        //打开蓝牙
+        openBle();
      }
+
+    public void setNeedConnecAuto(boolean needConnecAuto) {
+        this.needConnecAuto = needConnecAuto;
+    }
+
+    private void openBle() {
+        if(callback != null ) {
+            switch (callback.isBleOpen()) {
+                case 0:
+                    //蓝牙已开启
+                    if(callback != null && needConnecAuto) callback.connectDeviceAuto();
+                    break;
+                case 1:
+                    //蓝牙为开其：
+                    pd.setMessage("正在打开蓝牙");
+                    pd.show();
+                    callback.openBle();
+                    break;
+                case 2:
+                    //服务还未绑定,100毫秒后再去访问
+                    if(mainHandler != null) {
+                        mainHandler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                openBle();
+                            }
+                        },100);
+                    }
+                    break;
+            }
+        }
+    }
+
+    /**
+     * 蓝牙已打开
+     */
+    public void bleOpend() {
+        if(pd != null && pd.isShowing()) {
+            pd.dismiss();
+            if(callback != null && needConnecAuto) {
+                //连接绑定过的设备
+                callback.connectDeviceAuto();
+            }
+        }
+    }
 
     private void initHandler() {
         mainHandler = new Handler(Looper.getMainLooper(), new Handler.Callback() {
@@ -234,10 +242,12 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             public boolean handleMessage(Message msg) {
                 switch (msg.what) {
                     case LOAD_GROUP:
+                        //加载了一个组
                         GroupEntity ge = (GroupEntity)msg.obj;
                         updateGroup(ge);
                         break;
                     case CHANGE_GROUP:
+                        //取消加组或建组
                         int gid = msg.arg1;
                         if(gid == currentGroupId) return false;
                         currentGroupId = gid;
@@ -247,8 +257,27 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                         loadGroup(gid);
                         break;
                     case UPDATE_IMAGE:
+                        //更新发送图片的进度
                         int percent = msg.arg1;
                         conversationAdapter.updateImgageProgress(percent);
+                        break;
+                    case UPDATE_BLESTATE:
+                        //根据蓝牙连接的状态更新UI
+                        if(tvTip == null) return false;
+                        boolean connect = (boolean)msg.obj;
+                        String text = tvTip.getText().toString();
+                        if (connect) {
+                            if (tvTip.getVisibility() ==
+                                    View.VISIBLE && text.equals(tipReconnecting)) {
+                                tvTip.setText(tipConnecSuccess);
+                                tvTip.setVisibility(View.GONE);
+                            }
+                        } else {
+                            if (!text.equals(tipReconnecting)) {
+                                tvTip.setText(tipConnectLose);
+                                tvTip.setVisibility(View.VISIBLE);
+                            }
+                        }
                         break;
                 }
                 return true;
@@ -257,6 +286,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
 
     }
 
+    /**
+     * 初始化表情
+     * @param inflater
+     */
     private void initExpressions(LayoutInflater inflater) {
         for(int i = 0; i < ExpressionUtil.epDatas.size();i ++) {
             GridView gridView = (GridView)inflater.inflate(R.layout.grid_expressiona,null);
@@ -338,7 +371,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
 
 
     /**
-     * insert expression to EditText
+     * 将表情插入到文本
      * @param drawableId
      */
     private void insertExpression(int drawableId,View view) {
@@ -365,6 +398,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         }
     }
 
+    /**
+     * 初始化解析表情的实例
+     */
     private void initImageGetter() {
         imgageGetter = new Html.ImageGetter() {
             @Override
@@ -916,7 +952,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
      * @param memberId
      */
     public void endReceiveSounds(String sounds, int memberId,long receivingSoundsTime) {
-        receivingData(0, sounds, memberId,receivingSoundsTime);
+        receivingData(0, sounds, memberId, receivingSoundsTime);
     }
 
     private void saveMessage(Object message,int type,int mid,long time) {
@@ -1036,25 +1072,14 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         return false;
     }
 
-    public void deviceConnected(final boolean connect) {
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                String text = tvTip.getText().toString();
-                if (connect) {
-                    if (tvTip.getVisibility() ==
-                            View.VISIBLE && text.equals(tipReconnecting)) {
-                        tvTip.setText(tipConnecSuccess);
-                        tvTip.setVisibility(View.GONE);
-                    }
-                } else {
-                    if (!text.equals(tipReconnecting)) {
-                        tvTip.setText(tipConnectLose);
-                        tvTip.setVisibility(View.VISIBLE);
-                    }
-                }
-            }
-        });
+    /**
+     * 连接设备的结果
+     * @param connect
+     */
+    public void deviceConnected(boolean connect) {
+        if(mainHandler != null) {
+            mainHandler.obtainMessage(UPDATE_BLESTATE,-1,-1,connect).sendToTarget();
+        }
     }
     /**
      * update the group of talk
@@ -1087,33 +1112,50 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
 
     public interface CallbackInHomeFragment {
         /**
-         * send text or sound message
+         * 请求发送文本或语音信息
          */
         void send(MainActivity.SendAction sendAction,String text);
 
         /**
-         * stop send sounds
+         * 停止发送语音
          */
         void stopSendSounds();
 
         /**
-         * call to open or close menu
+         * 打开或关闭左侧菜单
          */
         void toggleMenu();
 
         /**
-         * call to reconnect device
+         * 重新连接设备
          */
         void reconnectDevice();
 
         /**
-         * call to reset cms
+         * 设置我的id，方便在发送时标识自己
+         * @param tempId
          */
-        void resetCms();
-
         void setMyId(int tempId);
 
         void openScroll(boolean open);
+
+        /**
+         * 检查蓝牙是否已开启
+         * @return 0 蓝牙已开启
+         *         1 蓝牙未开启
+         *         2 服务还未绑定成功
+         * */
+        int isBleOpen();
+
+        /**
+         * 打开蓝牙
+         */
+        void openBle();
+
+        /**
+         * 自动连接绑定过的设备
+         */
+        void connectDeviceAuto();
     }
 
     @Override
@@ -1235,14 +1277,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             });
         }else if(requestCode == REQUEST_CONTEXT_MENU) {
             switch (resultCode) {
-                case 0:
-                    //to reset scm
-                    if(callback != null) {
-                        callback.resetCms();
-                        endReceive(0);
-                        btnSounds.setEnabled(true);
-                    }
-                    break;
                 case 1:
                     //to look group
                     if(groupEntity != null && groupEntity.getMembers().size() > 0) {
@@ -1306,4 +1340,5 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     public static final int LOAD_GROUP = 0; //加载到一个组
     public static final int CHANGE_GROUP = 1;   //改变组
     public static final int UPDATE_IMAGE = 2;   //更新图片发送进度
+    public static final int UPDATE_BLESTATE = 3;   //更新图片发送进度
 }

@@ -58,27 +58,21 @@ public class Constants {
 
     public static final int READ_CHANGE_CHANNEL = 7;
 
-    public static final int READ_ERROR = 8;
+    public static final int READ_ERROR = 8; //读到错误数据
 
-    public static final int GET_BITMAP = 9;
+    public static final int GET_BITMAP = 9; //加载图片完毕
 
-    public static final int READ_UNKNOWN = 10;  //接收到位置数据
-    /**
-     * the every data packet's length
-     */
-    public static final int Data_Packet_Length = 60;
+    public static final int READ_UNKNOWN = 10;  //接收到未知数据
 
-    /**
-     * the length of instruction packet
-     */
-    public static final int Instruction_Packet_Length = 10;
+    public static final int HANDLE_SEND = 11;   //发送数据后处理更新UI的操作
 
-    /**
-     * the head and tail of data packet
-     */
-    public static final byte Data_Packet_Head = (byte) 0x01;
+    public static final int Data_Packet_Length = 60;    //数据包的长度
 
-    public static final byte Data_Packet_Tail = (byte) 0xff;
+    public static final int Instruction_Packet_Length = 10; //指令包的长度
+
+    public static final byte Data_Packet_Head = (byte) 0x01;    //数据包的帧头
+
+    public static final byte Data_Packet_Tail = (byte) 0xff;    //数据包的帧尾
 
     /**
      * the head and tail of instruction packet
