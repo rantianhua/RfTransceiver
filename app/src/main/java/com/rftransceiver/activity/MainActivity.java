@@ -15,6 +15,8 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
@@ -87,6 +89,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     @InjectView(R.id.tv_menu_contacts)
     TextView tvContacts;
 
+    private Bitmap back;
     //接受的消息时长的起始时间
     private long preTime;
     //接受的消息时长的终止时间
@@ -221,6 +224,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
             e.printStackTrace();
         }
         setContentView(R.layout.activity_main);
+
+        BitmapFactory.Options op = new BitmapFactory.Options();
+        op.inSampleSize = 4;
+        back = BitmapFactory.decodeResource(getResources(),R.drawable.lanchuner_bg,op);
+
         System.loadLibrary("speex");
 
         initDataExchangeHandler();
@@ -254,6 +262,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private void initView() {
 
         ButterKnife.inject(this);
+        lockerView.setBackground(new BitmapDrawable(back));
         sp = getSharedPreferences(Constants.SP_USER,0);
         //获取用户名
         String name = sp.getString(Constants.NICKNAME,"");

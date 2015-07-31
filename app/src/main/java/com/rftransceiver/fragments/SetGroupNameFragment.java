@@ -1,7 +1,10 @@
 package com.rftransceiver.fragments;
 
 import android.app.Fragment;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.text.Editable;
@@ -41,7 +44,8 @@ public class SetGroupNameFragment extends Fragment {
     ImageView imgCancel;
     @InjectView(R.id.btn_sure_set_group_name)
     Button btnSure;
-
+    @InjectView(R.id.img_rainbow_above)
+    ImageView background;
     /**
      * the instance of OnGroupNameSet
      */
@@ -70,6 +74,11 @@ public class SetGroupNameFragment extends Fragment {
         etGroupName.setTextColor(Color.BLACK);
         etGroupName.setHint(R.string.hint_et_group_name);
         etGroupName.addTextChangedListener(textWatcher);
+
+        BitmapFactory.Options op = new BitmapFactory.Options();
+        op.inSampleSize = 4;
+        Bitmap back = BitmapFactory.decodeResource(getResources(),R.drawable.creat_group_above,op);
+        background.setBackground(new BitmapDrawable(back));
 
         SpannableString ss = new SpannableString("一人建组");
         ForegroundColorSpan colorSpan = new ForegroundColorSpan(Color.BLUE);

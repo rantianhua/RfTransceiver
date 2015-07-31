@@ -114,8 +114,6 @@
             android:gravity="center"
             android:layout_centerVertical="true"
             android:textSize="15dp"
-            android:scaleType="centerInside"
-            android:src="@drawable/send_button"
             android:background="#0fff"
             android:visibility="visible"
             />

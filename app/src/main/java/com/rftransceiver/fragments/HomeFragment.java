@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.Image;
@@ -111,6 +112,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     RelativeLayout top;
     @InjectView(R.id.img_face)
     ImageView imgFace;
+    //按压button时所显示的图片
+    private Bitmap press;
+    //抬起button时所显示的图片
+    private Bitmap up;
     //计算发送语音的时长
     private long curTime;
     private long preTime;
@@ -431,8 +436,23 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
 
     private void initView(View v) {
         ButterKnife.inject(this,v);
+
+        BitmapFactory.Options op1 = new BitmapFactory.Options();
+        op1.inSampleSize = 2;
+        press = BitmapFactory.decodeResource(getResources(),R.drawable.press,op1);
+
+        BitmapFactory.Options op2 = new BitmapFactory.Options();
+        op2.inSampleSize = 2;
+        up = BitmapFactory.decodeResource(getResources(),R.drawable.up,op2);
+
         imgMessageType.setSelected(true);
         listView.setInterface(this);
+        btnSounds.setImageBitmap(up);
+
+        BitmapFactory.Options op = new BitmapFactory.Options();
+        op.inSampleSize = 4;
+        Bitmap backGround = BitmapFactory.decodeResource(getResources(),R.drawable.chatbackground,op);
+        listView.setBackground(new BitmapDrawable(backGround));
         conversationAdapter = new ListConversationAdapter(getActivity(),imgageGetter,getFragmentManager());
         listView.setAdapter(conversationAdapter);
         conversationAdapter.updateData(dataLists);
@@ -536,7 +556,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 switch (motionEvent.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        btnSounds.setSelected(true);
+                        btnSounds.setImageBitmap(press);
+                        //btnSounds.setSelected(true);
                         soundPool.play(soundsId, 1, 1, 1, 0, 1);
                         sendSounds = true;
                         if (tvTip.getVisibility() == View.VISIBLE) {
@@ -565,17 +586,22 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                         }
                         return true;
                     case MotionEvent.ACTION_CANCEL:
+                        btnSounds.setImageBitmap(up);
                         return false;
                     case MotionEvent.ACTION_UP:
                         curTime=System.currentTimeMillis();
                         seconds = (curTime-preTime);
+                        BitmapFactory.Options oP = new BitmapFactory.Options();
+                        oP.inSampleSize = 2;
+                        Bitmap up = BitmapFactory.decodeResource(getResources(),R.drawable.up,oP);
 
-                        btnSounds.setSelected(false);
+                        btnSounds.setImageBitmap(up);
+
+                        //btnSounds.setSelected(false);
                         if (sendSounds && callback != null) callback.stopSendSounds();
                         sendSounds = false;
                         tvTip.setText("");
-                        tvTip.setVisibility(View.GONE);
-                        btnSounds.setImageResource(R.drawable.up);
+                        tvTip.setVisibility(View.GONE);;
 
                         return true;
                     default:
