@@ -115,7 +115,7 @@ public class GroupDetailFragment extends Fragment {
         btnClearChat.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                sendAction(0, null);//��homefragment����ɾ����Ϣ��Ϣ
+                sendAction(0, null);//向homefragment中传递清除聊天信息的命令
             }
         });
 
