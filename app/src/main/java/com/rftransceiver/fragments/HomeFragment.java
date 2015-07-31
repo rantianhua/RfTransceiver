@@ -57,6 +57,7 @@ import com.rftransceiver.util.CommonAdapter;
 import com.rftransceiver.util.CommonViewHolder;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.ExpressionUtil;
+import com.rftransceiver.util.GroupUtil;
 import com.rftransceiver.util.ImageUtil;
 import com.rftransceiver.util.PoolThreadUtil;
 
@@ -561,7 +562,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                                     }
 
                                 }
-                            }, 1000);
+                            }, 200);
                         }
                         return true;
                     case MotionEvent.ACTION_CANCEL:
@@ -640,7 +641,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                                     @Override
                                     public void isRealTimePlay(boolean isPlay) {
                                         //设置是否进行实时语音
-                                        groupEntity.setIsRealTimePlay(isPlay);
+                                        if(groupEntity != null) {
+                                            groupEntity.setIsRealTimePlay(isPlay);
+                                        }
                                     }
                                 };
                         popMenu.setCallBack(callbackInContextMenu);
@@ -1115,7 +1118,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
      * @param gid
      */
     public void changeGroup(int gid) {
+        if(gid == currentGroupId) return;
         mainHandler.obtainMessage(CHANGE_GROUP,gid,-1,null).sendToTarget();
+        if(getActivity() != null) {
+            GroupUtil.saveCurrentGid(gid,getActivity().getSharedPreferences(Constants.SP_USER,0));
+        }
     }
     //删除正在聊天的组
 //    public void deleteNowGroup(int gid){

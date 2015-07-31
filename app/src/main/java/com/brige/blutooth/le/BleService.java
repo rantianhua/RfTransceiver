@@ -380,9 +380,9 @@ public class BleService extends Service {
      * @param needResearch
      * @return
      */
-    public boolean connect(final String address,boolean needResearch) {
+    public void connect(final String address,boolean needResearch) {
         if (mBluetoothAdapter == null || address == null || mConnectionState != STATE_DISCONNECTED) {
-            return false;
+            return;
         }
         if(needResearch) {
             waitConnectDevice = address;
@@ -393,7 +393,7 @@ public class BleService extends Service {
             Runnable run = scanBle.startScan();
             isCheckDeviceAddress = true;
             mainHan.postDelayed(run,4000);
-            return true;
+            return;
         }
         //和传入的address建立新的连接
         try {
@@ -404,9 +404,7 @@ public class BleService extends Service {
             mConnectionState = STATE_CONNECTING;
         } catch (Exception e) {
             e.printStackTrace();
-            return false;
         }
-        return true;
     }
 
     /**

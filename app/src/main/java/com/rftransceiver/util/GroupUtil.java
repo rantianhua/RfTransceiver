@@ -74,7 +74,7 @@ public class GroupUtil {
      */
     public static byte[] getPicBytes(String path,Context context) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        getSmallBitmap(path,context).compress(Bitmap.CompressFormat.JPEG,100,outputStream);
+        getSmallBitmap(path,context).compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
         return outputStream.toByteArray();
     }
 
@@ -82,7 +82,7 @@ public class GroupUtil {
         int size = (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
                 60,context.getResources().getDisplayMetrics());
         size = size * size;
-        return ImageUtil.createImageThumbnail(path,size);
+        return ImageUtil.createImageThumbnail(path, size);
     }
 
 
@@ -253,6 +253,16 @@ public class GroupUtil {
             e.printStackTrace();
         }
         return res;
+    }
+
+    /**
+     * 报存最进使用的组的id
+     * @param gid
+     */
+    public static void saveCurrentGid(int gid,SharedPreferences sp) {
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putInt(Constants.PRE_GROUP, gid);
+        editor.apply();
     }
 
     //json 数据的key值

@@ -16,6 +16,8 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
+import android.media.AudioManager;
+import android.media.AudioRecord;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -241,13 +243,15 @@ public class MainActivity extends Activity implements View.OnClickListener,
      * 目的是提前获取录音权限，避免在录音时弹出获取权限的请求
      */
     private void openRecordPer() {
-        record.startRecording();
-        dataExchangeHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                record.stopRecording();
-            }
-        }, 100);
+//        dataExchangeHandler.postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                record.stopRecording();
+//            }
+//        }, 100);
+        //设置媒体音量最大
+        AudioManager audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC),AudioManager.FLAG_SHOW_UI);
     }
 
     //初始化视图
@@ -256,7 +260,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
         ButterKnife.inject(this);
         sp = getSharedPreferences(Constants.SP_USER,0);
         //获取用户名
-        String name = sp.getString(Constants.NICKNAME,"");
+        name = sp.getString(Constants.NICKNAME,"");
         if(!TextUtils.isEmpty(name)) {
             tvName.setText(name);
         }
@@ -390,12 +394,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     public void connectDeviceAuto() {
         if(TextUtils.isEmpty(bindAddress)) return;
         bindFrom = BineDeviceFrom.HF;
-        if(!bleService.connect(bindAddress,true)) {
-            if (homeFragment != null) {
-                Log.e("ddkhfd","ppppppppppppp");
-                homeFragment.deviceConnected(false);
-            }
-        }
+        bleService.connect(bindAddress,true);
     }
 
     /**
@@ -1011,12 +1010,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
             return;
         }
         if(bleService == null) return;
-        if(!bleService.connect(bindAddress,true)) {
-            if(homeFragment != null) {
-                homeFragment.deviceConnected(false);
-            }
-        }
-
+        bleService.connect(bindAddress,true);
     }
 
     /**

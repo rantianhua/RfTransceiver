@@ -633,7 +633,7 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
      * @return
      */
     public int getCurrentId() {
-        if(connectedSsid != null) {
+        if( subIds != null && connectedSsid != null) {
             return subIds.get(connectedSsid);
         }
         return -1;
