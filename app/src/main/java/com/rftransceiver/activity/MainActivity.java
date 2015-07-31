@@ -33,7 +33,6 @@ import com.rftransceiver.R;
 import com.rftransceiver.customviews.CircleImageDrawable;
 import com.rftransceiver.customviews.LockerView;
 import com.rftransceiver.db.DBManager;
-import com.rftransceiver.db.ListTest;
 import com.rftransceiver.fragments.BindDeviceFragment;
 import com.rftransceiver.fragments.ContactsFragment;
 import com.rftransceiver.fragments.HomeFragment;

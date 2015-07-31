@@ -377,7 +377,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         if(groupEntity == null) {
             if(getCurrentGroupId() != -1) {
                 loadGroup(currentGroupId);
-
+                Constants.GROUPID = currentGroupId;
             }
         }else {
             updateGroup(groupEntity);
@@ -876,7 +876,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
      * @param memberId
      */
     public void endReceiveSounds(String sounds, int memberId,long receivingSoundsTime) {
-        receivingData(0, sounds, memberId,receivingSoundsTime);
+        receivingData(0, sounds, memberId, receivingSoundsTime);
     }
 
     private void saveMessage(Object message,int type,int mid,long time) {
@@ -1057,6 +1057,13 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         loadGroup(gid);
 
     }
+    //删除正在聊天的组
+//    public void deleteNowGroup(int gid){
+//        if(gid == currentGroupId) return;
+//        dataLists.clear();
+//        conversationAdapter.updateData(dataLists);
+//        groupEntity = null;
+//    }
 
     public interface CallbackInHomeFragment {
         /**

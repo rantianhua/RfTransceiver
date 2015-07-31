@@ -220,31 +220,37 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
         myAlert.setListener(new MyAlertDialogFragment.CallbackInMyAlert() {
             @Override
             public void onClickSure() {
-                PoolThreadUtil.getInstance().addTask(new Runnable() {
-                    @Override
-                    public void run() {
-                        //在此处执行删除组的操作
-                        dbManager = DBManager.getInstance(getActivity());
-                        dbManager.deleteGroup(gid);//更新数据库中的数据
-                        mainHan.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                mapContacts.get(key).remove(child);//把hashmap中的数据更新
-                                //更新该界面
-                                if (mapContacts.get(key).size() == 0) {//如果组信息的key键下的child组没有分组了，那么就不显示这个key键
-                                    mapContacts.remove(key);
-                                }
-                                if (mapContacts.size() == 0) {//如果通讯录中没有信息了，则显示没有联系人
-                                    Toast.makeText(getActivity(), "还没有联系人", Toast.LENGTH_SHORT).show();
-                                }
-                                adpter.notifyDataSetChanged();
-                            }
-                        });
-                    }
-                });
+                if (gid != Constants.GROUPID) {
+                    PoolThreadUtil.getInstance().addTask(new Runnable() {
+                        @Override
 
+                        public void run() {
+                            //在此处执行删除组的操作
 
+                            dbManager = DBManager.getInstance(getActivity());
+                            dbManager.deleteGroup(gid);//更新数据库中的数据
+                            mainHan.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mapContacts.get(key).remove(child);//把hashmap中的数据更新
+                                    //更新该界面
+                                    if (mapContacts.get(key).size() == 0) {//如果组信息的key键下的child组没有分组了，那么就不显示这个key键
+                                        mapContacts.remove(key);
+                                    }
+                                    if (mapContacts.size() == 0) {//如果通讯录中没有信息了，则显示没有联系人
+                                        Toast.makeText(getActivity(), "还没有联系人", Toast.LENGTH_SHORT).show();
+                                    }
+                                    adpter.notifyDataSetChanged();
+                                }
+                            });
+                        }
+                    });
+                }else
+                {
+                    Toast.makeText(getActivity(), "无法删除您正在使用的组", Toast.LENGTH_SHORT).show();
+                }
             }
+
 
             @Override
             public void onClickCancel() {
@@ -265,6 +271,7 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
                 if (callback != null) {
                     Constants.GROUPID = data.getGroupId();
                     callback.changeGroup(data.getGroupId());
+
                 }
             }
 
@@ -330,5 +337,6 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
     public interface CallbackInContacts{
         void changeGroup(int gid);
         void openScorll(boolean open);
+
     }
 }
