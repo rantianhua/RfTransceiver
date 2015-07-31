@@ -39,7 +39,7 @@ public class GroupEntity implements Parcelable{
         members = new ArrayList<>();
     }
 
-    public boolean isRealTimePlay = true;//标识是够进行实时播放
+    public boolean isRealTimePlay = true;//标识是否进行实时播放
 
     /**
      * 标识是否保存组的语音信息
