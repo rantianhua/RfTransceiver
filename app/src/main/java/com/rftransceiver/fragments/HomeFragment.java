@@ -846,6 +846,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         switch (tye) {
             case 0:
                 if(data != null) {
+                    if(soundsReceivingTime>500||soundsReceivingTime<30000)
                     receiveData = new ConversationData(ListConversationAdapter.ConversationType.LEFT_SOUNDS,
                             data,soundsReceivingTime);
                 }
