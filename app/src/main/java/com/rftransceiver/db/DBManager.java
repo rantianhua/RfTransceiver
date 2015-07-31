@@ -98,6 +98,7 @@ public class DBManager {
                     null);
             if(cursor != null && cursor.moveToFirst()) {
                 gid = cursor.getInt(0);
+                Constants.GROUPID = gid;//保存该组的id到Constants中，用于通讯录中与选中组的id进行比较判断删除时是否是正在聊天的组
                 cursor.close();
             }
             //save members into member table
@@ -129,7 +130,7 @@ public class DBManager {
 
     public void deleteGroup(int gid) {//很据组的id删除表的信息
         try{
-            openReadDB();
+            openWriteDB();//把原来的openReadD方法改成openWrite方法
             db.beginTransaction();
             db.delete(DatabaseHelper.TABLE_DATA,"_gid = ?",new String[]{String.valueOf(gid)});
             db.delete(DatabaseHelper.TABLE_MEMBER,"_gid = ?",new String[]{String.valueOf(gid)});
