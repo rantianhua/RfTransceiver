@@ -20,6 +20,7 @@ import com.rftransceiver.fragments.HomeFragment;
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.group.GroupMember;
 import com.rftransceiver.util.Constants;
+import com.rftransceiver.util.GroupUtil;
 import com.rftransceiver.util.ImageUtil;
 import com.rftransceiver.util.PoolThreadUtil;
 
@@ -86,9 +87,9 @@ public class DBManager {
             asyncWord = Base64.encodeToString(async,Base64.DEFAULT);
         }
         if(TextUtils.isEmpty(name) || TextUtils.isEmpty(asyncWord)) return;
-        openWriteDB();
-        db.beginTransaction();
         try {
+            openWriteDB();
+            db.beginTransaction();
             //save group base info
             db.execSQL("INSERT INTO " + DatabaseHelper.TABLE_GROUP + " VALUES(null,?,?,?)",
                     new Object[]{name,asyncWord,groupEntity.getTempId()});
@@ -103,7 +104,8 @@ public class DBManager {
             //save members into member table
             List<GroupMember> members = groupEntity.getMembers();
             if(gid != -1 && members != null && members.size() > 1) {
-                saveCurrentGid(gid);
+                //更新当前组的id
+                GroupUtil.saveCurrentGid(gid,sp);
                 for(GroupMember member : members) {
                     //save the picture to local storage
                     Bitmap bitmap = member.getBitmap();
@@ -129,7 +131,7 @@ public class DBManager {
 
     public void deleteGroup(int gid) {//很据组的id删除表的信息
         try{
-            openReadDB();
+            openWriteDB();
             db.beginTransaction();
             db.delete(DatabaseHelper.TABLE_DATA,"_gid = ?",new String[]{String.valueOf(gid)});
             db.delete(DatabaseHelper.TABLE_MEMBER,"_gid = ?",new String[]{String.valueOf(gid)});
@@ -142,16 +144,6 @@ public class DBManager {
             db.close();
             closeDB();
         }
-    }
-
-    /**
-     * save current shown group id,
-     * @param gid
-     */
-    private void saveCurrentGid(int gid) {
-        SharedPreferences.Editor editor = sp.edit();
-        editor.putInt(Constants.PRE_GROUP, gid);
-        editor.apply();
     }
 
     /**
@@ -182,9 +174,9 @@ public class DBManager {
      */
     public GroupEntity getAgroup(int gid) {
         GroupEntity groupEntity = null;
-        openReadDB();
-        db.beginTransaction();
         try {
+            openReadDB();
+            db.beginTransaction();
             Cursor cursor = db.rawQuery("select * from " + DatabaseHelper.TABLE_GROUP +
                 " where _gid=" + gid,null);
             String name = null,async = null;
@@ -285,9 +277,9 @@ public class DBManager {
         PoolThreadUtil.getInstance().addTask(new Runnable() {
             @Override
             public void run() {
-                openWriteDB();
-                db.beginTransaction();
                 try {
+                    openWriteDB();
+                    db.beginTransaction();
                     for (ContentValues values : saveValues) {
 
                         long re = db.insert(DatabaseHelper.TABLE_DATA, "_data", values);
@@ -369,26 +361,6 @@ public class DBManager {
         }
 
     }
-
-    //for test
-//   public void insertMessage(){
-//       try{
-//           openWriteDB();
-//           db.beginTransaction();
-//           String sql = "INSERT INTO " + DatabaseHelper.TABLE_DATA + " VALUES(?,?,?,?,?,?)";
-//           db.execSQL(sql, new Object[]{2, "HGF", 5, 7, 1, "TDTDFGDG"});
-//           sql = "INSERT INTO " + DatabaseHelper.TABLE_DATA + " VALUES(?,?,?,?,?,?)";
-//           db.execSQL(sql, new Object[]{3, "HGF", 6, 4, 1, "好好"});
-//           db.setTransactionSuccessful();
-//       }catch (Exception e) {
-//           Log.e("saveGroup","error in save group base info or members info",e);
-//       }finally {
-//           db.endTransaction();
-//           db.close();
-//           closeDB();
-//       }
-//
-//   }
 
     /**
      * get message data saved in db
@@ -481,9 +453,9 @@ public class DBManager {
 
     public List<ContactsData> getContacts() {
         String sql = "select _gname,_gid from " + DatabaseHelper.TABLE_GROUP;
-        openReadDB();
         List<ContactsData> contactsDatas = null;
         try {
+            openReadDB();
             db.beginTransaction();
             Cursor cursor = db.rawQuery(sql,null);
             if(cursor == null) return null;

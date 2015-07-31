@@ -3,7 +3,9 @@ package com.source.sounds;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.util.Log;
 
+import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.PoolThreadUtil;
 
 //¼��PCM������
@@ -32,24 +34,30 @@ public class Audio_Recorder  implements Runnable
     private Audio_Encoder encoder = Audio_Encoder.getInstance();
 
     public Audio_Recorder() {
+        initRecord();
+    }
+
+    /**
+     * 实例化audioRecord对象
+     */
+    private void initRecord () {
+        if(audioRecord != null) return;
+        bufferSize = BUFFER_FRAME_SIZE;
+        audioBufSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig,
+                audioFormat);
+        if (audioBufSize == AudioRecord.ERROR_BAD_VALUE)
+        {
+            //do something
+            return;
+        }
+        samples = new short[audioBufSize];
+        audioRecord = new AudioRecord(audioSource, sampleRate,
+                channelConfig, audioFormat, audioBufSize);
     }
     
     public void startRecording()
-    {  
-        bufferSize = BUFFER_FRAME_SIZE;  
-        audioBufSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig,
-                audioFormat);  
-        if (audioBufSize == AudioRecord.ERROR_BAD_VALUE) 
-        {  
-            //do something
-            return;  
-        }  
-        samples = new short[audioBufSize];
-        if (null == audioRecord)
-        {  
-            audioRecord = new AudioRecord(audioSource, sampleRate,  
-                    channelConfig, audioFormat, audioBufSize);  
-        }
+    {
+        initRecord();
         //start to record data
         PoolThreadUtil.getInstance().addTask(this);
     }
@@ -72,9 +80,6 @@ public class Audio_Recorder  implements Runnable
         while (isRecording())
         {  
             bufferRead = audioRecord.read(samples, 0, bufferSize);
-//            for(int i = 0; i < bufferRead;i++) {
-//                samples[i] *= 4;
-//            }
             if (bufferRead > 0)
             {
                 // add the data to the encoder
@@ -90,6 +95,9 @@ public class Audio_Recorder  implements Runnable
         }  
         audioRecord.stop();
         encoder.stopEncoding();
+        if(Constants.DEBUG) {
+            Log.e("Audio_Recoder","录音停止");
+        }
     }
 
     public synchronized boolean isRecording() {
