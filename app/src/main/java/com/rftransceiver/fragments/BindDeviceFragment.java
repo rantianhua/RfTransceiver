@@ -1,98 +1,137 @@
 package com.rftransceiver.fragments;
 
-import android.animation.ObjectAnimator;
-import android.app.Activity;
-import android.app.Fragment;
 import android.app.ListFragment;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Message;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
-import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.brige.blutooth.le.ScanBle;
 import com.rftransceiver.R;
-import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.util.CommonAdapter;
 import com.rftransceiver.util.CommonViewHolder;
 
-import org.w3c.dom.Text;
-
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 
 /**
  * Created by rantianhua on 15-6-13.
+ * 用来搜索绑定设备的类
  */
 public class BindDeviceFragment extends ListFragment implements ScanBle.ScanBleListener{
 
     @InjectView(R.id.pb_search_devices)
-    ProgressBar pbSearching;
+    ProgressBar pbSearching;    //正在搜索设备的提示
     @InjectView(R.id.tv_handle_bind_device)
     TextView tvHandle;  //确定连接设备或者重新搜索设备
 
-    private BluetoothAdapter adapter;
-
-    private ProgressDialog pd;
-
+    private ProgressDialog pd;  //提示用户当前正在处理某些事情
     //搜索蓝牙的实体类
     private ScanBle scanBle;
-
-    /**
-     * searched devices
-     */
+    //保存搜索到的设备
     private ArrayList<BluetoothDevice> devices;
-
-    //记录当前选择的item
+    //记录当前选择的listView中的视图
     private View selectedView;
-
     //回调接口
     private CallbackInBindDeviceFragment callback;
-
     //将要连接的设备
     private BluetoothDevice waitConnectDevice;
-
     //在主线程中接收异步消息
-    private static final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private static Handler mainHandler;
     //在资源文件中定义好的文字信息
     private String textSure,textResearch;
+    //用来定时关闭搜索
+    private Runnable scaRun;
+    //标识是否有请求连接
+    private boolean requestConnection = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        final BluetoothManager bluetoothManager =
-                (BluetoothManager) getActivity().getSystemService(Context.BLUETOOTH_SERVICE);
-        adapter = bluetoothManager.getAdapter();
+        initHandler();
         devices = new ArrayList<>();
         textResearch = getString(R.string.restart_search);
         textSure = getString(R.string.sure);
         pd = new ProgressDialog(getActivity());
-        scanBle = ScanBle.getInstance(adapter,this);
+    }
+
+    private void initHandler() {
+        mainHandler = new Handler(Looper.getMainLooper(), new Handler.Callback() {
+            @Override
+            public boolean handleMessage(Message msg) {
+                switch (msg.what) {
+                    case 0:
+                        //搜索到一个设备
+                        BluetoothDevice device = (BluetoothDevice)msg.obj;
+                        devices.add(device);
+                        CommonAdapter commonAdapter = (CommonAdapter) getListAdapter();
+                        commonAdapter.notifyDataSetChanged();
+                        break;
+                    case 1:
+                        break;
+                }
+                return true;
+            }
+        });
+    }
+
+    /**
+     * 向MainActivity请求搜索设备，返回BlutoothAdapter用来实例化ScanBle
+     */
+    private void initScanBle() {
+        if(callback == null || scanBle != null) return;
+        //先检查服务有没有绑定完毕
+        if(!callback.isBleServiceBinded()) {
+            //100毫秒后重新检查一遍
+            mainHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    initScanBle();
+                }
+            },100);
+            return;
+        }
+        BluetoothAdapter adapter = callback.requestScanDevice();
+        if(adapter != null) {
+            //蓝牙已打开，可以开始搜索设备
+            scanBle = ScanBle.getInstance(adapter,this);
+            startSearch();
+        }else {
+            //先打开蓝牙
+            openBle();
+        }
+    }
+
+    /**
+     * 向MainActivity请求打开蓝牙
+     */
+    private void openBle() {
+        if(callback != null) {
+            callback.openBle();
+        }
+    }
+
+    /**
+     * 蓝牙已打开
+     */
+    public void bleOpend() {
+        if(pd != null && pd.isShowing()) {
+            pd.dismiss();
+        }
+        initScanBle();
     }
 
     @Override
@@ -103,6 +142,9 @@ public class BindDeviceFragment extends ListFragment implements ScanBle.ScanBleL
                 cancelSearch();
             }
         }
+        if(pd.isShowing()) {
+            pd.dismiss();
+        }
     }
 
     @Nullable
@@ -110,16 +152,18 @@ public class BindDeviceFragment extends ListFragment implements ScanBle.ScanBleL
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_bind_device,container,false);
         initView(v);
-        startSearch();
+        //初始化搜索实例
+        initScanBle();
         return v;
     }
 
-    //搜索设备
-    private void startSearch() {
-        if(!adapter.isEnabled() || adapter.getState() == BluetoothAdapter.STATE_TURNING_ON) {
-            MainActivity.needSearchDevice = true;
-        }else {
-            searchDevices();
+    //定时搜索设备,10秒后自动停止搜索
+    public void startSearch() {
+        scaRun = scanBle.startScan();
+        if(scaRun != null ) {
+            tvHandle.setVisibility(View.INVISIBLE);
+            pbSearching.setVisibility(View.VISIBLE);
+            mainHandler.postDelayed(scaRun, 10000);
         }
     }
 
@@ -132,12 +176,15 @@ public class BindDeviceFragment extends ListFragment implements ScanBle.ScanBleL
                 helper.setText(R.id.tv_device_name_list, item.getName());
             }
         });
+        tvHandle.setVisibility(View.VISIBLE);
+        tvHandle.setText(textResearch);
         tvHandle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(tvHandle.getText().toString().equals(textResearch)) {
+                if (tvHandle.getText().toString().equals(textResearch)) {
                     startSearch();
-                }else if(tvHandle.getText().toString().equals(textSure)) {
+                } else if (tvHandle.getText().toString().equals(textSure)) {
+                    requestConnection = true;
                     pd.setMessage("正在绑定...");
                     pd.show();
                     connectDevice();
@@ -148,11 +195,15 @@ public class BindDeviceFragment extends ListFragment implements ScanBle.ScanBleL
 
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
-        if(selectedView != null) {
+        if (selectedView != null) {
             selectedView.setSelected(false);
         }
         if(pbSearching.getVisibility() == View.VISIBLE) {
             cancelSearch();
+            if(scaRun != null) {
+                mainHandler.removeCallbacks(scaRun);
+            }
+            scanBle.stopScan();
         }
         tvHandle.setText(textSure);
         selectedView = v.findViewById(R.id.tv_device_name_list);
@@ -169,28 +220,25 @@ public class BindDeviceFragment extends ListFragment implements ScanBle.ScanBleL
         }
     }
 
+    public boolean getRequestConnection() {
+        return requestConnection;
+    }
+
     /**
      * 设备已连接
      */
     public void deviceConnected() {
-        if(pd != null && pd.isShowing()) pd.dismiss();
-        setCallback(null);
+        if(pd != null && pd.isShowing()) {
+            pd.dismiss();
+        }
     }
+
 
     //设置回调接口
     public void setCallback(CallbackInBindDeviceFragment callback) {
         this.callback = callback;
     }
 
-    //定时搜索设备
-    public void searchDevices() {
-        Runnable run = scanBle.startScan();
-        if(run != null ) {
-            tvHandle.setVisibility(View.INVISIBLE);
-            pbSearching.setVisibility(View.VISIBLE);
-            new Handler(Looper.myLooper()).postDelayed(run, 10000);
-        }
-    }
 
     //取消搜索
     private void cancelSearch() {
@@ -210,16 +258,7 @@ public class BindDeviceFragment extends ListFragment implements ScanBle.ScanBleL
     public void scanBleResult(final BluetoothDevice device) {
         if (device == null || devices == null) return;
         if (devices.contains(device)) return;
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                if(devices != null) {
-                    devices.add(device);
-                    CommonAdapter commonAdapter = (CommonAdapter) getListAdapter();
-                    commonAdapter.notifyDataSetChanged();
-                }
-            }
-        });
+        mainHandler.obtainMessage(0,-1,-1,device).sendToTarget();
     }
 
     /**
@@ -230,12 +269,31 @@ public class BindDeviceFragment extends ListFragment implements ScanBle.ScanBleL
         cancelSearch();
     }
 
+
     public interface CallbackInBindDeviceFragment {
         /**
-         * connect selected device
-         * @param device ble device
+         * 连接选中的设备
+         * @param device
          */
         void connectDevice(BluetoothDevice device);
+
+        /**
+         * @return 已实例化好的BluetoothAdapter对象，
+         * 用来实例化ScanBle对象
+         */
+        BluetoothAdapter requestScanDevice();
+
+        /**
+         * 请求打开蓝牙
+         */
+        void openBle();
+
+        /**
+         * 检查BleService是否已经绑定好
+         * @return
+         */
+        boolean isBleServiceBinded();
+
     }
 
     @Override

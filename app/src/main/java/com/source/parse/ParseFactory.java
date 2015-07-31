@@ -65,6 +65,7 @@ public class ParseFactory {
                     break;
                 default:
                     unKnowData(temp);
+                    Log.e("receive", "unknow data content" + temp[Constants.Packet_Type_flag_Index]);
                     break;
             }
         }else if(temp[Constants.Data_Packet_Length-1] == Constants.Instruction_Packet_Tail) {
@@ -91,6 +92,7 @@ public class ParseFactory {
                     break;
                 default:
                     unKnowData(temp);
+                    Log.e("receive", "unknow data instruct" + temp[1]);
                     break;
             }
         }else {
@@ -100,6 +102,9 @@ public class ParseFactory {
 
     private void unKnowData(byte[] data) {
         Log.e("receive", "unknow data tail"+data[Constants.Data_Packet_Length-1]);
+        if(handler != null) {
+            handler.obtainMessage(Constants.MESSAGE_READ,Constants.READ_UNKNOWN).sendToTarget();
+        }
     }
 
     public void setHandler(Handler han) {
