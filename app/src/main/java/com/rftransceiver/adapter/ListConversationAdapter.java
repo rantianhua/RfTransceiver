@@ -184,7 +184,6 @@ public class ListConversationAdapter extends BaseAdapter{
             case RIGHT_SOUNDS:
                 hodler.tvSounds.setTag(data.getContent());
                 hodler.tvSounds.setSoundsTime(data.getSoundsTime());
-                //œ‘ æ”Ô“Ù≥§∂»
                 hodler.soundsTime.setText(data.getSoundsTime() / 1000 + "." + (data.getSoundsTime() / 100) % 10 + "s");
                 break;
             case TIME:
