@@ -45,11 +45,6 @@ public class Audio_Reciver implements Runnable
          }
 	 }
 
-    public void startWithAutoStop() {
-        autoStop = true;
-        startReceiver();
-    }
-
     @Override
     public void run() {
         //先启动解码器

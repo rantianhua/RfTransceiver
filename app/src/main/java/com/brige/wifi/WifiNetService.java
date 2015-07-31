@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Configuration;
 import android.net.DhcpInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
@@ -19,6 +20,7 @@ import android.os.Message;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.WindowManager;
 
 
 import com.rftransceiver.group.GroupEntity;
@@ -51,25 +53,22 @@ import java.util.concurrent.TimeUnit;
 public class WifiNetService extends Service implements Handler.Callback{
 
     private final String TAG = getClass().getSimpleName();
-    private final int port = 4583;  //the port of socket
-    public static final String WIFI_HOT_HEADER = "interphone_";
-    private String SSID;
-    private final String PSD = "interphone_psd";
-    private LocalWifiBinder localWifiBinder = new LocalWifiBinder();
-    private WifiManager manager;
-    private BroadcastReceiver wifiReceiver;
-    private CallBack callback;  //the interface communicate with Activity
+    private final int port = 4583;  //tsocket的端口
+    public static final String WIFI_HOT_HEADER = "interphone_";    //wifi热点名的前缀
+    private String SSID;    //wifi的热点名
+    private final String PSD = "interphone_psd";    //wifi热点密码
+    private LocalWifiBinder localWifiBinder = new LocalWifiBinder();    //用来传递WifiNetService实例
+    private WifiManager manager;    //wifi管理者
+    private BroadcastReceiver wifiReceiver; //wifi状态的广播接收器
+    private CallBack callback;  //回调接口
 
-    private Handler serverAccept;   //open a server socket to wait to accept a client connect
-    private ServerSocket serverSocket;  //the serverSocket wait to be connected
-    private Runnable startServerSocket;
-    private boolean endAccept = false;
-
-    /**
-     * the thread pool to execute mutiClientSocket
-     */
-    private PoolThreadUtil poolThreadUtil;
-    private List<WorkRunnabble> works;
+    private Handler serverAccept;   //开启工作线程用来监听socket连接
+    private ServerSocket serverSocket;  //socket服务端
+    private Runnable startServerSocket; //开启socket服务端的runnable对象
+    private boolean endAccept = false;  //接收客户端连接的标识
+    private PoolThreadUtil poolThreadUtil;  //线程池
+    private List<WorkRunnabble> works;  //记录所有socket的工作线程
+    private boolean needStartAp = false;    //标识需要开启wifi热点的
 
     public class LocalWifiBinder extends Binder{
         public WifiNetService getService() {
@@ -89,18 +88,51 @@ public class WifiNetService extends Service implements Handler.Callback{
 
         poolThreadUtil = PoolThreadUtil.getInstance();
         works = new ArrayList<>();
-
     }
 
     /**
-     * create wifi hot
+     * wifi关闭
      */
-    public void startWifiAp() {
-        //first disable wifi
-        if(manager.isWifiEnabled()){
-            manager.setWifiEnabled(false);
+    public void wifiDisable() {
+        Log.e("wifiDisable", "有连接关闭le");
+        if(needStartAp) {
+            needStartAp = false;
+            //重新开启wifi热点
+            startWifiAp(false);
+        }
+    }
+    /**
+     * 开启wifi热点
+     * @param checkWifi 标识要不要检查wifi
+     */
+    public void startWifiAp(boolean checkWifi) {
+        if(checkWifi) {
+            //如果wifi开着，先关闭wifi
+            if(manager.isWifiEnabled()){
+                needStartAp = true;
+                manager.setWifiEnabled(false);
+                return;
+            }
         }
 
+        if(isWifiApEnabled()) {
+            String openSSID = getWifiApName();
+            if(openSSID != null && compareTwoSsid(openSSID,SSID)) {
+                //热点已开启
+                return;
+            }
+            //关闭重新配置热点
+            closeWifiAp();
+            if(Constants.DEBUG) {
+                Log.e("startWifiAp","重新开启热点");
+            }
+            try {
+                Thread.sleep(100);
+            }catch (Exception e) {
+                e.fillInStackTrace();
+            }
+        }
+        //通过反射开启wifi
         Method method = null;
         try {
             method = manager.getClass().getMethod("setWifiApEnabled",
@@ -124,19 +156,52 @@ public class WifiNetService extends Service implements Handler.Callback{
             e.printStackTrace();
         }
 
-        //check wifiAp is enable or not
+        //检查wifi热点是否开启
         final Timer timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                if(isWifiApEnabled()) {
+                if (isWifiApEnabled()) {
                     timer.cancel();
-                    callback.wifiApCreated();
+                    if (callback != null) {
+                        callback.wifiApCreated();
+                    }
                 }
             }
-        },10,1000);
+        }, 0, 1000);
     }
 
+    /**
+     * 比较两个热点名是否相同
+     * @param ssid1
+     * @param ssid2
+     * @return
+     */
+    public static boolean compareTwoSsid(String ssid1,String ssid2) {
+        //有的设备有双引号
+        ssid1 = ssid1.replaceAll("\"","");
+        ssid2 = ssid2.replaceAll("\"", "");
+        if(ssid1.equalsIgnoreCase(ssid2)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 检查ssid的有效性
+     * @param ssid
+     * @return
+     */
+    public static boolean isSSIDValid(String ssid) {
+        ssid = ssid.replaceAll("\"", "");
+        ssid = ssid.toLowerCase();
+        if(ssid.startsWith(WIFI_HOT_HEADER)) {
+            return true;
+        }
+        return false;
+    }
+
+    //检查热点是否已经开启
     public boolean isWifiApEnabled() {
         try {
             Method method = manager.getClass().getMethod("isWifiApEnabled");
@@ -148,12 +213,37 @@ public class WifiNetService extends Service implements Handler.Callback{
         return false;
     }
 
-    public void startWifi() {
+    //获取当前热点的名称
+    public String getWifiApName() {
+        try {
+            Method method = manager.getClass().getMethod(
+                    "getWifiApConfiguration");
+            WifiConfiguration configuration = (WifiConfiguration)method.invoke(manager);
+            if(configuration != null) {
+                return configuration.SSID;
+            }
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    //开启wifi
+    public boolean startWifi() {
+        //如果热点是开着的，先关闭热点
         if(isWifiApEnabled()) {
             closeWifiAp();
+            try {
+                Thread.sleep(50);
+            }catch (Exception e) {
+
+            }
         }
-        if(!manager.isWifiEnabled()) {
+        if(isWifiEnable()) {
+            return false;
+        }else {
             manager.setWifiEnabled(true);
+            return true;
         }
     }
 
@@ -163,79 +253,115 @@ public class WifiNetService extends Service implements Handler.Callback{
         }
     }
 
+    //设置接口
     public void setCallBack(CallBack callback) {
         this.callback = callback;
     }
 
+    //检查wifi是否已开启
     public boolean isWifiEnable() {
         return manager.isWifiEnabled();
     }
 
+    //开启wifi
     public void enableWifi() {
         manager.setWifiEnabled(true);
     }
 
+    //wifi已经开启
     public void wifiEnabled() {
         if(callback != null) {
+            //通知接口调用方
            callback.wifiEnabled();
         }
     }
 
     public void wifiConnected(String ssid) {
-        Log.e("wifiConnected","ssid is" + ssid);
         if(callback != null) {
             callback.wifiApConnected(ssid);
         }
     }
 
     /**
-     * connect wifi hot
-     * @param ssid the wifiAp's name
+     * 连接wifi热点
+     * @param ssid 热点名称
      * @return
      */
     public boolean connectAction(String ssid) {
-        WifiConfiguration configuration = setUpWifiConfig(ssid);
+        WifiConfiguration configuration = null;
+        //检查是否已经有连接过该热点
+        WifiConfiguration tempConfig = isExist(SSID);
+        if(tempConfig != null) {
+            //连接过，直接连接
+            if(Constants.DEBUG) {
+                Log.e("connectAction","之前连接过");
+            }
+            configuration = tempConfig;
+        }else {
+            configuration = setUpWifiConfig(ssid);
+        }
         if(configuration == null) {
             return false;
         }
-
-        WifiConfiguration tempConfig = isExist(SSID);
-        if(tempConfig != null) {
-            manager.removeNetwork(tempConfig.networkId);
-        }
-
+        //检查是否已有wifi连接上，有则断开连接，
+        isWifiConneted(true);
         int netId = manager.addNetwork(configuration);
-        //disconnect exist connect
-        manager.disconnect();
-        manager.enableNetwork(netId,true);
-        return manager.reconnect();
+        manager.enableNetwork(netId, true);
+        manager.reassociate();
+        return true;
     }
 
     /**
      *
-     * @param ssid the wifiAp's name
-     * @return true if the hot have connected,else false
+     * @param ssid 要连接的wifi热点的名称
+     * @return true 如果检查出该热点已经连接上了
      */
     public boolean ssidConnected(String ssid) {
-        WifiInfo info = manager.getConnectionInfo();
-        if(info != null) {
-            String connectSsid = info.getSSID();
-            if(connectSsid != null && (ssid.equalsIgnoreCase(connectSsid)
-                    || connectSsid.equalsIgnoreCase("\""+ssid+"\""))) {
-                return true;
-            }
+        String connectedSSID = isWifiConneted(false);
+        if(!TextUtils.isEmpty(connectedSSID)) {
+            return compareTwoSsid(ssid,connectedSSID);
         }
         return false;
     }
 
     /**
-     * @param ssid the wifiAp's name
-     * @return the existed WifiConfiguration
+     * 检查wifi是否已有连接
+     * @param disConnect    //是否断开该连接
+     * @return
+     */
+    private String isWifiConneted(boolean disConnect) {
+        WifiInfo info = manager.getConnectionInfo();
+        if(info != null) {
+            String ssid = info.getSSID();
+            if(disConnect) {
+                //关闭该连接
+                List<WifiConfiguration> configurations = manager.getConfiguredNetworks();
+                for(WifiConfiguration con : configurations) {
+                    if(compareTwoSsid(ssid,con.SSID)) {
+                        //关闭该wifi
+                        int netId = con.networkId;
+                        manager.disableNetwork(netId);
+                        manager.disconnect();
+                        break;
+                    }
+                }
+                return null;
+            }else {
+                return ssid;
+            }
+        }else {
+            return null;
+        }
+    }
+
+    /**
+     * @param ssid 热点名称
+     * @return 存在的热点配置
      */
     private WifiConfiguration isExist(String ssid) {
         List<WifiConfiguration> existingConfigs = manager.getConfiguredNetworks();
         for (WifiConfiguration existingConfig : existingConfigs) {
-            if (existingConfig.SSID.equals("\"" + ssid + "\"")) {
+            if (compareTwoSsid(existingConfig.SSID,ssid)) {
                 return existingConfig;
             }
         }
@@ -268,9 +394,10 @@ public class WifiNetService extends Service implements Handler.Callback{
     }
 
     /**
-     * open a serverSocket to wait connect
+     * 开启服务端socket等待客户端连接
      */
     public void openServer() {
+        //开启一个新得线程监听连接
         HandlerThread server = new HandlerThread("server");
         server.start();
         serverAccept = new Handler(server.getLooper(),this);
@@ -314,7 +441,7 @@ public class WifiNetService extends Service implements Handler.Callback{
     }
 
     /**
-     * cancel create group
+     * 取消建组
      */
     public void cancelCreateGroup() {
         for(int i = 0;i < works.size();i++) {
@@ -326,24 +453,25 @@ public class WifiNetService extends Service implements Handler.Callback{
         }
     }
 
-    //send group full members to every member
+    //向所有的成员发送组的详细信息
+    private int activeMembers = 0;  //记录向多少个成员发送了信息
     public void sendFullGroup(final GroupEntity groupEntity) {
-        poolThreadUtil.addTask(new Runnable() {
-            @Override
-            public void run() {
-                String groupInfo = GroupUtil.getWriteData(GroupUtil.GROUP_FULL_INFO,
-                        groupEntity,WifiNetService.this.getApplicationContext());
-                if(groupInfo != null) {
-                    for(int i = 0;i < works.size();i++ ){
-                        WorkRunnabble run = works.get(i);
-                        if(run.getReading()) {
-                            run.writeMessage(groupInfo);
-                        }
-                    }
+        String groupInfo = GroupUtil.getWriteData(GroupUtil.GROUP_FULL_INFO,
+                groupEntity,WifiNetService.this.getApplicationContext());
+        if(groupInfo != null) {
+            for(int i = 0;i < works.size();i++ ){
+                WorkRunnabble run = works.get(i);
+                if(run.getReading()) {
+                    run.writeMessage(groupInfo);
+                    activeMembers++;
                 }
-                callback.sendGroupFinished();
             }
-        });
+        }
+        if(Constants.DEBUG) {
+            Log.e("sendFullGroup","向"+activeMembers+"个成员发送了信息");
+        }
+        callback.sendGroupFinished(activeMembers);
+        activeMembers = 0;
     }
 
     /**
@@ -359,7 +487,7 @@ public class WifiNetService extends Service implements Handler.Callback{
 
 
     /**
-     * create client socket to exchange data
+     *  建立一个socket连接与指定的设备
      */
     public void createClientSocket(String ssid,boolean requestGroupInfo) {
         String request = requestGroupInfo ? "request" : "";
@@ -427,34 +555,30 @@ public class WifiNetService extends Service implements Handler.Callback{
 
         @Override
         protected String doInBackground(String... strings) {
-            //before connect, close have established connection
+            //连接前先关闭已有的连接，否则端口被占用
             if(works.size() > 0) {
                 final WorkRunnabble preWork = works.get(0);
-                poolThreadUtil.addTask(new Runnable() {
-                    @Override
-                    public void run() {
-                        preWork.writeMessage(GroupUtil.getWriteData(GroupUtil.CLOSE_SOCKET,
-                                null,null));
-                        preWork.cancel();
-                    }
-                });
+                //通知服务端关闭对应的socket和work thread
+                preWork.writeMessage(GroupUtil.getWriteData(GroupUtil.CLOSE_SOCKET,
+                        null,null));
+                preWork.cancel();
             }
             String host = getServerIpAdress();
+            if(Constants.DEBUG) {
+                Log.e("ClientConnect","服务端ip 是"+host);
+            }
             try {
                 Socket socket = new Socket();
                 socket.bind(null);
                 socket.connect(new InetSocketAddress(host, port));
+                Log.e("ClientConnect", "客户端连接成功");
                 final WorkRunnabble work = new WorkRunnabble(socket,-1);
                 works.add(work);
                 poolThreadUtil.addTask(work);
                 if(!TextUtils.isEmpty(strings[1])) {
-                    poolThreadUtil.addTask(new Runnable() {
-                        @Override
-                        public void run() {
-                            work.writeMessage(GroupUtil.getWriteData(GroupUtil.REQUEST_GBI,
-                                    null, null));
-                        }
-                    });
+                    //请求群主的基本信息
+                    work.writeMessage(GroupUtil.getWriteData(GroupUtil.REQUEST_GBI,
+                            null, null));
                 }
             } catch (IOException e) {
                 Log.e(TAG, "client socket connect error" + e.getMessage(), e);
@@ -476,7 +600,7 @@ public class WifiNetService extends Service implements Handler.Callback{
 
         /**
          *
-         * @return the ipAddress of WifiAp
+         * @return 得到服务端的ip地址
          */
         private String getServerIpAdress() {
             DhcpInfo info = manager.getDhcpInfo();
@@ -489,19 +613,18 @@ public class WifiNetService extends Service implements Handler.Callback{
         }
     }
 
+    //关闭wifi热点
     public void closeWifiAp() {
-        if (isWifiApEnabled()) {
-            try {
-                Method method = manager.getClass().getMethod("getWifiApConfiguration");
-                method.setAccessible(true);
-                WifiConfiguration config = (WifiConfiguration) method.invoke(manager);
-                Method method2 = manager.getClass().getMethod("setWifiApEnabled",
-                        WifiConfiguration.class, boolean.class);
-                method2.invoke(manager, config, false);
-            }
-           catch (Exception e) {
-               e.printStackTrace();
-           }
+        try {
+            Method method = manager.getClass().getMethod("getWifiApConfiguration");
+            method.setAccessible(true);
+            WifiConfiguration config = (WifiConfiguration) method.invoke(manager);
+            Method method2 = manager.getClass().getMethod("setWifiApEnabled",
+                    WifiConfiguration.class, boolean.class);
+            method2.invoke(manager, config, false);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -527,7 +650,6 @@ public class WifiNetService extends Service implements Handler.Callback{
 
 
     private void closeWorks() {
-        Log.e(TAG,"close works");
         for(int i  = 0;i < works.size(); i ++) {
             works.get(i).cancel();
         }
@@ -536,7 +658,7 @@ public class WifiNetService extends Service implements Handler.Callback{
     }
 
     /**
-     * create a runnable to read and write from socket
+     * socket连接建立后的工作线程
      */
     class WorkRunnabble implements Runnable {
 
@@ -546,12 +668,12 @@ public class WifiNetService extends Service implements Handler.Callback{
         private boolean reading = false;
 
         /**
-         * every member have a id as an identity
+         * 每一个组成员的id
          */
         private int id;
 
         public WorkRunnabble(Socket socket,int id) {
-            this.id = id;
+            setId(id);
             this.socket = socket;
             try {
                 out = socket.getOutputStream();
@@ -564,7 +686,7 @@ public class WifiNetService extends Service implements Handler.Callback{
         @Override
         public void run() {
             setReading(true);
-            boolean receving = false;
+            boolean receving = false;   //用于标识开始接收一段数据
             try {
                 int bytes = 0;
                 byte[] buff = new byte[1024];
@@ -575,28 +697,31 @@ public class WifiNetService extends Service implements Handler.Callback{
                         byte[] data = new byte[bytes];
                         System.arraycopy(buff,0,data,0,bytes);
                         if(!receving && data[0] == Constants.Data_Packet_Head) {
-                            //start receiving data
+                            //开始接收一段数据
                             receving = true;
                             if(bytes < 1024 && data[data.length-1] == Constants.Data_Packet_Tail) {
-                                //do parse data in other thread , avoid blocking read data
+                                //数据接收完毕
                                 receving = false;
+                                //得到收到的字符转，转化前去掉数据包的头和尾
                                 sb.append(new String(data,1,bytes-2));
                                 final String temp = sb.toString();
                                 sb.delete(0,sb.length());
                                 poolThreadUtil.addTask(new Runnable() {
                                     @Override
                                     public void run() {
+                                        //解析接收到的数据
                                         parseReadData(temp);
                                     }
                                 });
                             }else {
+                                //数据未接收完毕，继续缓存
                                 sb.append(new String(data,1,data.length-1));
                             }
                         }else if(receving && data[data.length-1] == Constants.Data_Packet_Tail) {
-                            //end receiving data
+                            //数据接收完毕
                             receving = false;
                             sb.append(new String(data,0,data.length-1));
-                            //do parse data in other thread , avoid blocking read data
+                            //解析数据
                             final  String temp = sb.toString();
                             poolThreadUtil.addTask(new Runnable() {
                                 @Override
@@ -606,68 +731,83 @@ public class WifiNetService extends Service implements Handler.Callback{
                             });
                             sb.delete(0,sb.length());
                         }else {
+                            //继续缓存数据
                             sb.append(new String(data,0,data.length));
                         }
                         data = null;
                     }
                 }
             }catch (Exception e) {
-                Log.e(TAG,"error in read from socket " + e.getMessage(),e);
+                Log.e(TAG, "error in read from socket " + e.getMessage(), e);
             }finally {
                 cancel();
             }
         }
 
         /**
+         * 根据收到的数据判断接下来的动作
          * @param data received data
          */
         private void parseReadData(String data) {
             JSONObject object = null;
+            if(callback == null) return;
             try{
+                //将字符串转换为Json
                 object = new JSONObject(data);
-                Log.e("readData", "have read some data" + object);
+                if(Constants.DEBUG) {
+                    Log.e("readData", "have read some data" + object);
+                }
                 String type = object.getString("msg");
                 switch (type) {
                     case GroupUtil.GROUP_BASEINFO:
-                        //received group base info
-                        if(callback == null) return;
+                        //组员接收到一个群主的信息
                         callback.readData(GroupUtil.GROUP_BASEINFO,object);
                         break;
                     case GroupUtil.REQUEST_GBI:
-                        //need send group owner info to connected device
-                        if(callback == null) return;
+                        //群主接收到一个组员的请求，要发送自己的信息给他
                         String info = callback.getGroupInfo(getId());
                         if(info == null) return;
+                        //发送自己的信息
                         writeMessage(info);
                         break;
                     case GroupUtil.CLOSE_SOCKET:
+                        //建组完毕或者群主取消了建组，则关闭所有的socket
                         cancel();
                         break;
                     case GroupUtil.MEMBER_BASEINFO:
-                        if(callback == null) return;
+                        //群主接收到一个组员的信息
                         object.put(GroupUtil.GROUP_MEMBER_ID,getId());
                         callback.readData(GroupUtil.MEMBER_BASEINFO,object);
                         break;
                     case GroupUtil.CANCEL_ADD:
-                        if(callback == null) return;
+                        //群主收到一个组成员取消加组的请求
                         callback.readData(GroupUtil.CANCEL_ADD,object);
-                        int closeId = -1;
+                        int closeId = -1;   //该成员的id
                         closeId = object.getInt(GroupUtil.GROUP_MEMBER_ID);
                         if(closeId != -1) {
                             WorkRunnabble closeRunnable = works.get(closeId-1);
                             if(closeRunnable.getId() == closeId) {
                                 closeRunnable.cancel();
-                                Log.e("CANCEL_ADD","cancel a member");
+                                if(Constants.DEBUG) {
+                                    Log.e("CANCEL_ADD","cancel a member");
+                                }
                             }
                         }
                         break;
                     case GroupUtil.CANCEL_CREATE:
-                        if(callback == null ) return;
+                        //群成员接收到群主撤销建组的请求
                         callback.readData(GroupUtil.CANCEL_CREATE,object);
                         break;
+                    case GroupUtil.RECEIVE_GROUP:
+                        //接收到一个成员收到整个群组消息的反馈
+                        callback.readData(GroupUtil.RECEIVE_GROUP,object);
+                        break;
                     default:
-                        if(callback == null ) return;
-                        callback.readData(GroupUtil.GROUP_FULL_INFO,object);
+                        //告诉群组已收到整个组的信息
+                        int mid = callback.getIdInCurrentGroup();
+                        writeMessage(GroupUtil.getWriteData(GroupUtil.RECEIVE_GROUP,mid,null));
+                        //群成员接收到群主发送的所有组成员的信息
+                        callback.readData(GroupUtil.GROUP_FULL_INFO, object);
                         break;
                 }
             }catch (Exception e) {
@@ -739,17 +879,17 @@ public class WifiNetService extends Service implements Handler.Callback{
             return this.reading;
         }
 
-        public int getId() {
+        public synchronized int getId() {
             return id;
         }
 
-        public void setId(int id) {
+        public synchronized void setId(int id) {
             this.id = id;
         }
     }
 
     /**
-     *  create and open a server socket
+     *  开启服务端socket
      */
     class OpenServerSocket implements Runnable {
 
@@ -758,7 +898,6 @@ public class WifiNetService extends Service implements Handler.Callback{
             try{
                 serverSocket = new ServerSocket(port);
                 while (!getEndAccept()) {
-                    Log.e(TAG, "waiting accept ...");
                     Socket socket  = serverSocket.accept();
                     WorkRunnabble work = new WorkRunnabble(socket,works.size()+1);
                     works.add(work);
@@ -822,7 +961,18 @@ public class WifiNetService extends Service implements Handler.Callback{
          */
         void socketConnectFailed(String ssid);
 
-        void sendGroupFinished();
+        /**
+         * 通知接口调用者群组信息已发送完毕
+         * @param counts 发送给了多少个成员
+         */
+        void sendGroupFinished(int counts);
+
+        /**
+         * 组员取得自己在当前组的id
+         * @return
+         */
+        int getIdInCurrentGroup();
+
     }
 
 }

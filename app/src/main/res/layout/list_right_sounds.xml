@@ -50,6 +50,7 @@
         android:layout_height="30dp"
         android:textSize="10dp"
         android:paddingEnd="3dp"
+        android:layout_marginLeft="20dp"
         android:layout_alignBottom="@id/tv_right_sounds"
         android:gravity="bottom|end"
         android:layout_toStartOf="@id/tv_right_sounds"/>

@@ -7,7 +7,7 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="50dp"
-        android:background="@color/blue_without_press"
+        android:background="@color/dark_blue"
         android:id="@+id/rl_top_home"
         >
 
@@ -63,6 +63,7 @@
         android:layout_below="@+id/tv_tip_home"
         android:listSelector="@android:color/transparent"
         android:divider="#000000"
+        android:background="@drawable/chatbackground"
         />
 
 
@@ -100,21 +101,23 @@
             android:gravity="center|start"
             android:background="@drawable/stroke_home_text"
             android:focusable="true"
+            android:visibility="invisible"
             />
 
-        <Button
-            android:layout_width="match_parent"
-            android:layout_height="30dp"
+        <ImageView
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="20dp"
             android:id="@+id/btn_sounds"
-            android:layout_toEndOf="@+id/img_sounds_text"
-            android:layout_toStartOf="@+id/img_face"
+            android:layout_centerHorizontal="true"
             android:gravity="center"
             android:layout_centerVertical="true"
-            android:text="@string/touch_send_sounds"
             android:textSize="15dp"
-            android:textColor="@color/white"
-            android:background="@drawable/touch_with_stroke"
-            android:visibility="invisible"
+            android:scaleType="centerInside"
+            android:src="@drawable/send_button"
+            android:background="#0fff"
+            android:visibility="visible"
             />
 
         <ImageView
@@ -162,7 +165,7 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="142dp"
         android:id="@+id/rl_home_imgs_address"
         android:layout_above="@+id/vp_home_expression"
         android:paddingStart="40dp"
@@ -177,6 +180,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
+            android:layout_gravity="center"
             android:layout_weight="1">
 
             <ImageView
@@ -228,6 +232,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
+            android:layout_gravity="center"
             android:layout_weight="1">
 
             <ImageView

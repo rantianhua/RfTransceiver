@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:padding="16dp">
+    android:paddingTop="16dp"
+    android:paddingBottom="16dp"
+    android:background="#eee">
 
     <View
         android:layout_width="match_parent"
-        android:layout_height="0.5dp"
+        android:layout_height="1px"
         android:id="@+id/view_line_setting_1"
-        android:background="@color/dark_blue"
         />
 
     <RelativeLayout
@@ -15,7 +16,9 @@
         android:layout_height="wrap_content"
         android:id="@+id/rl_personal_setting"
         android:layout_below="@+id/view_line_setting_1"
-        android:layout_marginTop="10dp">
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:background="@color/white">
 
         <ImageView
             android:layout_width="70dp"
@@ -23,6 +26,7 @@
             android:id="@+id/img_photo_setting"
             android:layout_centerVertical="true"
             android:scaleType="centerCrop"
+            android:layout_marginStart="10dp"
             />
 
         <TextView
@@ -43,160 +47,53 @@
             android:layout_centerVertical="true"
             android:layout_alignParentEnd="true"
             android:src="@drawable/right"
+            android:layout_marginEnd="10dp"
             />
 
     </RelativeLayout>
 
     <View
         android:layout_width="match_parent"
-        android:layout_height="0.5dp"
-        android:id="@+id/view_line_setting_2"
-        android:background="@color/dark_blue"
+        android:layout_height="1px"
+        android:background="@android:color/darker_gray"
         android:layout_below="@+id/rl_personal_setting"
-        android:layout_marginTop="10dp"
         />
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="0.5dp"
-        android:id="@+id/view_line_setting_3"
-        android:background="@color/dark_blue"
-        android:layout_below="@+id/view_line_setting_2"
-        android:layout_marginTop="60dp"
-        />
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/rl_save_sounds_setting"
-        android:layout_below="@+id/view_line_setting_3"
-        android:layout_marginTop="10dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/tv_save_sounds"
-            android:layout_centerVertical="true"
-            android:textSize="18sp"
-            android:textColor="@android:color/black"
-            android:gravity="center"
-            android:text="@string/save_sounds_data"
-            />
-        
-        <ImageView
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:padding="10dp"
-            android:background="@android:color/transparent"
-            android:src="@drawable/switch_img"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:id="@+id/img_switch_sounds"/>
-
-    </RelativeLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="0.5dp"
-        android:id="@+id/view_line_setting_4"
-        android:background="@color/dark_blue"
-        android:layout_below="@+id/rl_save_sounds_setting"
-        android:layout_marginTop="10dp"
-        />
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="0.5dp"
-        android:id="@+id/view_line_setting_5"
-        android:background="@color/dark_blue"
-        android:layout_below="@+id/view_line_setting_4"
-        android:layout_marginTop="60dp"
-        />
 
     <TextView
+        android:id="@+id/tv_cleanCache"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="10dp"
-        android:paddingBottom="10dp"
+        android:layout_below="@id/rl_personal_setting"
+        android:layout_marginTop="10dp"
+        android:text="清除缓存"
         android:gravity="start|center_vertical"
-        android:textColor="@android:color/black"
-        android:textSize="18sp"
-        android:layout_below="@+id/view_line_setting_5"
-        android:text="@string/choose_channel"
-        android:id="@+id/tv_change_channel"
-        android:background="@drawable/click_with_color"
-        />
+        android:textSize="20dp"
+        android:paddingStart="5dp"
+        android:paddingEnd="5dp"
+        android:padding="10dp"
+        android:background="@color/white"
+        android:textColor="@android:color/black"/>
 
     <TextView
+        android:id="@+id/tv_cache_size"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/tv_change_channel"
-        android:layout_alignTop="@+id/tv_change_channel"
+        android:textSize="17dp"
+        android:textColor="@android:color/black"
+        android:text="123"
+        android:gravity="right"
+        android:layout_alignBaseline="@id/tv_cleanCache"
         android:layout_alignParentEnd="true"
-        android:layout_marginEnd="10dp"
-        android:id="@+id/tv_current_channel"
-        android:gravity="center"/>
+        android:layout_marginEnd="10dp"/>
 
     <View
         android:layout_width="match_parent"
-        android:layout_height="0.5dp"
-        android:id="@+id/view_line_setting_6"
-        android:background="@color/dark_blue"
-        android:layout_below="@+id/tv_change_channel"
+        android:layout_height="1px"
+        android:background="@android:color/darker_gray"
+        android:layout_below="@+id/tv_cleanCache"
         />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingTop="10dp"
-        android:paddingBottom="10dp"
-        android:gravity="start|center_vertical"
-        android:textColor="@android:color/black"
-        android:textSize="18sp"
-        android:layout_below="@+id/view_line_setting_6"
-        android:text="@string/clear_cache"
-        android:id="@+id/tv_clear_cache"
-        android:background="@drawable/click_with_color"
-        />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_alignBottom="@+id/tv_change_channel"
-        android:layout_alignTop="@+id/tv_change_channel"
-        android:textColor="@android:color/black"
-        android:gravity="center"
-        android:id="@+id/tv_cache_size"/>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="0.5dp"
-        android:id="@+id/view_line_setting_7"
-        android:background="@color/dark_blue"
-        android:layout_below="@+id/tv_clear_cache"
-        />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingTop="10dp"
-        android:paddingBottom="10dp"
-        android:gravity="start|center_vertical"
-        android:textColor="@android:color/black"
-        android:textSize="18sp"
-        android:layout_below="@+id/view_line_setting_7"
-        android:text="@string/about"
-        android:id="@+id/tv_about"
-        android:background="@drawable/click_with_color"
-        />
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="0.5dp"
-        android:id="@+id/view_line_setting_8"
-        android:background="@color/dark_blue"
-        android:layout_below="@+id/tv_about"
-        />
 
 </RelativeLayout>

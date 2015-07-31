@@ -43,29 +43,29 @@
 
             <View
                 android:layout_width="match_parent"
-                android:layout_height="0.5dp"
+                android:layout_height="1px"
                 android:id="@+id/line_menu_1"
                 android:layout_below="@+id/tv_menu_name"
                 android:layout_marginTop="12dp"
-                android:background="@color/white"
+                android:background="@android:color/darker_gray"
                 />
 
             <View
-                android:layout_width="0.5dp"
-                android:layout_height="30dp"
+                android:layout_width="1px"
+                android:layout_height="40dp"
                 android:id="@+id/line_menu_2"
                 android:layout_below="@+id/line_menu_1"
-                android:layout_marginTop="5dp"
                 android:layout_centerHorizontal="true"
-                android:background="@color/white"
+                android:background="@android:color/darker_gray"
                 />
 
             <TextView
                 android:layout_width="match_parent"
-                android:layout_height="30dp"
+                android:layout_height="40dp"
                 android:layout_alignBottom="@+id/line_menu_2"
                 android:layout_toStartOf="@+id/line_menu_2"
                 android:text="@string/create_group"
+                android:textSize="18dp"
                 android:textColor="@color/white"
                 android:id="@+id/tv_menu_create_group"
                 android:gravity="center"
@@ -74,10 +74,11 @@
 
             <TextView
                 android:layout_width="match_parent"
-                android:layout_height="30dp"
+                android:layout_height="40dp"
                 android:layout_alignBottom="@+id/line_menu_2"
                 android:textColor="@color/white"
                 android:text="@string/add_group"
+                android:textSize="18dp"
                 android:id="@+id/tv_menu_add_group"
                 android:layout_toEndOf="@+id/line_menu_2"
                 android:gravity="center"
@@ -86,11 +87,10 @@
 
             <View
                 android:layout_width="match_parent"
-                android:layout_height="0.5dp"
+                android:layout_height="1px"
                 android:id="@+id/line_menu_3"
                 android:layout_below="@+id/line_menu_2"
-                android:layout_marginTop="5dp"
-                android:background="@color/white"
+                android:background="@android:color/darker_gray"
                 />
 
             <ImageView
@@ -108,9 +108,10 @@
                 android:gravity="start|center_vertical"
                 android:id="@+id/tv_menu_interphone"
                 android:layout_below="@+id/line_menu_3"
-                android:layout_marginTop="20dp"
+                android:layout_marginTop="0dp"
                 android:textColor="@color/white"
                 android:text="@string/interphone"
+                android:textSize="18dp"
                 android:paddingStart="40dp"
                 android:paddingEnd="0dp"
                 android:background="@drawable/click_with_color"
@@ -118,9 +119,10 @@
 
             <View
                 android:layout_width="match_parent"
-                android:layout_height="0.5dp"
-                android:background="@color/white"
+                android:layout_height="1px"
+                android:background="@android:color/darker_gray"
                 android:id="@+id/line_menu_4"
+                android:layout_marginLeft="40dp"
                 android:layout_below="@+id/tv_menu_interphone"/>
 
             <ImageView
@@ -140,6 +142,7 @@
                 android:layout_below="@+id/line_menu_4"
                 android:textColor="@color/white"
                 android:text="@string/contacts"
+                android:textSize="18dp"
                 android:paddingStart="40dp"
                 android:paddingEnd="0dp"
                 android:background="@drawable/click_with_color"
@@ -147,9 +150,10 @@
 
             <View
                 android:layout_width="match_parent"
-                android:layout_height="0.5dp"
-                android:background="@color/white"
+                android:layout_height="1px"
+                android:background="@android:color/darker_gray"
                 android:id="@+id/line_menu_5"
+                android:layout_marginLeft="40dp"
                 android:layout_below="@+id/tv_menu_contacts"/>
 
             <ImageView
@@ -169,6 +173,7 @@
                 android:layout_below="@+id/line_menu_5"
                 android:textColor="@color/white"
                 android:text="@string/my_device"
+                android:textSize="18dp"
                 android:paddingStart="40dp"
                 android:paddingEnd="0dp"
                 android:background="@drawable/click_with_color"
@@ -176,8 +181,8 @@
 
             <View
                 android:layout_width="match_parent"
-                android:layout_height="0.5dp"
-                android:background="@color/white"
+                android:layout_height="1px"
+                android:background="@android:color/darker_gray"
                 android:id="@+id/line_menu_6"
                 android:layout_below="@+id/tv_menu_my_device"/>
 
@@ -203,6 +208,7 @@
             android:layout_centerVertical="true"
             android:padding="10dp"
             android:src="@drawable/setting"
+            android:alpha="0.8"
             />
 
         <TextView
@@ -214,6 +220,7 @@
             android:id="@+id/tv_menu_setting"
             android:textColor="@color/white_with_gray"
             android:text="@string/setting"
+            android:alpha="0.8"
             android:layout_centerVertical="true"
             android:paddingStart="48dp"
             android:paddingEnd="5dp"
@@ -230,7 +237,8 @@
             android:layout_alignParentEnd="true"
             android:textStyle="bold"
             android:paddingStart="48dp"
-            android:paddingEnd="0dp"
+            android:paddingEnd="15dp"
+            android:alpha="0.8"
             />
 
         <ImageView
@@ -241,6 +249,7 @@
             android:src="@drawable/exit"
             android:padding="10dp"
             android:layout_alignStart="@+id/tv_menu_exit"
+            android:alpha="0.8"
             />
 
     </RelativeLayout>

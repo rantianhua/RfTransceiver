@@ -20,6 +20,7 @@
         android:layout_toStartOf="@+id/tv_input_length"
         android:layout_centerVertical="true"
         android:id="@+id/et_limit_input"
+        android:textColorHint="#999"
         />
 
     <ImageView
