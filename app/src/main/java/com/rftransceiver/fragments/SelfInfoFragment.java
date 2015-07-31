@@ -55,6 +55,10 @@ public class SelfInfoFragment extends Fragment {
         content = (RelativeLayout) inflater.inflate(R.layout.fragment_selfnfo,container,false);
         dwClean = getResources().getDrawable(R.drawable.cancel1);
         dwEdit = getResources().getDrawable(R.drawable.pen);
+        BitmapFactory.Options op = new BitmapFactory.Options();
+        op.inSampleSize = 4;
+        Bitmap backGround = BitmapFactory.decodeResource(getResources(),R.drawable.chatbackground,op);
+        content.setBackground(new BitmapDrawable(backGround));
         initVierw(content);
         initEvent();
         return content;
