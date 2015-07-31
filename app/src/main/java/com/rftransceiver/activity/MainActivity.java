@@ -15,6 +15,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -41,6 +42,7 @@ import com.rftransceiver.fragments.ContactsFragment;
 import com.rftransceiver.fragments.HomeFragment;
 import com.rftransceiver.fragments.LoadDialogFragment;
 import com.rftransceiver.fragments.MyDeviceFragment;
+import com.rftransceiver.fragments.SelfInfoFragment;
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.ImageUtil;
@@ -90,8 +92,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private long preTime;
     //接受的消息时长的终止时间
     private long curTime;
-    //接收语音消息的时长
-    private long seconds;
     //管理蓝牙的服务
     private BleService bleService;
     //接收异步线程的消息
@@ -110,6 +110,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private BindDeviceFragment bindDeviceFragment;
     //对讲机
     private HomeFragment homeFragment;
+    //个人中心fragment
+    private SelfInfoFragment selfInfoFragment;
     //我的设备
     private MyDeviceFragment myDeviceFragment;
     //通讯录
@@ -149,7 +151,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
         HF, //请求来自与HomeFragment
         BF //请求来自与BindDeviceFragment
     }
-
     /**
      * 当BleService绑定成功或者绑定失败的时候回调
      */
@@ -193,7 +194,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
                             homeFragment.bleOpend();
                         }
                         if(bindDeviceFragment != null) {
-                            Log.e("hhhhhhhh","kkkkkkkkkkkkkk");
                             bindDeviceFragment.bleOpend();
                         }
                         if(unBind && myDeviceFragment != null) {
@@ -207,6 +207,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
     };
 
     public static int CURRENT_CHANNEL = 0;
+
+    //自己的头像
+    private Drawable dwHead;
+    //自己的昵称
+    private String name;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -288,6 +293,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     private void  initEvent(){
+        imgPhoto.setOnClickListener(this);
         tvAddGroup.setOnClickListener(this);
         tvCreateGruop.setOnClickListener(this);
         tvMyDevice.setOnClickListener(this);
@@ -304,7 +310,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private void changeFragment(Fragment fragment) {
         FragmentTransaction transaction = getFragmentManager().beginTransaction();
         transaction.replace(R.id.frame_content, fragment);
-        if(fragment instanceof MyDeviceFragment || fragment instanceof ContactsFragment) {
+        if(fragment instanceof MyDeviceFragment || fragment instanceof ContactsFragment
+                || fragment instanceof SelfInfoFragment) {
             transaction.addToBackStack(null);
         }
         transaction.commitAllowingStateLoss();
@@ -402,6 +409,14 @@ public class MainActivity extends Activity implements View.OnClickListener,
         }
     }
 
+    /**
+     * 实例化SelfInfoFragment对象，并设置其头像与名字
+     */
+    private void initSelfInfoFragment(){
+        selfInfoFragment = new SelfInfoFragment();
+        selfInfoFragment.setHead(dwHead);
+        selfInfoFragment.setName(name);
+    }
     /**
      * 实例化MyDeviceFragment对象，实例化后为其设置回调接口
      */
@@ -578,10 +593,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
                         showToast(msg.getData().getString(Constants.TOAST));
                         break;
                     case Constants.GET_BITMAP:
-                        Bitmap bitmap = (Bitmap) msg.obj;
-                        if(bitmap != null) {
-                            imgPhoto.setImageDrawable(new CircleImageDrawable(
-                                    bitmap));
+                        Bitmap bmHead = (Bitmap) msg.obj;
+                        if(bmHead  != null) {
+                            dwHead = new CircleImageDrawable(bmHead);
+                            imgPhoto.setImageDrawable(dwHead);
                         }
                         break;
                     case Constants.HANDLE_SEND:
@@ -756,6 +771,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
     @Override
     public void onClick(View v) {
         switch (v.getId()){
+            case R.id.img_menu_photo:
+                initSelfInfoFragment();
+                changeFragment(selfInfoFragment);
+                lockerView.closeMenu();
+                break;
             case R.id.tv_menu_add_group:
                 groupAction(1);
                 break;
