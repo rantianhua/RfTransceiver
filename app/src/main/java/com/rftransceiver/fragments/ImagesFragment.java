@@ -302,7 +302,9 @@ public class ImagesFragment extends Fragment implements ImageDirsPopWindow.OnPic
     @Override
     public void onDestroy() {
         super.onDestroy();
-        imageDirsPopWindow.setPictureDirSelected(null);
+        if(imageDirsPopWindow != null) {
+            imageDirsPopWindow.setPictureDirSelected(null);
+        }
         imageDirsPopWindow = null;
         imageFolders = null;
         adapter = null;

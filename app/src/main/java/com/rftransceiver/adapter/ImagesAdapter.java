@@ -17,7 +17,15 @@ import java.util.List;
 public class ImagesAdapter extends CommonAdapter {
 
     private String dirPath; //the path of folder
+    private boolean canTake;    //标识是否可以拍照
 
+    /**
+     *
+     * @param dirPath     图片目录
+     * @param datas 图片路径
+     * @param context
+     * @param layoutId  布局iid
+     */
     public ImagesAdapter(String dirPath,List<String> datas,Context context,int layoutId) {
         super(context,datas,layoutId);
         this.dirPath = dirPath;

@@ -6,6 +6,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
@@ -13,10 +14,12 @@ import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.Image;
 import android.media.SoundPool;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
@@ -63,6 +66,7 @@ import com.rftransceiver.util.PoolThreadUtil;
 
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -510,6 +514,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         imgPicture.setOnClickListener(this);
         imgAddress.setOnClickListener(this);
         imgFace.setOnClickListener(this);
+        imgShoot.setOnClickListener(this);
         etSendMessage.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i2, int i3) {
@@ -715,16 +720,18 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                 }
                 break;
             case R.id.img_home_shoot:
-                //want to take picture
-
+                //拍照发送
+                openCamera();
+                break;
             case R.id.img_home_picture:
                 //want to send picture
-                ImagesFragment imagesFragment = ImagesFragment.getInstance(REQUEST_HOME);
-                imagesFragment.setTargetFragment(HomeFragment.this,REQUEST_HOME);
-                getFragmentManager().beginTransaction().replace(R.id.frame_content,
-                        imagesFragment)
-                        .addToBackStack(null)
-                        .commit();
+//                ImagesFragment imagesFragment = ImagesFragment.getInstance(REQUEST_HOME);
+//                imagesFragment.setTargetFragment(HomeFragment.this,REQUEST_HOME);
+//                getFragmentManager().beginTransaction().replace(R.id.frame_content,
+//                        imagesFragment)
+//                        .addToBackStack(null)
+//                        .commit();
+                openCapture();
                 break;
             case R.id.img_home_address:
                 //want to send address
@@ -734,6 +741,17 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                 break;
             default:
                 break;
+        }
+    }
+
+    /**
+     * 打开系统图库
+     */
+    private void openCapture() {
+        Intent i = new Intent(
+                Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        if(i.resolveActivity(getActivity().getPackageManager()) != null) {
+            startActivityForResult(i, RESULT_LOAD_IMAGE);
         }
     }
 
@@ -1124,13 +1142,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             GroupUtil.saveCurrentGid(gid,getActivity().getSharedPreferences(Constants.SP_USER,0));
         }
     }
-    //删除正在聊天的组
-//    public void deleteNowGroup(int gid){
-//        if(gid == currentGroupId) return;
-//        dataLists.clear();
-//        conversationAdapter.updateData(dataLists);
-//        groupEntity = null;
-//    }
 
     public interface CallbackInHomeFragment {
         /**
@@ -1210,7 +1221,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             public void run() {
                 GroupEntity ge = dbManager.getAgroup(gid);
                 if (ge != null) {
-                    mainHandler.obtainMessage(LOAD_GROUP,-1,-1,ge).sendToTarget();
+                    mainHandler.obtainMessage(LOAD_GROUP, -1, -1, ge).sendToTarget();
                     loadConverationData(gid, ge.getTempId(), -1, 20, false);
                 }
             }
@@ -1267,46 +1278,66 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         });
     }
 
+    //打开相机拍照
+    private String takePath;    //拍照图片的存储路径
+    private void openCamera() {
+        Intent takePicture = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        //ensure the process can handle with the return intent
+        if(takePicture.resolveActivity(getActivity().getPackageManager()) != null) {
+            takePath = getActivity().getExternalFilesDir(null) +"/" + System.currentTimeMillis() + ".jpg";
+            Uri imageUri = Uri.fromFile(new File(takePath));
+            takePicture.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+            startActivityForResult(takePicture, REQUEST_IMAGE_CPTURE);
+        }
+    }
+
+    /**
+     * 压缩图片并发送
+     */
+    private void getImageToSend() {
+        PoolThreadUtil.getInstance().addTask(new Runnable() {
+            @Override
+            public void run() {
+                Bitmap bitmap = ImageUtil.createImageThumbnail(sendImgagePath,imgSendSize);
+                if(bitmap == null) return;
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                int options = 100;
+                bitmap.compress(Bitmap.CompressFormat.PNG,options,outputStream);
+                while (outputStream.toByteArray().length / 1024 > 60) {
+                    outputStream.reset();
+                    options -= 10;
+                    bitmap.compress(Bitmap.CompressFormat.PNG,options,outputStream);
+                }
+                final String imgData = Base64.encodeToString(outputStream.toByteArray(),Base64.DEFAULT);
+                if(callback != null) {
+                    mainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            callback.send(MainActivity.SendAction.Image, imgData);
+                        }
+                    });
+                }
+            }
+        });
+    }
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(requestCode == REQUEST_HOME && resultCode == Activity.RESULT_CANCELED && data != null) {
+        if (requestCode == REQUEST_HOME && resultCode == Activity.RESULT_CANCELED && data != null) {
             getFragmentManager().popBackStackImmediate();
             sendImgagePath = data.getStringExtra(Constants.PHOTO_PATH);
-            if(sendImgagePath == null) return;
-            PoolThreadUtil.getInstance().addTask(new Runnable() {
-                @Override
-                public void run() {
-                    Bitmap bitmap = ImageUtil.createImageThumbnail(sendImgagePath,imgSendSize);
-                    if(bitmap == null) return;
-                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                    int options = 100;
-                    bitmap.compress(Bitmap.CompressFormat.PNG,options,outputStream);
-                    while (outputStream.toByteArray().length / 1024 > 60) {
-                        outputStream.reset();
-                        options -= 10;
-                        bitmap.compress(Bitmap.CompressFormat.PNG,options,outputStream);
-                    }
-                    final String imgData = Base64.encodeToString(outputStream.toByteArray(),Base64.DEFAULT);
-                    if(callback != null) {
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                callback.send(MainActivity.SendAction.Image, imgData);
-                            }
-                        });
-                    }
-                }
-            });
-        }else if(requestCode == REQUEST_CONTEXT_MENU) {
+            if (sendImgagePath == null) return;
+            getImageToSend();
+        } else if (requestCode == REQUEST_CONTEXT_MENU) {
             switch (resultCode) {
                 case 1:
                     //to look group
-                    if(groupEntity != null && groupEntity.getMembers().size() > 0) {
-                        if(callback != null) {
+                    if (groupEntity != null && groupEntity.getMembers().size() > 0) {
+                        if (callback != null) {
                             callback.openScroll(false);
                         }
                         Fragment groupFragment = GroupDetailFragment.getInstance(groupEntity);
-                        groupFragment.setTargetFragment(HomeFragment.this,REQUEST_GROUP_DETAIL);
+                        groupFragment.setTargetFragment(HomeFragment.this, REQUEST_GROUP_DETAIL);
                         getFragmentManager().beginTransaction().replace(R.id.frame_content,
                                 groupFragment)
                                 .addToBackStack(null)
@@ -1317,7 +1348,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                     //unplay sounds
                     break;
             }
-        }else if(requestCode == REQUEST_GROUP_DETAIL) {
+        } else if (requestCode == REQUEST_GROUP_DETAIL) {
             switch (resultCode) {
                 case 0:
                     //clear chat records
@@ -1328,9 +1359,31 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                     break;
                 case 1:
                     //open scroll
-                    if(callback != null) callback.openScroll(true);
+                    if (callback != null) callback.openScroll(true);
                     break;
             }
+        } else if (requestCode == REQUEST_IMAGE_CPTURE && resultCode == Activity.RESULT_OK) {
+            sendImgagePath = takePath;
+            if (sendImgagePath == null) return;
+            getImageToSend();
+        } else if (requestCode == RESULT_LOAD_IMAGE && resultCode == Activity.RESULT_OK && null != data) {
+            try {
+                Uri selectedImage = data.getData();
+                String[] filePathColumn = { MediaStore.Images.Media.DATA };
+                Cursor cursor = getActivity().getContentResolver().query(selectedImage,
+                        filePathColumn, null, null, null);
+                cursor.moveToFirst();
+                int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                String picturePath = cursor.getString(columnIndex);
+                cursor.close();
+                if(picturePath != null) {
+                    sendImgagePath = picturePath;
+                    getImageToSend();
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+
         }
         else {
             super.onActivityResult(requestCode, resultCode, data);
@@ -1361,6 +1414,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     public static final int REQUEST_HOME = 303;
     public static final int REQUEST_CONTEXT_MENU = 304;
     public static final int REQUEST_GROUP_DETAIL = 305;
+    public static final int REQUEST_IMAGE_CPTURE = 306; //请求拍照
+    public static final int RESULT_LOAD_IMAGE = 307;    //请求系统图库
     public static final String EXTRA_LOCATION = "address";
     public static final int LOAD_GROUP = 0; //加载到一个组
     public static final int CHANGE_GROUP = 1;   //改变组

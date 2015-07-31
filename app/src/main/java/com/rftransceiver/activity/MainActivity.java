@@ -43,7 +43,6 @@ import com.rftransceiver.fragments.ContactsFragment;
 import com.rftransceiver.fragments.HomeFragment;
 import com.rftransceiver.fragments.LoadDialogFragment;
 import com.rftransceiver.fragments.MyDeviceFragment;
-import com.rftransceiver.fragments.SelfInfoFragment;
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.ImageUtil;
@@ -111,8 +110,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private BindDeviceFragment bindDeviceFragment;
     //对讲机
     private HomeFragment homeFragment;
-    //个人中心fragment
-    private SelfInfoFragment selfInfoFragment;
     //我的设备
     private MyDeviceFragment myDeviceFragment;
     //通讯录
@@ -145,7 +142,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     //我在组里的id
     private int myId;
     public static final int REQUEST_GROUP = 301;    //获取组信息的请求代码，用于GroupActivity
-    public static final int REQUEST_CHANGECHANNEL = 305;    //修改信道的请求代码
+    public static final int REQUEST_SETTING = 306; //设置的请求代码
     //区分请求绑定设备的来源
     private BineDeviceFrom bindFrom;
     private enum BineDeviceFrom {
@@ -210,7 +207,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     public static int CURRENT_CHANNEL = 0;
 
     //自己的头像
-    private Drawable dwHead;
+    private Bitmap bitmapHead;
     //自己的昵称
     private String name;
 
@@ -251,7 +248,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
 //        }, 100);
         //设置媒体音量最大
         AudioManager audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC),AudioManager.FLAG_SHOW_UI);
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), AudioManager.FLAG_SHOW_UI);
     }
 
     //初始化视图
@@ -313,8 +310,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private void changeFragment(Fragment fragment) {
         FragmentTransaction transaction = getFragmentManager().beginTransaction();
         transaction.replace(R.id.frame_content, fragment);
-        if(fragment instanceof MyDeviceFragment || fragment instanceof ContactsFragment
-                || fragment instanceof SelfInfoFragment) {
+        if(fragment instanceof MyDeviceFragment || fragment instanceof ContactsFragment) {
             transaction.addToBackStack(null);
         }
         transaction.commitAllowingStateLoss();
@@ -407,14 +403,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
         }
     }
 
-    /**
-     * 实例化SelfInfoFragment对象，并设置其头像与名字
-     */
-    private void initSelfInfoFragment(){
-        selfInfoFragment = new SelfInfoFragment();
-        selfInfoFragment.setHead(dwHead);
-        selfInfoFragment.setName(name);
-    }
     /**
      * 实例化MyDeviceFragment对象，实例化后为其设置回调接口
      */
@@ -591,10 +579,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
                         showToast(msg.getData().getString(Constants.TOAST));
                         break;
                     case Constants.GET_BITMAP:
-                        Bitmap bmHead = (Bitmap) msg.obj;
-                        if(bmHead  != null) {
-                            dwHead = new CircleImageDrawable(bmHead);
-                            imgPhoto.setImageDrawable(dwHead);
+                        bitmapHead = (Bitmap) msg.obj;
+                        if(bitmapHead  != null) {
+                            Drawable drawable = new CircleImageDrawable(bitmapHead);
+                            imgPhoto.setImageDrawable(drawable);
                         }
                         break;
                     case Constants.HANDLE_SEND:
@@ -770,9 +758,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     public void onClick(View v) {
         switch (v.getId()){
             case R.id.img_menu_photo:
-                initSelfInfoFragment();
-                changeFragment(selfInfoFragment);
-                lockerView.closeMenu();
+                showPersonal();
                 break;
             case R.id.tv_menu_add_group:
                 groupAction(1);
@@ -790,7 +776,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                 break;
             case R.id.tv_menu_setting:
                 startActivityForResult(new Intent(MainActivity.this,
-                        SettingActivity.class), REQUEST_CHANGECHANNEL);
+                        SettingActivity.class), REQUEST_SETTING);
                 break;
             case R.id.tv_menu_exit:
                 MainActivity.this.finish();
@@ -801,6 +787,21 @@ public class MainActivity extends Activity implements View.OnClickListener,
                 lockerView.closeMenu();
                 break;
         }
+    }
+
+    /**
+     * 展示个人中心的方法
+     */
+    private void showPersonal() {
+        Intent intent = new Intent();
+        intent.setClass(this,PersonalActivity.class);
+        intent.putExtra("name", name);
+        if(bitmapHead != null) {
+            Bundle bundle = new Bundle();
+            bundle.putParcelable("bitmap",bitmapHead);
+            intent.putExtra("bitmap",bundle);
+        }
+        startActivity(intent);
     }
 
     /**
@@ -1084,11 +1085,15 @@ public class MainActivity extends Activity implements View.OnClickListener,
             String address = data.getStringExtra(HomeFragment.EXTRA_LOCATION);
             if(!TextUtils.isEmpty(address))
                 send(SendAction.Address,address);
-        }else if(requestCode == REQUEST_CHANGECHANNEL && resultCode == Activity.RESULT_OK
-                && data != null) {
-            int channel = data.getIntExtra(Constants.SELECTED_CHANNEL, -1);
-            if(channel == -1) return;
-            changeChanel((byte)channel);
+        }else if(requestCode == REQUEST_SETTING && data != null) {
+            String newName = data.getStringExtra("name");
+            if(!TextUtils.isEmpty(name)) {
+                name = newName;
+                tvName.setText(newName);
+                SharedPreferences.Editor editor = sp.edit();
+                editor.putString(Constants.NICKNAME,newName);
+                editor.apply();
+            }
         }
         else {
             super.onActivityResult(requestCode, resultCode, data);
