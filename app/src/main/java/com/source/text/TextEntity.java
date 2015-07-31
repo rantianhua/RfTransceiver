@@ -226,4 +226,11 @@ public class TextEntity implements Runnable{
             realDataLen = (options.getLength()-1-options.getOffset());
         }
     }
+
+    /**
+     * 关闭正在进行的发送
+     */
+    public void close() {
+        setAddImageData(false);
+    }
 }

@@ -46,7 +46,6 @@ public class ListConversationAdapter extends BaseAdapter{
     private List<ConversationData> listData = new ArrayList<>();
     private LayoutInflater inflater = null;
     private FragmentManager fm;
-    private TextView tvImgProgress;
     private Map<Integer,RelativeLayout> soundTimeList = new HashMap<>();
 
     AnimationDrawable soundPlayAnim;
@@ -160,7 +159,12 @@ public class ListConversationAdapter extends BaseAdapter{
                 if(data.getBitmap() != null) {
                     hodler.imgData.setImageBitmap(data.getBitmap());
                 }
-                tvImgProgress = hodler.tvImgProgress;
+                if(data.getPercent() > 0 && data.getPercent() < 100) {
+                    hodler.tvImgProgress.setVisibility(View.VISIBLE);
+                    hodler.tvImgProgress.setText(data.getPercent() + "%");
+                }else {
+                    hodler.tvImgProgress.setVisibility(View.INVISIBLE);
+                }
                 break;
             case LEFT_ADDRESS:
             case RIGHT_ADDRESS:
@@ -193,16 +197,6 @@ public class ListConversationAdapter extends BaseAdapter{
 
         return convertView;
     }
-
-    public void updateImgageProgress(int percent) {
-        if(tvImgProgress != null && tvImgProgress.getVisibility() == View.VISIBLE) {
-            tvImgProgress.setText(percent + "%");
-            if(percent == 100) {
-                tvImgProgress.setVisibility(View.INVISIBLE);
-            }
-        }
-    }
-
     /**
      * update data source
      * @param dataLists

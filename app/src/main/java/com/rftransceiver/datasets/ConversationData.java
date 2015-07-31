@@ -51,6 +51,8 @@ public class ConversationData {
      */
     private int mid;
     private long soundsTime;
+    // 发送图片的进度
+    private int percent;
 
     public ConversationData(ListConversationAdapter.ConversationType type) {
         setConversationType(type);
@@ -75,6 +77,14 @@ public class ConversationData {
         if(bitmap != null) {
             setPhotoDrawable(bitmap);
         }
+    }
+
+    public int getPercent() {
+        return percent;
+    }
+
+    public void setPercent(int percent) {
+        this.percent = percent;
     }
 
     public ListConversationAdapter.ConversationType getConversationType() {
