@@ -43,26 +43,25 @@
 
             <View
                 android:layout_width="match_parent"
-                android:layout_height="0.5dp"
+                android:layout_height="1px"
                 android:id="@+id/line_menu_1"
                 android:layout_below="@+id/tv_menu_name"
                 android:layout_marginTop="12dp"
-                android:background="@color/white"
+                android:background="@android:color/darker_gray"
                 />
 
             <View
-                android:layout_width="0.5dp"
-                android:layout_height="30dp"
+                android:layout_width="1px"
+                android:layout_height="40dp"
                 android:id="@+id/line_menu_2"
                 android:layout_below="@+id/line_menu_1"
-                android:layout_marginTop="5dp"
                 android:layout_centerHorizontal="true"
-                android:background="@color/white"
+                android:background="@android:color/darker_gray"
                 />
 
             <TextView
                 android:layout_width="match_parent"
-                android:layout_height="30dp"
+                android:layout_height="40dp"
                 android:layout_alignBottom="@+id/line_menu_2"
                 android:layout_toStartOf="@+id/line_menu_2"
                 android:text="@string/create_group"
@@ -75,7 +74,7 @@
 
             <TextView
                 android:layout_width="match_parent"
-                android:layout_height="30dp"
+                android:layout_height="40dp"
                 android:layout_alignBottom="@+id/line_menu_2"
                 android:textColor="@color/white"
                 android:text="@string/add_group"
@@ -88,11 +87,10 @@
 
             <View
                 android:layout_width="match_parent"
-                android:layout_height="0.5dp"
+                android:layout_height="1px"
                 android:id="@+id/line_menu_3"
                 android:layout_below="@+id/line_menu_2"
-                android:layout_marginTop="5dp"
-                android:background="@color/white"
+                android:background="@android:color/darker_gray"
                 />
 
             <ImageView
@@ -121,9 +119,10 @@
 
             <View
                 android:layout_width="match_parent"
-                android:layout_height="0.5dp"
-                android:background="@color/white"
+                android:layout_height="1px"
+                android:background="@android:color/darker_gray"
                 android:id="@+id/line_menu_4"
+                android:layout_marginLeft="40dp"
                 android:layout_below="@+id/tv_menu_interphone"/>
 
             <ImageView
@@ -151,9 +150,10 @@
 
             <View
                 android:layout_width="match_parent"
-                android:layout_height="0.5dp"
-                android:background="@color/white"
+                android:layout_height="1px"
+                android:background="@android:color/darker_gray"
                 android:id="@+id/line_menu_5"
+                android:layout_marginLeft="40dp"
                 android:layout_below="@+id/tv_menu_contacts"/>
 
             <ImageView
@@ -181,8 +181,8 @@
 
             <View
                 android:layout_width="match_parent"
-                android:layout_height="0.5dp"
-                android:background="@color/white"
+                android:layout_height="1px"
+                android:background="@android:color/darker_gray"
                 android:id="@+id/line_menu_6"
                 android:layout_below="@+id/tv_menu_my_device"/>
 

@@ -22,15 +22,13 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.rftransceiver.R;
-import com.rftransceiver.db.DBManager;
 
-import java.util.HashMap;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 
 /**
- * Created by Administrator on 2015/7/30.
+ * Created by Wuyang on 2015/7/30.
  */
 public class SelfInfoFragment extends Fragment {
 
@@ -41,11 +39,10 @@ public class SelfInfoFragment extends Fragment {
     @InjectView(R.id.btn_confirm_selfinfo)
     Button btnConfirm;
 
-    private Bitmap bmClean;
     private RelativeLayout content;
-    private Drawable dwHead,dwClean;
+    private Drawable dwHead,dwClean,dwEdit;
     private String name;
-
+    private RelativeLayout.LayoutParams lp;
     private float dentisy;
 
     @Override
@@ -57,8 +54,8 @@ public class SelfInfoFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         content = (RelativeLayout) inflater.inflate(R.layout.fragment_selfnfo,container,false);
-        bmClean =  BitmapFactory.decodeResource(null,R.drawable.cancel1);
-        dwClean = new BitmapDrawable(bmClean);
+        dwClean = getResources().getDrawable(R.drawable.cancel1);
+        dwEdit = getResources().getDrawable(R.drawable.pen);
         initVierw(content);
         initEvent();
         return content;
@@ -68,29 +65,35 @@ public class SelfInfoFragment extends Fragment {
         ButterKnife.inject(this, view);
         imgHead.setImageDrawable(dwHead);
         edName.setText(name);
+        lp = (RelativeLayout.LayoutParams) edName.getLayoutParams();
+        //设置显示在edName右侧的名为dwClean和dwEdit的CompoundDrawables大小
+        dwClean.setBounds(0, 0, (int) (dentisy * 20 + 0.5f), (int) (dentisy * 20 + 0.5f));
+        dwEdit.setBounds(0, 0, (int) (dentisy * 20 + 0.5f), (int) (dentisy * 20 + 0.5f));
         if(imgHead!=null) imgHead.setImageDrawable(dwHead);
         if(name!=null) edName.setText(name);
-        if(edName.hasFocus()){
-            RelativeLayout.LayoutParams lp =(RelativeLayout.LayoutParams) edName.getLayoutParams();
-            lp.width=RelativeLayout.LayoutParams.MATCH_PARENT;
-            lp.setMargins(150, 0, 0, 0);
-            edName.setLayoutParams(lp);
-            edName.setGravity(Gravity.LEFT);
-            dwClean.setBounds(0, 0, (int) (dentisy * 20 + 0.5f), (int) (dentisy * 20 + 0.5f));
-        }
+        edName.setCompoundDrawables(null, null, dwEdit, null);
+        edName.setCompoundDrawablePadding((int)(dentisy*5+0.5f));
     }
 
-    public void initEvent(){
+    public void initEvent() {
         edName.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
                 if (hasFocus) {
+                    lp.width = RelativeLayout.LayoutParams.MATCH_PARENT;
+                    lp.setMargins(150, 0, 0, 0);
+                    edName.setLayoutParams(lp);
+                    edName.setGravity(Gravity.LEFT);
                     btnConfirm.setVisibility(View.VISIBLE);
-                    if (edName.length() != 0)
+                    if (edName.length() != 0) {
                         edName.setCompoundDrawables(null, null, dwClean, null);
+                    }
                 } else {
-                    btnConfirm.setVisibility(View.INVISIBLE);
-                    edName.setCompoundDrawables(null, null, null, null);
+                    lp.width = RelativeLayout.LayoutParams.WRAP_CONTENT;
+                    lp.setMargins(0, 0, 0, 0);
+                    edName.setLayoutParams(lp);
+                    edName.setGravity(Gravity.CENTER);
+                    edName.setCompoundDrawables(null, null, dwEdit, null);
                 }
             }
         });
@@ -115,7 +118,7 @@ public class SelfInfoFragment extends Fragment {
         edName.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                if(event.getRawX()>edName.getX()+dentisy*20+0.5f)
+                if (edName.hasFocus() && event.getRawX() > edName.getX() + edName.getWidth() - dentisy * 30 + 0.5f)
                     edName.setText("");
                 return false;
             }
@@ -124,6 +127,7 @@ public class SelfInfoFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 edName.clearFocus();
+                imgHead.requestFocus();
                 btnConfirm.setVisibility(View.INVISIBLE);
                 setName(edName.getText().toString());
             }

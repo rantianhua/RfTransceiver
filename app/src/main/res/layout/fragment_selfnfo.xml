@@ -2,7 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
+    android:background="@drawable/chatbackground"
     >
 
 
@@ -11,8 +11,9 @@
         android:layout_width="130dp"
         android:layout_height="130dp"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="80dp"
+        android:layout_marginTop="120dp"
         android:visibility="visible"
+        android:focusableInTouchMode="true"
         />
 
     <EditText
@@ -25,8 +26,6 @@
         android:gravity="center"
         android:layout_below="@id/img_head_selfinfo"
         android:layout_centerHorizontal="true"
-        android:paddingStart="20dp"
-        android:paddingEnd="20dp"
         />
 
     <Button
@@ -34,12 +33,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_margin="80dp"
+        android:layout_margin="100dp"
         android:background="@color/dark_blue"
         android:text="确定修改"
         android:textColor="@android:color/white"
         android:textSize="20dp"
         android:layout_centerHorizontal="true"
-        android:visibility="visible"/>
+        android:visibility="invisible"/>
 
 </RelativeLayout>

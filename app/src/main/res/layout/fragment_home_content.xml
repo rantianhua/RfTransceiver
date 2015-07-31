@@ -7,7 +7,7 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="50dp"
-        android:background="@color/blue_without_press"
+        android:background="@color/dark_blue"
         android:id="@+id/rl_top_home"
         >
 
@@ -63,6 +63,7 @@
         android:layout_below="@+id/tv_tip_home"
         android:listSelector="@android:color/transparent"
         android:divider="#000000"
+        android:background="@drawable/chatbackground"
         />
 
 
@@ -164,7 +165,7 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="142dp"
         android:id="@+id/rl_home_imgs_address"
         android:layout_above="@+id/vp_home_expression"
         android:paddingStart="40dp"
@@ -179,6 +180,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
+            android:layout_gravity="center"
             android:layout_weight="1">
 
             <ImageView
@@ -230,6 +232,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
+            android:layout_gravity="center"
             android:layout_weight="1">
 
             <ImageView

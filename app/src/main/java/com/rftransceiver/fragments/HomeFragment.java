@@ -516,7 +516,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                     }if(imgMessageType.isSelected()){
                         imgMessageType.setSelected(false);
                         etSendMessage.setVisibility(View.VISIBLE);
-                        btnSounds.setVisibility(View.INVISIBLE);
+                        btnSounds.setVisibility(View.GONE);
                     }
                 }
                 else{
@@ -530,7 +530,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                     if(imgMessageType.isSelected()){
                         imgMessageType.setSelected(false);
                         etSendMessage.setVisibility(View.VISIBLE);
-                        btnSounds.setVisibility(View.INVISIBLE);
+                        btnSounds.setVisibility(View.GONE);
                     }
                 }
                 break;
@@ -626,7 +626,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                     if(imgMessageType.isSelected()){
                         imgMessageType.setSelected(false);
                         etSendMessage.setVisibility(View.VISIBLE);
-                        btnSounds.setVisibility(View.INVISIBLE);
+                        btnSounds.setVisibility(View.GONE);
                     }
                 }
                 break;

@@ -60,6 +60,7 @@
         android:paddingLeft="3dp"
         android:layout_alignBottom="@id/tv_left_sounds"
         android:gravity="bottom|start"
-        android:layout_toEndOf="@id/tv_left_sounds"/>
+        android:layout_toEndOf="@id/tv_left_sounds"
+        android:layout_marginEnd="20dp"/>
 
 </RelativeLayout>
