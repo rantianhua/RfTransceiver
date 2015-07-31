@@ -11,7 +11,7 @@ import java.math.BigDecimal;
  */
 public class DataClearnManager {
 
-    public static boolean deleteDir(File dir) {
+    public static boolean deleteDir(File dir) {//根据文件路径删除图片
         if (dir != null && dir.isDirectory()) {
             String[] children = dir.list();
             for (int i = 0; i < children.length; i++) {
@@ -53,7 +53,7 @@ public class DataClearnManager {
      * @param size
      * @return
      */
-    public static String getFormatSize(double size) {
+    public static String getFormatSize(double size) {//把size格式化更易懂的字符串输出
         double kiloByte = size / 1024;
         if (kiloByte < 1) {
            return size + "Byte";

@@ -38,6 +38,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.rftransceiver.R;
 import com.rftransceiver.activity.LocationActivity;
@@ -465,6 +466,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         }else {
             isPublicChannel = false;
             updateGroup(groupEntity);
+
         }
     }
 
@@ -476,6 +478,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         if(currentGroupId == -1) {
             try {
                 currentGroupId = getActivity().getSharedPreferences(Constants.SP_USER,0).getInt(Constants.PRE_GROUP,-1);
+
             }catch (Exception e ){
 
             }
@@ -847,12 +850,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         Object oj = recevBitmap != null ? recevBitmap : data;
         //接受语音，检查是否保存组语音信息
         if(groupEntity == null) return;
-        if(!(tye == 0 && !groupEntity.getIsSaveSoundOfGroup())) {
+        if (!(tye == 0 && !groupEntity.getIsSaveSoundOfGroup())) {
             saveMessage(oj,tye,memberId,time);
         }
         recevBitmap = null;
     }
-
 
     /**
      * according the last data's time to deciding show time message or not
@@ -1086,6 +1088,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
      * @param groupEntity
      */
     public void updateGroup(final GroupEntity groupEntity) {
+
         this.groupEntity = groupEntity;
         if(groupEntity == null) {
             isPublicChannel = true;
@@ -1299,7 +1302,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             switch (resultCode) {
                 case 0:
                     //clear chat records
-                    deleteMessage(currentGroupId);//调用下文实现的方法
+                    deleteMessage(currentGroupId);//调用下文实现的方法删除聊天记录
+                    Toast.makeText(getActivity(), "成功删除聊天记录", Toast.LENGTH_SHORT).show();
+                    dataLists.clear();//删除聊天界面上的聊天记录
+                    conversationAdapter.updateData(dataLists);
                     break;
                 case 1:
                     //open scroll
