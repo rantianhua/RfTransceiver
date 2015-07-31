@@ -1,6 +1,7 @@
 package com.rftransceiver.fragments;
 
 import android.app.Fragment;
+import android.app.ProgressDialog;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -37,6 +38,7 @@ public class MyDeviceFragment extends Fragment {
 
     private String bindDeviceName ; //已绑定设备的名称
     private CallbackInMyDevice callback;    //回调接口
+    private ProgressDialog pd;  //解除绑定的提示
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -44,6 +46,7 @@ public class MyDeviceFragment extends Fragment {
         //从SharedPrefernce中获取当前设备的名称
         bindDeviceName = getActivity().getSharedPreferences(Constants.SP_USER,0).getString(Constants.BIND_DEVICE_NAME,
                 null);
+        pd = new ProgressDialog(getActivity());
     }
 
     @Nullable
@@ -91,7 +94,7 @@ public class MyDeviceFragment extends Fragment {
         imgBack.setImageResource(R.drawable.back);
         tvTitle.setText(R.string.my_device);
         //显示绑定设备名称
-        tvMydevice.setText(TextUtils.isEmpty(bindDeviceName) ? "未绑定任何设备" : bindDeviceName );
+        tvMydevice.setText(TextUtils.isEmpty(bindDeviceName) ? "未绑定任何设备" : bindDeviceName);
     }
 
     /**
@@ -99,11 +102,22 @@ public class MyDeviceFragment extends Fragment {
      */
     private void unbindDevice() {
         if(callback == null) return;
+        pd.setMessage("正在解除绑定");
+        pd.show();
         //利用回调接口执行具体的解绑操作
         callback.unbindDevice();
-        btnHandle.setText(R.string.bind_device);
-        tvMydevice.setText("已解绑" + tvMydevice.getText().toString());
-        btnHandle.setSelected(true);
+    }
+
+    /**
+     * 之前的绑定已取消
+     */
+    public void unBindOk() {
+        if(pd != null) {
+            pd.dismiss();
+            btnHandle.setText(R.string.bind_device);
+            btnHandle.setSelected(true);
+            tvMydevice.setText("已解绑" + bindDeviceName);
+        }
     }
 
     public void setCallback(CallbackInMyDevice callback) {

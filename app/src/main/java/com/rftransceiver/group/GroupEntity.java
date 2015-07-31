@@ -39,13 +39,10 @@ public class GroupEntity implements Parcelable{
         members = new ArrayList<>();
     }
 
-    public boolean isRealTimePlay = true;//标识是够进行实时播放
+    public boolean isRealTimePlay = true;//标识是否进行实时播放
 
     /**
-     * 标识是否保存组的语音信息，要与全局设置中保存语音信息结合
-     * 二者都为true时，保存组语音信息；isSaveSoundOfGroup为false时，不保存组语音信息
-     * 实现：1、当不保存时：先将语音一起存入，再删除数据库中此组的语音信息
-     *      2、保存数据时，直接不保存词组的语音信息
+     * 标识是否保存组的语音信息
      */
     public boolean isSaveSoundOfGroup = true;
 

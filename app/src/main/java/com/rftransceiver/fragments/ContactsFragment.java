@@ -4,6 +4,7 @@ import android.app.Fragment;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.ContactsContract;
 import android.support.annotation.Nullable;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -22,6 +23,7 @@ import com.rftransceiver.adapter.ContactsAdapter;
 import com.rftransceiver.customviews.LetterView;
 import com.rftransceiver.datasets.ContactsData;
 import com.rftransceiver.db.DBManager;
+import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.PoolThreadUtil;
 
 import java.util.ArrayList;
@@ -78,7 +80,6 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
         super.onCreate(savedInstanceState);
         dbManager = DBManager.getInstance(getActivity());
         mapContacts = new HashMap<>();
-        if(callback != null) callback.openScorll(false);
     }
 
     @Nullable
@@ -109,6 +110,8 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
     }
 
     private void initEvent() {
+
+
         contacts.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
             @Override
             public boolean onChildClick(ExpandableListView expandableListView, View view, int i, int i1, long l) {
@@ -148,23 +151,29 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
         this.callback = callback;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        if(callback != null) callback.openScorll(false);
+    }
+
     private void loadContacts() {
         rlLoading.setVisibility(View.VISIBLE);
         PoolThreadUtil.getInstance().addTask(new Runnable() {
             @Override
             public void run() {
                 final List<ContactsData> contactDatas = dbManager.getContacts();
-                if(contactDatas != null && contactDatas.size() > 0) {
-                    for(int j = 0;j < letterView.letters.length;j++) {
+                if (contactDatas != null && contactDatas.size() > 0) {
+                    for (int j = 0; j < letterView.letters.length; j++) {
                         String key = letterView.letters[j];
-                        for(int i =0;i < contactDatas.size();i++) {
+                        for (int i = 0; i < contactDatas.size(); i++) {
                             String itemKey = contactDatas.get(i).getFirstLetter();
-                            if(itemKey.equals(key)) {
+                            if (itemKey.equals(key)) {
                                 List<ContactsData> subData = null;
-                                if(!mapContacts.containsKey(key)) {
+                                if (!mapContacts.containsKey(key)) {
                                     subData = new ArrayList<ContactsData>();
-                                    mapContacts.put(key,subData);
-                                }else {
+                                    mapContacts.put(key, subData);
+                                } else {
                                     subData = mapContacts.get(key);
                                 }
                                 subData.add(contactDatas.get(i));
@@ -177,21 +186,21 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
                         @Override
                         public void run() {
                             rlLoading.setVisibility(View.GONE);
-                            adpter = new ContactsAdapter(mapContacts,getActivity());
+                            adpter = new ContactsAdapter(mapContacts, getActivity());
                             adpter.setCallback(ContactsFragment.this);
                             contacts.setAdapter(adpter);
-                            for(int i = 0;i < mapContacts.size();i++) {
+                            for (int i = 0; i < mapContacts.size(); i++) {
                                 contacts.expandGroup(i);
                             }
                         }
                     });
-                }else {
+                } else {
                     mainHan.post(new Runnable() {
                         @Override
                         public void run() {
                             rlLoading.setVisibility(View.GONE);
-                            if(getActivity() == null) return;
-                            Toast.makeText(getActivity(),"还没有联系人",Toast.LENGTH_SHORT).show();
+                            if (getActivity() == null) return;
+                            Toast.makeText(getActivity(), "还没有联系人", Toast.LENGTH_SHORT).show();
                         }
                     });
                 }
@@ -233,6 +242,8 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
                         });
                     }
                 });
+
+
             }
 
             @Override
@@ -242,6 +253,34 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
         });
         myAlert.show(getFragmentManager(), null);
     }
+
+    @Override
+    public void jionGroup(final int i,final int i1) {//实现加入组的接口
+        final ContactsData data = (ContactsData) adpter.getChild(i, i1);
+        String message = "要进入" + "\"" + data.getGroupName() + "\"" + "进行群聊吗？";
+        MyAlertDialogFragment myAlert = MyAlertDialogFragment.getInstance(200, 180, message, true);
+        myAlert.setListener(new MyAlertDialogFragment.CallbackInMyAlert() {
+            @Override
+            public void onClickSure() {
+                if (callback != null) {
+                    Constants.GROUPID = data.getGroupId();
+                    callback.changeGroup(data.getGroupId());
+                }
+            }
+
+            @Override
+            public void onClickCancel() {
+
+            }
+        });
+        try {
+            myAlert.show(getFragmentManager(), null);
+        } catch (Exception e) {
+        e.printStackTrace();
+        }
+    }
+
+
 
     private final LetterView.SelectLetterListener selectLetterListener = new LetterView.SelectLetterListener() {
         @Override
@@ -282,12 +321,10 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if(adpter != null) adpter.setCallback(null);
         letterView.setListener(null);
         showLetter = null;
         mapContacts = null;
         if(callback != null) callback.openScorll(true);
-        setCallback(null);
     }
 
     public interface CallbackInContacts{
