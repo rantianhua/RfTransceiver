@@ -22,6 +22,7 @@ public class GroupMember implements Parcelable{
     private int id; //the member's id in the group
     private Drawable drawable;  //the member's photo
     private Bitmap bitmap;
+    private boolean addSucceed = false; //标识加组是否成功
 
     public GroupMember() {
 
@@ -70,6 +71,14 @@ public class GroupMember implements Parcelable{
 
     public Drawable getDrawable() {
         return drawable;
+    }
+
+    public boolean isAddSucceed() {
+        return addSucceed;
+    }
+
+    public void setAddSucceed(boolean addSucceed) {
+        this.addSucceed = addSucceed;
     }
 
     public void setDrawable(Bitmap bitmap) {

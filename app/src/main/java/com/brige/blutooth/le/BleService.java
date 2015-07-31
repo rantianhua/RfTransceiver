@@ -52,7 +52,6 @@ public class BleService extends Service {
 
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
-    private String mBluetoothDeviceAddress;
     private BluetoothGatt mBluetoothGatt;
     private int mConnectionState = STATE_DISCONNECTED;
 
@@ -119,7 +118,6 @@ public class BleService extends Service {
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 mConnectionState = STATE_CONNECTED;
-                mBluetoothDeviceAddress = gatt.getDevice().getAddress();
                 // 发现服务,
                 try {
                     //参考http://www.apkbus.com/android-204863-1-1.html上的经验说在发现服务之前先sleep一段时间
@@ -133,7 +131,7 @@ public class BleService extends Service {
                 if(callback != null) callback.bleConnection(true);
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 mConnectionState = STATE_DISCONNECTED;
-                //利用接口报告蓝牙连接断开
+                //利用接口报告蓝牙BLE连接断开
                 if(callback != null) callback.bleConnection(false);
                 if(writeCharacteristic != null) {
                     setCharacteristicNotification(
@@ -301,6 +299,23 @@ public class BleService extends Service {
         this.callback = listener;
     }
 
+    /**
+     * 解除绑定、重新启动蓝牙
+     */
+    public void unBindDevice() {
+        disconnect();
+        mBluetoothAdapter.disable();
+        Log.e("unBindDevice","关闭蓝牙");
+    }
+
+    /**
+     * 返回已实例化的BluetoothAdapter对象
+     * @return
+     */
+    public BluetoothAdapter getBleAdapter() {
+        return mBluetoothAdapter;
+    }
+
     public class LocalBinder extends Binder {
         public BleService getService() {
             return BleService.this;
@@ -380,16 +395,6 @@ public class BleService extends Service {
             mainHan.postDelayed(run,4000);
             return true;
         }
-        //重连之前已有的连接
-        if (mBluetoothDeviceAddress != null && address.equals(mBluetoothDeviceAddress)
-                && mBluetoothGatt != null) {
-            if (mBluetoothGatt.connect()) {
-                mConnectionState = STATE_CONNECTING;
-                return true;
-            } else {
-                return false;
-            }
-        }
         //和传入的address建立新的连接
         try {
             final BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
@@ -408,13 +413,14 @@ public class BleService extends Service {
      * 解除已有的连接
      */
     public void disconnect() {
-        mBluetoothDeviceAddress = null;
         try {
             mBluetoothGatt.disconnect();
-            mConnectionState = STATE_DISCONNECTED;
         }catch (Exception e) {
 
         }
+        close();
+        mConnectionState = STATE_DISCONNECTED;
+        findCharacter = false;
     }
 
     /**

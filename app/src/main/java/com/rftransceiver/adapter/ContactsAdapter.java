@@ -105,7 +105,19 @@ public class ContactsAdapter extends BaseExpandableListAdapter {
             view.setTag(childHolder);
             final int group = i;
             final int child = i1;
-            view.setOnLongClickListener(new View.OnLongClickListener() {
+            view.setOnClickListener(new View.OnClickListener() {//为每个分支创建一个点击事件，为了实现加入组的功能
+                @Override
+                public void  onClick(View v) {
+                    String key = getKeyByIndex(group);
+                    List<ContactsData> cont = mapDatas.get(key);//通过key值找到分支的List
+                    if(cont != null) {
+                        //通过接口将组geoupid和childID传到调用方
+                        if(callback != null) callback.jionGroup(group,child);//加入组的操作接口
+                    }
+
+                }
+            });
+            view.setOnLongClickListener(new View.OnLongClickListener() {//为每个分支师徒创建一个长按事件，为了实现删除组的功能
                 @Override
                 public boolean onLongClick(View view) {
                     //先根据父视图的索引得到其对应的子视图的数据源
@@ -161,6 +173,7 @@ public class ContactsAdapter extends BaseExpandableListAdapter {
     //该接口用来回调传递获取的组的id，hashmap中的key值，和child<List>的下标
     public interface CallbackInContactsAdpter {
         void getGroupId(int gid,String key,int childId);
+        void jionGroup(int i,int i1);//接口用来回调加入组的操作
     }
 
 }

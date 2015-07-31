@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.Message;
 import android.support.v4.util.Pools;
 import android.util.Base64;
 import android.util.Log;
@@ -43,7 +44,7 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
 
 
     /**
-     * the enum to distinguish create group or add group
+     * 枚举类用来区分是加组还是建组
      */
     public enum GroupAction {
         CREATE,
@@ -52,31 +53,61 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
     private GroupAction groupAction = GroupAction.ADD;
 
     /**
-     * the fragment to set group name
+     * 获取组名的Fragment
      */
     private SetGroupNameFragment setGroupNameFragment;
 
     /**
-     *  add or create group in this fragment
+     *  显示加组和建组的界面
      */
     private RawGroupFragment rawGroupFragment;
 
     /**
-     * manage wifi action
+     * 管理wifi的服务
      */
     private WifiNetService service;
 
     /**
-     * mark is scanning device or not
-     */
-    private boolean scanning = false;
-
-    /**
-     * the entity of group
+     * 组的描述类
      */
     private GroupEntity groupEntity;
 
-    private Handler mainHandler;
+    //用来和非UI线程交互
+    private static Handler mainHandler;
+
+    private boolean needFirstScan  = false;  // 标识是否需要首次扫描wifi
+    private boolean isWifiOpenPre = false;  //标识在加组之前wifi是否开启
+
+    private int callbaclMembers;    //记录有多少个组成员已经收到整个组的信息
+    private int memberCounts;   //组成员的总数
+    private String addFailedMessage;    //加组失败的提示
+
+    //发送组的全部信息后，过一段时间检查是否所有成员都收到l
+    private final Runnable checkCreateComplete = new Runnable() {
+        @Override
+        public void run() {
+            if(groupEntity.getMembers().size() == 0) return;
+            if(callbaclMembers < memberCounts) {
+                //有成员未收到组信息
+                StringBuilder builder = new StringBuilder();
+                for(int i = 0; i < groupEntity.getMembers().size();i++) {
+                    if(!groupEntity.getMembers().get(i).isAddSucceed()) {
+                        builder.append(groupEntity.getMembers().get(i).getName());
+                        builder.append(",");
+                    }
+                }
+                if(builder.length() > 1) {
+                    builder.delete(builder.length()-2,builder.length()-1);
+                    builder.append(memberCounts - callbaclMembers);
+                    builder.append("加组失败");
+                    addFailedMessage = builder.toString();
+                    builder = null;
+                    mainHandler.sendEmptyMessage(0);
+                }
+            }
+
+        }
+    };
 
 
     @Override
@@ -84,33 +115,53 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_group);
 
+        //绑定服务
         bindService(new Intent(this, WifiNetService.class),
                 this, BIND_AUTO_CREATE);
 
+        initHandler();
+
+        //得到是加组还是建组
         int action = getIntent().getIntExtra(ACTION_MODE,0);
         groupAction = action == 0 ? GroupAction.CREATE : GroupAction.ADD;
 
+        //实例化一个组的描述类
         groupEntity = new GroupEntity();
-        if(groupAction == GroupAction.CREATE) {
-            //create a group
+        if(groupAction == GroupAction.CREATE) {//建组
+            //为组设置一个同步字
             groupEntity.setAsyncWord(GroupUtil.createAsynWord());
             if(setGroupNameFragment == null) initSGF();
+            //获取用户输入的组名
             changeFragment(setGroupNameFragment);
         }else {
-            //add a group
+            //加组
             initRGF(GroupAction.ADD.ordinal(), null);
             changeFragment(rawGroupFragment);
         }
 
-        initMainHandler();
     }
 
-    private void initMainHandler() {
-        mainHandler = new Handler(Looper.myLooper());
+    //初始化Handler
+    private void initHandler () {
+        mainHandler = new Handler(Looper.myLooper(), new Handler.Callback() {
+            @Override
+            public boolean handleMessage(Message message) {
+                switch (message.what) {
+                    case 0:
+                        //加组或建组完成
+                        Log.e("handleMessage","加组或建组即将完成");
+                        finishGroup();
+                        break;
+                    default:
+                        return false;
+                }
+                return true;
+            }
+        });
     }
 
     /**
-     * @param fragment next to be show
+     * @param fragment 显示指定的Fragment
      */
     private void changeFragment(Fragment fragment) {
         getFragmentManager().beginTransaction()
@@ -118,7 +169,7 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
     }
 
     /**
-     * init setGroupNameFragment
+     * 初始化setGroupNameFragment
      */
     private void initSGF() {
         if(setGroupNameFragment == null) {
@@ -128,7 +179,7 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
     }
 
     /**
-     * init rawGroupFragment
+     * 初始化 rawGroupFragment
      */
     private void initRGF(int action,String name) {
         if(rawGroupFragment == null) {
@@ -138,21 +189,28 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
     }
 
     /**
-     * callback in SetGroupNameFragment
+     * SetGroupNameFragment的接口函数，传送组名
      * @param name the group's name
      */
     @Override
     public void getGroupName(String name) {
+        //设置组名
         groupEntity.setName(name);
         setGroupNameFragment.setOnGroupNameSetCallback(null);
         setGroupNameFragment = null;
         initRGF(GroupAction.CREATE.ordinal(),name);
         changeFragment(rawGroupFragment);
+        //开启wifi热点
         if(service != null) {
-            service.startWifiAp();
+            service.startWifiAp(true);
         }
     }
 
+    /**
+     * wifiNetService服务绑定成功
+     * @param componentName
+     * @param iBinder
+     */
     @Override
     public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
         if(iBinder != null) {
@@ -160,7 +218,17 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
             service = binder.getService();
             service.setCallBack(this);
             if(groupAction == GroupAction.ADD) {
-                service.startWifi();
+                //如果是加组，就开启wifi
+                if(service.startWifi()) {
+                    needFirstScan = true;
+                    isWifiOpenPre = false;
+                }else {
+                    //扫描wifi热点
+                    isWifiOpenPre = true;
+                    service.startScan();
+                    Log.e("service connected", "立即开始扫描");
+                    needFirstScan = false;
+                }
             }
         }
     }
@@ -177,17 +245,20 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
         if(groupAction == GroupAction.CREATE) {
             service.closeWifiAp();
         }else if(groupAction == GroupAction.ADD) {
-            service.closeWifi();
+            if(!isWifiOpenPre) {
+                service.closeWifi();
+            }
         }
         unbindService(this);
     }
 
     /**
-     * callback in WifiNetService
-     * after wifiAp is created
+     * WifiNetService中的回调函数
+     * 通知wifi热点已经开启
      */
     @Override
     public void wifiApCreated() {
+        //开启服务端socket
         service.openServer();
     }
 
@@ -200,18 +271,20 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
         if(rawGroupFragment == null) return;
         switch (type) {
             case GroupUtil.GROUP_BASEINFO:
-                //received group base info
+                //收到一个群主的基本信息
                 rawGroupFragment.showGroupBaseInfo(object);
                 break;
             case GroupUtil.MEMBER_BASEINFO:
-                //show info in RawGroupFragment
+                //收到一个组成员的基本信息
                 rawGroupFragment.showGroupBaseInfo(object);
                 break;
             case GroupUtil.CANCEL_ADD:
+                //群成员取消加组
                 int cancelId = -1;
                 try {
                     cancelId = object.getInt(GroupUtil.GROUP_MEMBER_ID);
                     if(cancelId != -1) {
+                        //删除该组成员
                         rawGroupFragment.cancelAddGroup(cancelId);
                         groupEntity.removeMemberById(cancelId);
                     }
@@ -220,63 +293,90 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
                 }
                 break;
             case GroupUtil.CANCEL_CREATE:
+                //群主取消建组
                 rawGroupFragment.cancelCreate(object);
                 break;
-            case GroupUtil.GROUP_FULL_INFO:
-                mainHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            JSONArray array = (JSONArray)object.get("msg");
-                            for(int i = 0;i < array.length();i ++) {
-                                JSONObject o = (JSONObject)array.get(i);
-                                byte[] photo = null;
-                                Bitmap bitmap = null;
-                                try{
-                                    photo = Base64.decode(o.getString(GroupUtil.PIC),Base64.DEFAULT);
-                                    bitmap = BitmapFactory.decodeByteArray(photo,
-                                            0,photo.length);
-                                }catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                                GroupMember member = new GroupMember(o.getString(GroupUtil.NAME),
-                                        o.getInt(GroupUtil.GROUP_MEMBER_ID),
-                                        bitmap);
-                                groupEntity.getMembers().add(member);
+            case GroupUtil.RECEIVE_GROUP:
+                //收到一个组成员的de反馈
+                callbaclMembers++;
+                if(callbaclMembers == memberCounts) {
+                    //收到了所有组成员的反馈
+                    //可以结束建组了
+                    mainHandler.removeCallbacks(checkCreateComplete);
+                    mainHandler.sendEmptyMessage(0);
+                    callbaclMembers = 0;
+                    memberCounts = 0;
+                }else {
+                    //继续等待其他成员
+                    try {
+                        //该组员的id
+                        int id = object.getInt(GroupUtil.GROUP_MEMBER_ID);
+                        int size = groupEntity.getMembers().size();
+                        for(int i = 0; i < size;i++) {
+                            if(groupEntity.getMembers().get(i).getId() == id) {
+                                //设置该成员加组成功
+                                groupEntity.getMembers().get(i).setAddSucceed(true);
+                                break;
                             }
+                        }
+                    }catch (Exception e) {
+
+                    }
+                }
+                break;
+            case GroupUtil.GROUP_FULL_INFO:
+                Log.e("add group","finish");
+                //整个组的信息
+                try {
+                    JSONArray array = (JSONArray)object.get("msg");
+                    //解析处出整个组的信息
+                    for(int i = 0;i < array.length();i ++) {
+                        JSONObject o = (JSONObject)array.get(i);
+                        byte[] photo = null;
+                        Bitmap bitmap = null;
+                        try{
+                            photo = Base64.decode(o.getString(GroupUtil.PIC),Base64.DEFAULT);
+                            bitmap = BitmapFactory.decodeByteArray(photo,
+                                    0,photo.length);
                         }catch (Exception e) {
                             e.printStackTrace();
                         }
-                        finishGroup();
+                        GroupMember member = new GroupMember(o.getString(GroupUtil.NAME),
+                                o.getInt(GroupUtil.GROUP_MEMBER_ID),
+                                bitmap);
+                        groupEntity.getMembers().add(member);
                     }
-                });
+                }catch (Exception e) {
+                    e.printStackTrace();
+                }
+                mainHandler.sendEmptyMessage(0);
                 break;
         }
     }
 
     /**
-     * send group data to other Activity
+     * 建组加组流程完成
      */
     private void finishGroup() {
         String message = null;
         Intent intent = new Intent();
         Bundle bundle = new Bundle();
         groupEntity.setTempId(rawGroupFragment.getMyId());
-        bundle.putParcelable(EXTRA_GROUP,groupEntity);
+        bundle.putParcelable(EXTRA_GROUP, groupEntity);
         intent.putExtras(bundle);
         setResult(Activity.RESULT_OK,intent);
         if(groupAction == GroupAction.ADD) {
             message = "加组完成";
         }else if(groupAction == GroupAction.CREATE) {
-            message = "建组完成";
+            message = addFailedMessage == null ? "建组完成" : addFailedMessage;
         }
-        Toast.makeText(this,message,Toast.LENGTH_SHORT).show();
+        Toast.makeText(this,message,Toast.LENGTH_LONG).show();
         saveGroup();
         finish();
     }
 
     /**
-     * save group info to database
+     * 保存群组信息到数据库
      */
     private void saveGroup() {
         final DBManager dbManager = DBManager.getInstance(this);
@@ -293,15 +393,17 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
     }
 
     /**
-     * callback in WifiNetService
-     * after wifi is opened
+     * WifiNetService中的回调方法
      */
     @Override
     public void wifiEnabled() {
         if(groupAction == GroupAction.ADD) {
-            if(!scanning) {
-                service.startScan();
-                scanning = true;
+            if(needFirstScan) {
+                if(service != null) {
+                    service.startScan();
+                    needFirstScan = false;
+                    Log.e("wifiEnable","wifi打开后即开始扫描");
+                }
             }
         }
     }
@@ -340,15 +442,13 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
 
     /**
      * call in WifiNetService
+     * @param counts 标识成员的数量
      */
     @Override
-    public void sendGroupFinished() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                finishGroup();
-            }
-        });
+    public void sendGroupFinished(int counts) {
+        memberCounts = counts;
+        //5秒后检查
+        mainHandler.postDelayed(checkCreateComplete, 5000);
     }
 
     /**
@@ -361,7 +461,8 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
     }
 
     /**
-     * callback in RawGroupFragment
+     * RawGroupFragment的回调函数
+     * 得到扫描的wifi热点
      * @return
      */
     @Override
@@ -370,6 +471,17 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
             return service.getScanResults();
         }
         return null;
+    }
+
+    /**
+     * RawGroupFragment的回调函数
+     * 扫描热点
+     */
+    @Override
+    public void startScan() {
+        if (service != null) {
+            service.startScan();
+        }
     }
 
     /**
@@ -383,6 +495,16 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
     }
 
     /**
+     * RawGroupFragment的回调方法
+     * 取得自己在当前组的id
+     * @return
+     */
+    @Override
+    public int getIdInCurrentGroup() {
+        return rawGroupFragment.getCurrentId();
+    }
+
+    /**
      * callback in RawGroupFragment
      * @return
      */
@@ -393,23 +515,27 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
     }
 
     /**
-     * callback in RawGroupFragment
-     * @param ssid the wifiAp to be connected
+     * RawGroupFragment的回调方法
+     * @param ssid 和指定的热点建立socket连接
+     * @param requestGroupInfo 标识连接后是否请求获取群主的信息
      */
     @Override
     public void getSocketConnect(String ssid,boolean requestGroupInfo) {
         if(service == null) return;
+        Log.e("getSocketConnect","准备和"+ssid + "建立socket连接");
         service.createClientSocket(ssid,requestGroupInfo);
     }
 
     /**
-     * callback in RawGroupFragment to connect wifiAp
+     * RawGroupFragment中的回调函数，连接指定的热点
      * @param ssid the wifiAp to be connected
      */
     @Override
     public void connectWifiAp(String ssid) {
         if(service != null) {
+            Log.e("connectWifiAp","将要连接"+ssid);
             if(service.ssidConnected(ssid)) {
+                Log.e("connectWifiAp","已连接到"+ssid);
                 if(rawGroupFragment != null) {
                     rawGroupFragment.wifiApConnected(ssid);
                 }
