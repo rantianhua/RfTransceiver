@@ -98,6 +98,7 @@ public class DBManager {
                     null);
             if(cursor != null && cursor.moveToFirst()) {
                 gid = cursor.getInt(0);
+                Constants.GROUPID = gid;
                 cursor.close();
             }
             //save members into member table
@@ -129,7 +130,7 @@ public class DBManager {
 
     public void deleteGroup(int gid) {//很据组的id删除表的信息
         try{
-            openReadDB();
+            openWriteDB();
             db.beginTransaction();
             db.delete(DatabaseHelper.TABLE_DATA,"_gid = ?",new String[]{String.valueOf(gid)});
             db.delete(DatabaseHelper.TABLE_MEMBER,"_gid = ?",new String[]{String.valueOf(gid)});
