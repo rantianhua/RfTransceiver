@@ -1,14 +1,15 @@
 package com.rftransceiver.fragments;
 
-import android.app.ActionBar;
+import android.app.Activity;
 import android.app.Fragment;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.Editable;
-import android.text.Layout;
+import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -19,7 +20,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
 
 import com.rftransceiver.R;
 
@@ -44,6 +44,8 @@ public class SelfInfoFragment extends Fragment {
     private String name;
     private RelativeLayout.LayoutParams lp;
     private float dentisy;
+    //标识是否可以修改名称
+    private boolean changeInfo = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -67,16 +69,27 @@ public class SelfInfoFragment extends Fragment {
 
     private void initVierw(View view) {
         ButterKnife.inject(this, view);
-        imgHead.setImageDrawable(dwHead);
-        edName.setText(name);
+        if(dwHead != null) {
+            //展示头像
+            imgHead.setImageDrawable(dwHead);
+        }
+        if(!TextUtils.isEmpty(name)) {
+            //展示用户�?
+            edName.setText(name);
+        }
+
         lp = (RelativeLayout.LayoutParams) edName.getLayoutParams();
-        //������ʾ��edName�Ҳ����ΪdwClean��dwEdit��CompoundDrawables��С
+        //������ʾ��edName�Ҳ����ΪdwClean��dwEdit��CompoundDrawables��С
         dwClean.setBounds(0, 0, (int) (dentisy * 20 + 0.5f), (int) (dentisy * 20 + 0.5f));
         dwEdit.setBounds(0, 0, (int) (dentisy * 20 + 0.5f), (int) (dentisy * 20 + 0.5f));
-        if(imgHead!=null) imgHead.setImageDrawable(dwHead);
-        if(name!=null) edName.setText(name);
         edName.setCompoundDrawables(null, null, dwEdit, null);
-        edName.setCompoundDrawablePadding((int)(dentisy*5+0.5f));
+        edName.setCompoundDrawablePadding((int) (dentisy * 5 + 0.5f));
+        if(!changeInfo) {
+            //设置EditText不能编辑
+            edName.setClickable(false);
+            edName.setFocusable(false);
+            edName.setEnabled(false);
+        }
     }
 
     public void initEvent() {
@@ -133,7 +146,16 @@ public class SelfInfoFragment extends Fragment {
                 edName.clearFocus();
                 imgHead.requestFocus();
                 btnConfirm.setVisibility(View.INVISIBLE);
-                setName(edName.getText().toString());
+                String newName = edName.getText().toString();
+                setName(newName);
+                if (!newName.equals(name)) {
+                    if (getTargetFragment() != null) {
+                        Intent intent = new Intent();
+                        intent.putExtra("name",name);
+                        getTargetFragment().onActivityResult(SettingFragment.REQUEST_CHANGEINFO,
+                                Activity.RESULT_OK,intent);
+                    }
+                }
             }
         });
     }
@@ -144,12 +166,27 @@ public class SelfInfoFragment extends Fragment {
     }
 
 
-
+    /**
+     * 设置头像
+     * @param head
+     */
     public void setHead(Drawable head){
         this.dwHead=head;
     }
 
+    /**
+     * 设置名称
+     * @param name
+     */
     public void setName(String name){
         this.name=name;
+    }
+
+    /**
+     * 设置是否可以修改个人信息
+     * @param changeInfo
+     */
+    public void setChangeInfo(boolean changeInfo) {
+        this.changeInfo = changeInfo;
     }
 }

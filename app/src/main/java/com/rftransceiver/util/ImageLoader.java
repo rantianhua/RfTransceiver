@@ -48,7 +48,7 @@ public class ImageLoader
 	/**
 	 * 运行在UI线程的handler，用于给ImageView设置图片
 	 */
-	private Handler mHandler;
+	private static Handler mHandler;
 
 	/**
 	 * 引入一个值为1的信号量，防止mPoolThreadHander未初始化完成
