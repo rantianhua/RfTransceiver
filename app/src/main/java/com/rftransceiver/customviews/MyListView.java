@@ -137,6 +137,7 @@ public class MyListView extends ListView implements AbsListView.OnScrollListener
     private void topPadding(int topPadding) {
         header.setPadding(header.getPaddingLeft(), topPadding,
                 header.getPaddingRight(), header.getPaddingBottom());
+
     }
 
     @Override
@@ -168,6 +169,7 @@ public class MyListView extends ListView implements AbsListView.OnScrollListener
                 onMove(ev);
                 break;
             case MotionEvent.ACTION_UP:
+
                 if (state == State.READY) {
                     //after user loose his pointer,the goto loading state
                     state = State.LOADING;

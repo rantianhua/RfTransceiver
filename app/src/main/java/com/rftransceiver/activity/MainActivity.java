@@ -733,6 +733,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
         record.stopRecording();
         receiver.stopReceiver();
+        textEntity.close();
         textEntity.setSendListener(null);
         textEntity.setOptions(null);
 

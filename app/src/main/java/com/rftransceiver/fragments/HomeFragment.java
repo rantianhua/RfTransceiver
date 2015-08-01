@@ -179,6 +179,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     private ProgressDialog pd;
     //标识是否需要自动连接设备
     private boolean needConnecAuto = false;
+    //正在发送图片的数据源
+    private ConversationData conversationData;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -272,7 +275,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                     case UPDATE_IMAGE:
                         //更新发送图片的进度
                         int percent = msg.arg1;
-                        conversationAdapter.updateImgageProgress(percent);
+                        if(conversationData != null) {
+                            conversationData.setPercent(percent);
+                            conversationAdapter.notifyDataSetChanged();
+                        }
                         break;
                     case UPDATE_BLESTATE:
                         //根据蓝牙连接的状态更新UI
@@ -867,6 +873,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         switch (tye) {
             case 0:
                 if(data != null) {
+                    if(soundsReceivingTime>500||soundsReceivingTime<30000)
                     receiveData = new ConversationData(ListConversationAdapter.ConversationType.LEFT_SOUNDS,
                             data,soundsReceivingTime);
                 }
@@ -1065,6 +1072,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                     subData = new ConversationData(ListConversationAdapter.ConversationType.RIGHT_PIC,
                             null);
                     subData.setBitmap(sendBitmap);
+                    //记住正在发送的图片的数据源
+                    conversationData = subData;
                 }
                 break;
             case SOUNDS:
@@ -1227,6 +1236,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         dataLists.clear();
         if(popMenu!=null){
             popMenu.setCallBack(null);
+        }
+        if(groupEntity != null) {
+            GroupUtil.recycle(groupEntity.getMembers());
         }
     }
 
