@@ -99,6 +99,7 @@ public class DBManager {
                     null);
             if(cursor != null && cursor.moveToFirst()) {
                 gid = cursor.getInt(0);
+                Constants.GROUPID = gid;
                 cursor.close();
             }
             //save members into member table
