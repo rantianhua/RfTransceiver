@@ -46,22 +46,24 @@ public class SelfInfoFragment extends Fragment {
     private float dentisy;
     //标识是否可以修改名称
     private boolean changeInfo = false;
+    //背景图片
+    private Bitmap backGround;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         dentisy = getResources().getDisplayMetrics().density;
+        dwClean = getResources().getDrawable(R.drawable.cancel1);
+        dwEdit = getResources().getDrawable(R.drawable.pen);
+        //加载背景图片
+        BitmapFactory.Options op = new BitmapFactory.Options();
+        op.inSampleSize = 4;
+        backGround = BitmapFactory.decodeResource(getResources(), R.drawable.chatbackground, op);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         content = (RelativeLayout) inflater.inflate(R.layout.fragment_selfnfo,container,false);
-        dwClean = getResources().getDrawable(R.drawable.cancel1);
-        dwEdit = getResources().getDrawable(R.drawable.pen);
-        BitmapFactory.Options op = new BitmapFactory.Options();
-        op.inSampleSize = 4;
-        Bitmap backGround = BitmapFactory.decodeResource(getResources(),R.drawable.chatbackground,op);
-        content.setBackground(new BitmapDrawable(backGround));
         initVierw(content);
         initEvent();
         return content;
@@ -69,12 +71,13 @@ public class SelfInfoFragment extends Fragment {
 
     private void initVierw(View view) {
         ButterKnife.inject(this, view);
+        content.setBackground(new BitmapDrawable(backGround));
         if(dwHead != null) {
             //展示头像
             imgHead.setImageDrawable(dwHead);
         }
         if(!TextUtils.isEmpty(name)) {
-            //展示用户�?
+            //展示用户�?
             edName.setText(name);
         }
 
@@ -163,6 +166,9 @@ public class SelfInfoFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if(backGround != null) {
+            backGround.recycle();
+        }
     }
 
 

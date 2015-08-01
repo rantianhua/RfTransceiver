@@ -14,6 +14,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
@@ -24,6 +25,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.text.TextUtils;
 import android.util.Base64;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
@@ -178,7 +180,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
                 int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,-1);
                 switch (state) {
                     case BluetoothAdapter.STATE_OFF:
-                        showToast(getString(R.string.bluetooth_closed));
                         if(bleService != null && unBind) {
                             //重新开启蓝牙
                             bleService.openBluetooth();
@@ -208,6 +209,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private Bitmap bitmapHead;
     //自己的昵称
     private String name;
+    //用于在onStart中标识有没有进行初始化操作
+    private boolean init = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -227,12 +230,15 @@ public class MainActivity extends Activity implements View.OnClickListener,
     @Override
     protected void onStart() {
         super.onStart();
-        //进行录音和发送信息的初始化工作
-        iniInterphone();
-        //绑定蓝牙服务
-        bindService(new Intent(this, BleService.class), serviceConnectionBle, BIND_AUTO_CREATE);
-        //设置媒体音量最大
-        maxVolume();
+        if(!init) {
+            init = true;
+            //进行录音和发送信息的初始化工作
+            iniInterphone();
+            //绑定蓝牙服务
+            bindService(new Intent(this, BleService.class), serviceConnectionBle, BIND_AUTO_CREATE);
+            //设置媒体音量最大
+            maxVolume();
+        }
     }
 
     /**
@@ -262,11 +268,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
         PoolThreadUtil.getInstance().addTask(new Runnable() {
             @Override
             public void run() {
-//                //加载背景图片
-//                BitmapFactory.Options op = new BitmapFactory.Options();
-//                op.inSampleSize = 4;
-//                Bitmap bmBack = BitmapFactory.decodeResource(getResources(),R.drawable.lanchuner_bg,op);
-//                dataExchangeHandler.obtainMessage(Constants.GET_BITMAP,0,-1,bmBack).sendToTarget();
+                //加载背景图片
+                BitmapFactory.Options op = new BitmapFactory.Options();
+                op.inSampleSize = 4;
+                Bitmap bmBack = BitmapFactory.decodeResource(getResources(),R.drawable.lanchuner_bg,op);
+                dataExchangeHandler.obtainMessage(Constants.GET_BITMAP,0,-1,bmBack).sendToTarget();
                 //加载用户头像
                 if(!TextUtils.isEmpty(photoPath)) {
                     int size = (int) (dentisy * 120 + 0.5f);
@@ -310,7 +316,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private void changeFragment(Fragment fragment) {
         FragmentTransaction transaction = getFragmentManager().beginTransaction();
         transaction.replace(R.id.frame_content, fragment);
-        if(fragment instanceof MyDeviceFragment || fragment instanceof ContactsFragment) {
+        if(homeFragment != null && (fragment instanceof MyDeviceFragment || fragment instanceof ContactsFragment)) {
             transaction.addToBackStack(null);
         }
         transaction.commitAllowingStateLoss();
@@ -579,13 +585,12 @@ public class MainActivity extends Activity implements View.OnClickListener,
                         showToast(msg.getData().getString(Constants.TOAST));
                         break;
                     case Constants.GET_BITMAP:
-
-                        switch (msg.what) {
-//                            case 0:
-//                                //得到背景图片
-//                                back = (Bitmap) msg.obj;
-//                                lockerView.setBackground(new BitmapDrawable(back));
-//                                break;
+                        switch (msg.arg1) {
+                            case 0:
+                                //得到背景图片
+                                back = (Bitmap) msg.obj;
+                                lockerView.setBackground(new BitmapDrawable(back));
+                                break;
                             case 1:
                                 // 得到用户头像
                                 bitmapHead = (Bitmap) msg.obj;
@@ -697,6 +702,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
         record.stopRecording();
         receiver.clear();
         parseFactory.resetSounds();
+        textEntity.close();
         if(homeFragment != null) {
             homeFragment.endReceive(0);
         }
@@ -730,6 +736,12 @@ public class MainActivity extends Activity implements View.OnClickListener,
         unregisterReceiver(bluetoothSate);
     }
 
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.e("onStop","onstop");
+    }
 
     @Override
     protected void onDestroy() {
@@ -1120,7 +1132,12 @@ public class MainActivity extends Activity implements View.OnClickListener,
         if(lockerView.isMenuOpened()) {
             lockerView.closeMenu();
         }else {
-            super.onBackPressed();
+            try {
+                super.onBackPressed();
+            }catch (Exception e) {
+
+            }
+
         }
     }
 
