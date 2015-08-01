@@ -5,6 +5,7 @@
     lockerview:padding_right="100dp"
     lockerview:content_paddingTop="60dp"
     android:scrollbars="none"
+    android:background="@drawable/lanchuner_bg"
     android:id="@+id/lockerview">
 
     <LinearLayout

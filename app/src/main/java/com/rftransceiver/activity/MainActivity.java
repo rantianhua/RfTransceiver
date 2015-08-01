@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
-import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -15,11 +14,9 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
-import android.media.AudioRecord;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -27,7 +24,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.text.TextUtils;
 import android.util.Base64;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
@@ -43,7 +39,6 @@ import com.rftransceiver.db.DBManager;
 import com.rftransceiver.fragments.BindDeviceFragment;
 import com.rftransceiver.fragments.ContactsFragment;
 import com.rftransceiver.fragments.HomeFragment;
-import com.rftransceiver.fragments.LoadDialogFragment;
 import com.rftransceiver.fragments.MyDeviceFragment;
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.util.Constants;
@@ -223,37 +218,28 @@ public class MainActivity extends Activity implements View.OnClickListener,
             e.printStackTrace();
         }
         setContentView(R.layout.activity_main);
-
-        BitmapFactory.Options op = new BitmapFactory.Options();
-        op.inSampleSize = 4;
-        back = BitmapFactory.decodeResource(getResources(),R.drawable.lanchuner_bg,op);
-
         System.loadLibrary("speex");
-
         initDataExchangeHandler();
-
         initView();
         initEvent();
+    }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
         //进行录音和发送信息的初始化工作
         iniInterphone();
         //绑定蓝牙服务
         bindService(new Intent(this, BleService.class), serviceConnectionBle, BIND_AUTO_CREATE);
-        //开启录音权限
-        openRecordPer();
+        //设置媒体音量最大
+        maxVolume();
     }
 
     /**
      * 开启录音，并在100毫秒后停止，
      * 目的是提前获取录音权限，避免在录音时弹出获取权限的请求
      */
-    private void openRecordPer() {
-//        dataExchangeHandler.postDelayed(new Runnable() {
-//            @Override
-//            public void run() {
-//                record.stopRecording();
-//            }
-//        }, 100);
+    private void maxVolume() {
         //设置媒体音量最大
         AudioManager audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), AudioManager.FLAG_SHOW_UI);
@@ -272,18 +258,23 @@ public class MainActivity extends Activity implements View.OnClickListener,
         }
         final float dentisy = getResources().getDisplayMetrics().density;
         final String photoPath = sp.getString(Constants.PHOTO_PATH,"");
-        //获取用户头像
-        if(!TextUtils.isEmpty(photoPath)) {
-            PoolThreadUtil.getInstance().addTask(new Runnable() {
-                @Override
-                public void run() {
+        //获取用户头像,和背景图片
+        PoolThreadUtil.getInstance().addTask(new Runnable() {
+            @Override
+            public void run() {
+//                //加载背景图片
+//                BitmapFactory.Options op = new BitmapFactory.Options();
+//                op.inSampleSize = 4;
+//                Bitmap bmBack = BitmapFactory.decodeResource(getResources(),R.drawable.lanchuner_bg,op);
+//                dataExchangeHandler.obtainMessage(Constants.GET_BITMAP,0,-1,bmBack).sendToTarget();
+                //加载用户头像
+                if(!TextUtils.isEmpty(photoPath)) {
                     int size = (int) (dentisy * 120 + 0.5f);
                     Bitmap bitmap = ImageUtil.createImageThumbnail(photoPath, size * size);
-                    dataExchangeHandler.obtainMessage(Constants.GET_BITMAP, -1, -1, bitmap).sendToTarget();
-                    bitmap = null;
+                    dataExchangeHandler.obtainMessage(Constants.GET_BITMAP, 1, -1, bitmap).sendToTarget();
                 }
-            });
-        }
+            }
+        });
         //获取已绑定的设备的地址和名称
         bindAddress = sp.getString(Constants.BIND_DEVICE_ADDRESS,null);
         deviceName = sp.getString(Constants.BIND_DEVICE_NAME,null);
@@ -588,10 +579,21 @@ public class MainActivity extends Activity implements View.OnClickListener,
                         showToast(msg.getData().getString(Constants.TOAST));
                         break;
                     case Constants.GET_BITMAP:
-                        bitmapHead = (Bitmap) msg.obj;
-                        if(bitmapHead  != null) {
-                            Drawable drawable = new CircleImageDrawable(bitmapHead);
-                            imgPhoto.setImageDrawable(drawable);
+
+                        switch (msg.what) {
+//                            case 0:
+//                                //得到背景图片
+//                                back = (Bitmap) msg.obj;
+//                                lockerView.setBackground(new BitmapDrawable(back));
+//                                break;
+                            case 1:
+                                // 得到用户头像
+                                bitmapHead = (Bitmap) msg.obj;
+                                if(bitmapHead  != null) {
+                                    Drawable drawable = new CircleImageDrawable(bitmapHead);
+                                    imgPhoto.setImageDrawable(drawable);
+                                }
+                                break;
                         }
                         break;
                     case Constants.HANDLE_SEND:
@@ -695,6 +697,9 @@ public class MainActivity extends Activity implements View.OnClickListener,
         record.stopRecording();
         receiver.clear();
         parseFactory.resetSounds();
+        if(homeFragment != null) {
+            homeFragment.endReceive(0);
+        }
         if(write) {
             if(bleService != null) {
                 bleService.writeInstruction(Constants.RESET);

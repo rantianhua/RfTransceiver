@@ -137,10 +137,4 @@ public class CommonViewHolder
 				(ImageView) getView(viewId));
 		return this;
 	}
-
-	public int getPosition()
-	{
-		return mPosition;
-	}
-
 }

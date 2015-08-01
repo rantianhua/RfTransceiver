@@ -262,6 +262,17 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                         GroupEntity ge = (GroupEntity)msg.obj;
                         updateGroup(ge);
                         break;
+                    case LOAD_CONVERDATA:
+                        //加载到聊天信息
+                        List<ConversationData> dataList = (List<ConversationData>)msg.obj;
+                        dataLists.addAll(0,dataList);
+                        conversationAdapter.updateData(dataLists);
+                        listView.setSelection(dataLists.size()-1);
+                        break;
+                    case LOAD_COMPELET:
+                        //加载完毕
+                        listView.loadComplete();
+                        break;
                     case CHANGE_GROUP:
                         //取消加组或建组
                         int gid = msg.arg1;
@@ -297,6 +308,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                                 tvTip.setVisibility(View.VISIBLE);
                             }
                         }
+                        break;
+                    case SEND_IMG:
+                        //发送图片
+                        if(callback != null) callback.send(MainActivity.SendAction.Image, (String)msg.obj);
                         break;
                 }
                 return true;
@@ -1279,7 +1294,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         if(isLoad) {
             loadComplete();
         }
-        if(preDatas != null) {
+        if(preDatas != null && preDatas.size() > 0) {
             for(int i = 0;i < preDatas.size();i++) {
                 int mid = preDatas.get(i).getMid();
                 for(int j = 0;j < groupEntity.getMembers().size();j++) {
@@ -1289,31 +1304,18 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                     }
                 }
                 if(preDatas.get(i).getConversationType() == ListConversationAdapter.ConversationType.TIME) {
-                    //recaculate the time message
+                    //重新计算时间
                     preDatas.get(i).setContent(checkDataTime(
                             preDatas.get(i).getDateTime(),false
                     ));
                 }
             }
-            dataLists.addAll(0,preDatas);
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    conversationAdapter.updateData(dataLists);
-                    listView.setSelection(dataLists.size()-1);
-                }
-            });
-            preDatas = null;
+            mainHandler.obtainMessage(LOAD_CONVERDATA,-1,-1,preDatas).sendToTarget();
         }
     }
 
     private void loadComplete() {
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                listView.loadComplete();
-            }
-        });
+        mainHandler.sendEmptyMessage(LOAD_COMPELET);
     }
 
     //打开相机拍照
@@ -1346,15 +1348,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                     options -= 10;
                     bitmap.compress(Bitmap.CompressFormat.PNG,options,outputStream);
                 }
-                final String imgData = Base64.encodeToString(outputStream.toByteArray(),Base64.DEFAULT);
-                if(callback != null) {
-                    mainHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            callback.send(MainActivity.SendAction.Image, imgData);
-                        }
-                    });
-                }
+                String imgData = Base64.encodeToString(outputStream.toByteArray(),Base64.DEFAULT);
+                mainHandler.obtainMessage(SEND_IMG,-1,-1,imgData).sendToTarget();
             }
         });
     }
@@ -1406,14 +1401,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             getImageToSend();
         } else if (requestCode == RESULT_LOAD_IMAGE && resultCode == Activity.RESULT_OK && null != data) {
             try {
-                Uri selectedImage = data.getData();
-                String[] filePathColumn = { MediaStore.Images.Media.DATA };
-                Cursor cursor = getActivity().getContentResolver().query(selectedImage,
-                        filePathColumn, null, null, null);
-                cursor.moveToFirst();
-                int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-                String picturePath = cursor.getString(columnIndex);
-                cursor.close();
+                String picturePath = ImageUtil.getImgPathFromIntent(data,getActivity());
                 if(picturePath != null) {
                     sendImgagePath = picturePath;
                     getImageToSend();
@@ -1459,4 +1447,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     public static final int CHANGE_GROUP = 1;   //改变组
     public static final int UPDATE_IMAGE = 2;   //更新图片发送进度
     public static final int UPDATE_BLESTATE = 3;   //更新图片发送进度
+    public static final int LOAD_CONVERDATA = 4;    //加载到聊天信息
+    public static final int LOAD_COMPELET = 5;    //加载聊天信息完毕
+    public static final int SEND_IMG = 6;    //发送图片
 }
