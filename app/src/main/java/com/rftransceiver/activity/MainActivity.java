@@ -114,6 +114,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private MyDeviceFragment myDeviceFragment;
     //通讯录
     private ContactsFragment contactsFragment;
+    //保存新建的组的引用
+    private GroupEntity groupEntity;
+    //标识有没有新建的组
+    private boolean haveNewGroup = false;
 
     //用来区分发送信息的动作
     private SendAction action = SendAction.NONE;
@@ -133,10 +137,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private String bindAddress;
     //保存一些配置信息
     private SharedPreferences sp;
-    //组的同步字
-    private byte[] asyncWord;
-    //标识是否已经为设备设置了同步字
-    private boolean haveSetAsyncWord = false;
     //解除绑定的标识
     private boolean unBind = false;
     //我在组里的id
@@ -271,10 +271,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
                 //加载背景图片
                 BitmapFactory.Options op = new BitmapFactory.Options();
                 op.inSampleSize = 4;
-                Bitmap bmBack = BitmapFactory.decodeResource(getResources(),R.drawable.lanchuner_bg,op);
-                dataExchangeHandler.obtainMessage(Constants.GET_BITMAP,0,-1,bmBack).sendToTarget();
+                Bitmap bmBack = BitmapFactory.decodeResource(getResources(), R.drawable.lanchuner_bg, op);
+                dataExchangeHandler.obtainMessage(Constants.GET_BITMAP, 0, -1, bmBack).sendToTarget();
                 //加载用户头像
-                if(!TextUtils.isEmpty(photoPath)) {
+                if (!TextUtils.isEmpty(photoPath)) {
                     int size = (int) (dentisy * 120 + 0.5f);
                     Bitmap bitmap = ImageUtil.createImageThumbnail(photoPath, size * size);
                     dataExchangeHandler.obtainMessage(Constants.GET_BITMAP, 1, -1, bitmap).sendToTarget();
@@ -540,8 +540,9 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                 CURRENT_CHANNEL = channel;
                                 break;
                             case Constants.READ_SETASYNCWORD:
-                                showToast("设置同步字成功");
-                                haveSetAsyncWord = true;
+                                if(homeFragment != null) {
+                                    homeFragment.asyncOk();
+                                }
                                 break;
                             case Constants.READ_UNKNOWN:
                                 stopReceiveSounds();
@@ -687,13 +688,13 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     /**
-     * 向设备发送同步字
+     * 向设备发送同步字,HomeFragment中的回调方法
      */
-    private void sendAsyncWord() {
+    @Override
+    public void sendAsyncWord(byte[] asyncWord) {
         if(bleService == null || asyncWord == null) return;
-        if(!haveSetAsyncWord) {
-            bleService.writeInstruction(asyncWord);
-        }
+        bleService.writeInstruction(asyncWord);
+        Log.e("sendAsyncWord","设置同步字");
     }
 
     //复位硬件设备
@@ -740,7 +741,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     @Override
     protected void onStop() {
         super.onStop();
-        Log.e("onStop","onstop");
+        Log.e("onStop", "onstop");
     }
 
     @Override
@@ -821,7 +822,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
      */
     private void showPersonal() {
         Intent intent = new Intent();
-        intent.setClass(this,PersonalActivity.class);
+        intent.setClass(this, PersonalActivity.class);
         intent.putExtra("name", name);
         if(bitmapHead != null) {
             Bundle bundle = new Bundle();
@@ -846,6 +847,23 @@ public class MainActivity extends Activity implements View.OnClickListener,
             return;
         initHomeFragment();
         changeFragment(homeFragment);
+    }
+
+    /**
+     * HomeFragment的回调方法,复位单片机
+     */
+    @Override
+    public void resetFromH() {
+        resetCms(true);
+    }
+
+    /**
+     * HomeFragment中的回调方法
+     * @param tempId
+     */
+    @Override
+    public void setMyId(int tempId) {
+        this.myId = tempId;
     }
 
     /**
@@ -959,9 +977,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
         }else if(bindFrom == BineDeviceFrom.HF && homeFragment != null) {
             homeFragment.deviceConnected(connect);
         }
-        if(connect && !haveSetAsyncWord) {
-            sendAsyncWord();
-        }
     }
 
     /**
@@ -1012,18 +1027,25 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     /**
+     * HomeFragment中的回调函数，获取新建的组
+     * @return
+     */
+    @Override
+    public GroupEntity getNewGroup() {
+        if(haveNewGroup) {
+            haveNewGroup = false;
+            return groupEntity;
+        }
+        return null;
+    }
+
+    /**
      * HomeFragment中的回调方法
      * 停止录音
      */
     @Override
     public void stopSendSounds() {
         record.stopRecording();
-    }
-
-    //HomeFragment中的回调方法，设置我在组里的id
-    @Override
-    public void setMyId(int tempId) {
-        this.myId = tempId;
     }
 
     /**
@@ -1096,18 +1118,15 @@ public class MainActivity extends Activity implements View.OnClickListener,
              */
             Bundle bundle = data.getExtras();
             if(bundle == null) return;
-            GroupEntity groupEntity = bundle.getParcelable(GroupActivity.EXTRA_GROUP);
+            groupEntity = bundle.getParcelable(GroupActivity.EXTRA_GROUP);
             if(groupEntity == null) return;
-            asyncWord = groupEntity.getAsyncWord();
+            haveNewGroup = true;
             myId = groupEntity.getTempId();
             if(homeFragment == null) {
                 initHomeFragment();
                 changeFragment(homeFragment);
             }
-            homeFragment.updateGroup(groupEntity);
             lockerView.closeMenu();
-            sendAsyncWord();
-            //GroupUtil.recycle(groupEntity.getMembers());
         }else if(requestCode == HomeFragment.REQUEST_LOCATION && resultCode == Activity.RESULT_OK && data != null) {
             String address = data.getStringExtra(HomeFragment.EXTRA_LOCATION);
             if(!TextUtils.isEmpty(address))
