@@ -6,6 +6,7 @@ import android.os.Looper;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -25,19 +26,24 @@ public class SoundsTextView extends TextView implements View.OnClickListener{
     private ImageView soundImg,soundPlay;
     private long soundsTime;
     private float scale;
+    private float width;
+
     //���߳�ֹͣsoundAnim��runable
     Runnable runable = null;
     private static final Handler mHan = new Handler(Looper.getMainLooper());
     public SoundsTextView(Context context) {
         super(context);
         scale = context.getResources().getDisplayMetrics().density;
+        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        width = wm.getDefaultDisplay().getWidth();
     }
 
     public SoundsTextView(Context context, AttributeSet attrs) {
         super(context, attrs);
         setOnClickListener(this);
         scale = context.getResources().getDisplayMetrics().density;
-
+        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        width = wm.getDefaultDisplay().getWidth();
     }
 
     public long getSoundsTime() {
@@ -48,7 +54,11 @@ public class SoundsTextView extends TextView implements View.OnClickListener{
         this.soundsTime = soundsTime;
         //�����򳤶ȶ�̬�仯
         RelativeLayout.LayoutParams lp =(RelativeLayout.LayoutParams) getLayoutParams();
-        if(soundsTime/1000<50) lp.width=(int)((soundsTime/60)+ (scale * 50 + 0.5f));
+        if(((soundsTime/60)+ (scale * 50 + 0.5f)) < width - scale * 50 +0.5f)
+            lp.width=(int)((soundsTime/60)+ (scale * 50 + 0.5f));
+        else
+            lp.width=(int)(width - scale * 50 +0.5f);
+
         setLayoutParams(lp);
         invalidate();
     }
