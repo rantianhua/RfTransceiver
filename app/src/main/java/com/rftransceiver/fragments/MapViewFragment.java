@@ -106,15 +106,15 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_mapview,container,false);
+        View view = inflater.inflate(R.layout.fragment_mapview, container, false);
         initView(view);
 
-        if(TextUtils.isEmpty(address)) {
-            if(locationClient == null) initLocation();
-        }else {
+        if (TextUtils.isEmpty(address)) {
+            if (locationClient == null) initLocation();
+        } else {
             String[] addresses = address.split("\\|");
-            if(addresses.length > 1) {
-                if(geocoder != null) {
+            if (addresses.length > 1) {
+                if (geocoder != null) {
                     geocoder.geocode(new GeoCodeOption().address(addresses[0]).city(addresses[1]));
                 }
             }

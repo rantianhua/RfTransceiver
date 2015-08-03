@@ -1,13 +1,18 @@
 package com.rftransceiver.fragments;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Fragment;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.text.Editable;
 import android.text.InputFilter;
@@ -29,6 +34,8 @@ import com.rftransceiver.customviews.CircleImageDrawable;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.ImageUtil;
 
+import java.io.File;
+
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 
@@ -49,8 +56,9 @@ public class InitFragment extends Fragment implements View.OnClickListener{
     @InjectView(R.id.tv_input_length)
     TextView tvCounter;
 
-    private final int etSize = 10;
-    public static final int REQUEST_FRAGMENT = 200;
+    private final int etSize = 10;  //昵称的最大长度
+    private static final int REQUEST_IMAGE_CPTURE = 200;    //请求系统拍照的代码
+    private static final int RESULT_LOAD_IMAGE = 201;    //请求图库的代码
 
     private String photoPath;
 
@@ -111,14 +119,16 @@ public class InitFragment extends Fragment implements View.OnClickListener{
                     Toast.makeText(getActivity(),"请设置头像",Toast.LENGTH_SHORT).show();
                     return;
                 }
-                saveBaseInfo(nickname);
+                saveBaseInfo(nickname,photoPath,getActivity().getSharedPreferences(Constants.SP_USER,0));
+                startActivity(new Intent(getActivity(), MainActivity.class));
+                getActivity().finish();
                 etNickName.setText("");
                 break;
             case R.id.img_cancel_input:
                 etNickName.setText("");
                 break;
             case R.id.img_init_camera:
-                changeFragment(ImagesFragment.getInstance(REQUEST_FRAGMENT));
+                chooseAction();
                 break;
             default:
                 break;
@@ -126,29 +136,62 @@ public class InitFragment extends Fragment implements View.OnClickListener{
     }
 
     /**
-     *
-     * @param fragment the ImagesFragment to get user photo
+     * 选择获取图片的方式
      */
-    private void changeFragment(Fragment fragment) {
-        fragment.setTargetFragment(this,REQUEST_FRAGMENT);
-        getFragmentManager().beginTransaction().
-                replace(R.id.frame_content_launcher,fragment)
-                .addToBackStack(null)
-                .commit();
+    private void chooseAction() {
+        new AlertDialog.Builder(getActivity()).setItems(new String[]{"打开图库", "拍一张"}, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                if(i == 0) {
+                    //打开系统图库
+                    openGallery();
+                }else if(i == 1){
+                    //打开系统相机
+                    openCamera();
+                }
+            }
+        }).show();
+    }
+
+    /**
+     * 打开系统图库
+     */
+    private void openGallery() {
+        Intent i = new Intent(
+                Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        if(i.resolveActivity(getActivity().getPackageManager()) != null) {
+            startActivityForResult(i, RESULT_LOAD_IMAGE);
+        }
+    }
+
+    /**
+     * 打开相机
+     */
+    private void openCamera() {
+        Intent takePicture = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        //确保进程能够获取返回的intent
+        if(takePicture.resolveActivity(getActivity().getPackageManager()) != null) {
+            photoPath = getActivity().getExternalFilesDir(null)+Constants.PHOTO_NAME;
+            Uri imageUri = Uri.fromFile(new File(photoPath));
+            takePicture.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+            startActivityForResult(takePicture, REQUEST_IMAGE_CPTURE);
+        }
     }
 
     /**
      *
      * @param nickname
-     * save user base info
+     * 保存昵称
      */
-    private void saveBaseInfo(String nickname) {
-        SharedPreferences.Editor editor = getActivity().getSharedPreferences(Constants.SP_USER,0).edit();
-        editor.putString(Constants.NICKNAME,nickname);
-        editor.putString(Constants.PHOTO_PATH,photoPath);
+    public static void saveBaseInfo(String nickname,String photoPath,SharedPreferences sp) {
+        SharedPreferences.Editor editor = sp.edit();
+        if(!TextUtils.isEmpty(nickname)){
+            editor.putString(Constants.NICKNAME,nickname);
+        }
+        if(!TextUtils.isEmpty(photoPath)) {
+            editor.putString(Constants.PHOTO_PATH, photoPath);
+        }
         editor.apply();
-        startActivity(new Intent(getActivity(), MainActivity.class));
-        getActivity().finish();
     }
 
     /**
@@ -162,17 +205,28 @@ public class InitFragment extends Fragment implements View.OnClickListener{
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(requestCode == REQUEST_FRAGMENT && resultCode == Activity.RESULT_CANCELED) {
-            getFragmentManager().popBackStackImmediate();
-            photoPath = data.getStringExtra(Constants.PHOTO_PATH);
-            int size = (int)(getResources().getDisplayMetrics().density * 100 + 0.5f);
-            Bitmap bitmap = ImageUtil.createImageThumbnail(photoPath,size * size);
-            if(bitmap != null) {
-                CircleImageDrawable drawable = new CircleImageDrawable(bitmap);
-                setPhoto(drawable);
-            }
-        }else {
+        if(requestCode == REQUEST_IMAGE_CPTURE && resultCode == Activity.RESULT_OK) {
+            //显示图片
+            showBitmap();
+        }else if (requestCode == RESULT_LOAD_IMAGE && resultCode == Activity.RESULT_OK && null != data) {
+            photoPath = ImageUtil.getImgPathFromIntent(data,getActivity());
+            showBitmap();
+        }
+        else {
             super.onActivityResult(requestCode, resultCode, data);
+        }
+    }
+
+    /**
+     * 显示获取到的图片
+     */
+    private void showBitmap() {
+        if(photoPath == null) return;
+        int size = (int)(getResources().getDisplayMetrics().density * 100 + 0.5f);
+        Bitmap bitmap = ImageUtil.createImageThumbnail(photoPath,size * size);
+        if(bitmap != null) {
+            CircleImageDrawable drawable = new CircleImageDrawable(bitmap);
+            setPhoto(drawable);
         }
     }
 }

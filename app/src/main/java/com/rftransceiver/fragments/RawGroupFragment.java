@@ -203,7 +203,7 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
             public void run() {
                 refreshWifiAp();
             }
-        },0,1500);
+        },0,2000);
         scanTimer = new Timer();
         //每隔2秒扫描一次热点
         scanTimer.schedule(new TimerTask() {
@@ -211,7 +211,7 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
             public void run() {
                 if (callback != null) callback.startScan();
             }
-        },0, 2000);
+        },0, 3000);
     }
 
     /**
@@ -220,7 +220,6 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
     private void refreshWifiAp() {
         if(callback != null) {
             List<ScanResult> scans = callback.getScanResult();
-            Log.e("refreshWifiAp","得到一次热点结果");
             if(scans == null) return;
             //根据wifi信号的强度排序
             for(int i=0;i<scans.size();i++) {
@@ -241,6 +240,7 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
                 if(WifiNetService.isSSIDValid(ssid)
                         && !containResult(result)) {
                     Log.e("refreshWifiAp","扫描到" + result.SSID);
+                    stopScanWifiAp();
                     handler.obtainMessage(ADD_DATA, -1, -1, result).sendToTarget();
                 }
             }
@@ -360,7 +360,9 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
     private boolean containResult(ScanResult result) {
         int size = scanResults.size();
         for(int i = 0;i < size;i++) {
-            return WifiNetService.compareTwoSsid(scanResults.get(i).SSID,result.SSID);
+            if(WifiNetService.compareTwoSsid(scanResults.get(i).SSID,result.SSID)) {
+                return true;
+            }
         }
         return false;
     }
@@ -461,14 +463,14 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
                     @Override
                     public void onClick(View view) {
                         if(chooseView.getVisibility() == View.INVISIBLE) {
+                            //停止扫描wifi热点
+                            stopScanWifiAp();
                             chooseView.setVisibility(View.VISIBLE);
                             hideOtherViews();
                             String idKey = (String)view.getTag();
                             memberId = subIds.get(idKey);
-                            finalConnect((String)view.getTag());
+                            finalConnect(idKey);
                             tvTip.setText(getString(R.string.wait_group_owner_sure));
-                            //停止扫描wifi热点
-                            stopScanWifiAp();
                         }
                     }
                 });
@@ -586,9 +588,12 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
      * @param ssid
      */
     public void scoketConnectFailed(String ssid) {
-        if(WifiNetService.compareTwoSsid(ssid,scanResults.get(count).SSID)) {
-            Log.e("scoketConnectFailed"," in ssid " + ssid);
-            connectWifi();
+        try {
+            if(WifiNetService.compareTwoSsid(ssid,scanResults.get(count).SSID)) {
+                connectWifi();
+            }
+        }catch (Exception e) {
+
         }
     }
 
@@ -633,8 +638,10 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
      * @return
      */
     public int getCurrentId() {
-        if( subIds != null && connectedSsid != null) {
+        try {
             return subIds.get(connectedSsid);
+        }catch (Exception e) {
+            e.printStackTrace();
         }
         return -1;
     }
@@ -664,10 +671,10 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
             case RECEIVED_A_GROUP:
                 addGroupInUI((JSONObject)message.obj);
                 isConnecting = false;
-                if(scanTimer != null) {
-                    count ++;
-                    connectWifi();
-                }
+//                if(scanTimer != null) {
+//                    count ++;
+//                    connectWifi();
+//                }
                 break;
             case CANCEL_ADD_GROUP:
                 int id = message.arg1;

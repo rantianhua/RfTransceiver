@@ -46,14 +46,12 @@ public class SetGroupNameFragment extends Fragment {
     Button btnSure;
     @InjectView(R.id.img_rainbow_above)
     ImageView background;
-    /**
-     * the instance of OnGroupNameSet
-     */
+    //接口实例
     private OnGroupNameSet listener;
-    /**
-     * the max length of group name
-     */
+    //组名的最大长度
     private final int etLength = 8;
+    //背景图片
+    private Bitmap bmBg;
 
     @Nullable
     @Override
@@ -77,8 +75,8 @@ public class SetGroupNameFragment extends Fragment {
 
         BitmapFactory.Options op = new BitmapFactory.Options();
         op.inSampleSize = 4;
-        Bitmap back = BitmapFactory.decodeResource(getResources(),R.drawable.creat_group_above,op);
-        background.setBackground(new BitmapDrawable(back));
+        bmBg = BitmapFactory.decodeResource(getResources(),R.drawable.creat_group_above,op);
+        background.setBackground(new BitmapDrawable(bmBg));
 
         SpannableString ss = new SpannableString("一人建组");
         ForegroundColorSpan colorSpan = new ForegroundColorSpan(Color.BLUE);
@@ -136,6 +134,10 @@ public class SetGroupNameFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        //回收bitmap
+        if(bmBg != null) {
+            bmBg.recycle();
+        }
         setOnGroupNameSetCallback(null);
     }
 

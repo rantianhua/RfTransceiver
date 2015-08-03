@@ -63,7 +63,6 @@
         android:layout_below="@+id/tv_tip_home"
         android:listSelector="@android:color/transparent"
         android:divider="#000000"
-        android:background="@drawable/chatbackground"
         />
 
 

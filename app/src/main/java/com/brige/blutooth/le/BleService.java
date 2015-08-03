@@ -259,6 +259,9 @@ public class BleService extends Service {
             index = 0;  //避免上次遗留的错误数据对本次造成影响
             writeCharacteristic.setValue(instruction);
             mBluetoothGatt.writeCharacteristic(writeCharacteristic);
+            if(Constants.DEBUG) {
+                Log.e("writeInstruction","write a writeInstruction");
+            }
             return true;
         }else {
             return false;
