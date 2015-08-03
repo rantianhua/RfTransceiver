@@ -24,7 +24,7 @@
         android:layout_marginLeft="20dp"
         android:background="@drawable/tv_conversation_bg_right"
         android:textColor="@color/white"
-        android:gravity="center"
+        android:gravity="left"
         />
 
 </RelativeLayout>
