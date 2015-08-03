@@ -750,6 +750,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                         imgMessageType.setSelected(false);
                         etSendMessage.setVisibility(View.VISIBLE);
                         btnSounds.setVisibility(View.GONE);
+                        imgFace.setVisibility(View.VISIBLE);
                     }
                 }
                 break;
