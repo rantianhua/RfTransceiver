@@ -1003,9 +1003,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             }
             result.append(getHourAndMin(timeStamp,cal));
         }
-//        if(compareWithPre) {
-//            saveMessage(result.toString(), 4, 0, timeStamp-1);
-//        }
+        if(compareWithPre) {
+            saveMessage(result.toString(), 4, 0, timeStamp-1);
+        }
         cal = null;
         return result.toString();
     }
@@ -1041,11 +1041,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         receivingData(0, sounds, memberId, receivingSoundsTime);
     }
 
-//    private void saveMessage(Object message,int type,int mid,long time) {
-//        if(groupEntity != null) {
-//            dbManager.readyMessage(message, type, mid, currentGroupId, time);
-//        }
-//    }
+    private void saveMessage(Object message,int type,int mid,long time) {
+        if(groupEntity != null) {
+            dbManager.readyMessage(message, type, mid, currentGroupId, time);
+        }
+    }
 
     /**
      * after reveive all data
@@ -1119,9 +1119,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         Object object = sendBitmap == null ? sendText : sendBitmap;
         //发送语音，检查是否保存组语音消息
         if(groupEntity == null) return;
-//        if(!(sendAction.ordinal() == 0 && !groupEntity.getIsSaveSoundOfGroup())) {
-//            saveMessage(object, sendAction.ordinal(), myId, time);
-//        }
+        if(!(sendAction.ordinal() == 0 && !groupEntity.getIsSaveSoundOfGroup())) {
+            saveMessage(object, sendAction.ordinal(), myId, time);
+        }
         sendBitmap = null;
     }
 

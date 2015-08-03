@@ -440,10 +440,11 @@ public class DBManager {
             db.endTransaction();
         }catch (Exception e) {
             e.printStackTrace();
-            Log.e("getData", "error " ,e);
+            Log.e("getData", "error ", e);
         }finally {
             closeDB();
         }
+
         return conversationDatas;
     }
 
