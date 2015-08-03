@@ -462,6 +462,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                             case Constants.READ_SOUNDS:
                                 switch (msg.arg2) {
                                     case 0:
+                                        record.stopRecording();
                                         //preTime为接受消息的起始时间，用于计算消息时长
                                         preTime=System.currentTimeMillis();
                                         if(homeFragment != null){
@@ -547,7 +548,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
                             case Constants.READ_UNKNOWN:
                                 stopReceiveSounds();
                                 resetCms(true);
-                                showToast("收到未知数据");
                                 break;
                             case Constants.READ_RSSI:
                                 showToast("读到rssi值是：" + msg.arg2);

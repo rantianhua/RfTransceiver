@@ -361,7 +361,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                         boolean connect = (boolean)msg.obj;
                         String text = tvTip.getText().toString();
                         if (connect) {
-                            sendAsync();
+                            //sendAsync();
                             if (tvTip.getVisibility() ==
                                     View.VISIBLE && text.equals(tipReconnecting)) {
                                 tvTip.setText(tipConnecSuccess);
@@ -592,7 +592,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         btnSounds.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
-                sendAsync();
+                //sendAsync();
                 switch (motionEvent.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         btnSounds.setImageBitmap(press);
@@ -623,22 +623,15 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                             }, 200);
                         }
                         return true;
-                    case MotionEvent.ACTION_CANCEL:
-                        btnSounds.setImageBitmap(up);
-                        return false;
                     case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
                         curTime=System.currentTimeMillis();
                         seconds = (curTime-preTime);
-                        BitmapFactory.Options oP = new BitmapFactory.Options();
-                        oP.inSampleSize = 2;
-                        Bitmap up = BitmapFactory.decodeResource(getResources(),R.drawable.up,oP);
-
                         btnSounds.setImageBitmap(up);
                         if (sendSounds && callback != null) callback.stopSendSounds();
                         sendSounds = false;
                         tvTip.setText("");
                         tvTip.setVisibility(View.GONE);;
-
                         return true;
                     default:
                         return true;
@@ -904,7 +897,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
      * send text
      */
     private void sendText() {
-        sendAsync();
+        //sendAsync();
         Editable editable = editableFactory.newEditable(etSendMessage.getText());
         String message = Html.toHtml(editable);
         message = message.replace("<p dir=\"ltr\">","");
@@ -932,6 +925,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                 GroupMember member = groupEntity.getMembers().get(i);
                 if(member.getId() == memberId) {
                     if(tye == 0 && data == null) {
+                        if(tvTip.getVisibility() == View.VISIBLE && tvTip.getText().toString().endsWith("正在说话...")) {
+                            tvTip.setText("");
+                            if(callback != null) callback.stopSendSounds();
+                        }
                         tvTip.setVisibility(View.VISIBLE);
                         tvTip.setText(member.getName() + "正在说话...");
                         btnSounds.setEnabled(false);
