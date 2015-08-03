@@ -1100,7 +1100,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
      * @param type 0 is sounds data,
      */
     public void endReceive(int type) {
-        if(type == 0 && !sendSounds) {
+        if(type == 0) {
            //stop to recevie sounds data
             tvTip.setText("");
             tvTip.setVisibility(View.GONE);

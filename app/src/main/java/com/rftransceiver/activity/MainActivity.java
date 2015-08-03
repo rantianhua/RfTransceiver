@@ -462,7 +462,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                             case Constants.READ_SOUNDS:
                                 switch (msg.arg2) {
                                     case 0:
-                                        record.stopRecording();
+                                        stopSendSounds();
                                         //preTime为接受消息的起始时间，用于计算消息时长
                                         preTime=System.currentTimeMillis();
                                         if(homeFragment != null){
@@ -470,7 +470,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                             if(homeFragment.getRealTimePlay()){
                                                 receiver.startReceiver();
                                             }else {
-                                                receiver.stopReceiver();
+                                                stopReceiveSounds();
                                             }
                                             homeFragment.receivingData(0,null,(int)msg.obj,0);
                                         }
@@ -554,7 +554,9 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                 break;
                             case Constants.READ_CHANNEL:
                                 if (msg.arg2 == 0) {
-                                    stopReceiveSounds();
+                                    if(receiver.isReceiving()) {
+                                        stopReceiveSounds();
+                                    }
                                     if (action == SendAction.SOUNDS) {
                                         //start record
                                         record.startRecording();
@@ -654,7 +656,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                         index += ss.length;
                     }
                     String sounds = Base64.encodeToString(sendSounds,Base64.DEFAULT);
-                    if(homeFragment != null && homeFragment.isVisible()) {
+                    if(homeFragment != null) {
                         homeFragment.sendMessage(sounds,SendAction.SOUNDS);
                     }
                     soundsRecords.clear();
@@ -667,9 +669,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
      * 停止播放语音
      */
     private void stopReceiveSounds() {
-        if(receiver.isReceiving()) {
-            receiver.stopReceiver();
-        }
         receiver.stopReceiver();
         if(homeFragment != null) {
             homeFragment.endReceive(0);
@@ -683,7 +682,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
      */
     private void groupAction(int mode) {
         Intent intent = new Intent(this,GroupActivity.class);
-        intent.putExtra(GroupActivity.ACTION_MODE,mode);
+        intent.putExtra(GroupActivity.ACTION_MODE, mode);
         startActivityForResult(intent, REQUEST_GROUP);
     }
 
@@ -699,8 +698,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
     //复位硬件设备
     private void resetCms(boolean write) {
-        receiver.stopReceiver();
-        record.stopRecording();
+        stopReceiveSounds();
+        stopSendSounds();
         receiver.clear();
         parseFactory.resetSounds();
         textEntity.close();
