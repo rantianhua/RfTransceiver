@@ -280,7 +280,6 @@ public class DBManager {
                     openWriteDB();
                     db.beginTransaction();
                     for (ContentValues values : saveValues) {
-
                         long re = db.insert(DatabaseHelper.TABLE_DATA, "_data", values);
                     }
                     db.setTransactionSuccessful();
@@ -359,7 +358,7 @@ public class DBManager {
     }
 
     /**
-     * get message data saved in db
+     * 获取聊天记录
      * @param gid group id of the data
      * @param limits how many datas get
      */
@@ -371,8 +370,8 @@ public class DBManager {
         }
         sql += " order by _date_time desc " + "limit " + limits;
         List<ConversationData> conversationDatas = null;
-        openReadDB();
         try {
+            openReadDB();
             db.beginTransaction();
             Cursor cursor = db.rawQuery(sql,null);
             conversationDatas = new ArrayList<>();
@@ -437,6 +436,7 @@ public class DBManager {
                 conversationDatas.add(data);
             }
             cursor.close();
+            db.setTransactionSuccessful();
             db.endTransaction();
         }catch (Exception e) {
             e.printStackTrace();

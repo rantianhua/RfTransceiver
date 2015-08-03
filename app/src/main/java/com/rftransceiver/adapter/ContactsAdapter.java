@@ -93,6 +93,7 @@ public class ContactsAdapter extends BaseExpandableListAdapter {
     @Override
     public View getChildView(int i, int i1, boolean b, View view, ViewGroup viewGroup) {
         ChildHolder childHolder = null;
+        ContactsData contactsData = mapDatas.get(getKeyByIndex(i)).get(i1);
         if(view == null) {
             childHolder = new ChildHolder();
             childHolder.tvName = new TextView(context);
@@ -103,31 +104,24 @@ public class ContactsAdapter extends BaseExpandableListAdapter {
             childHolder.tvName.setBackgroundResource(R.drawable.click_with_color);
             view = childHolder.tvName;
             view.setTag(childHolder);
-            final int group = i;
-            final int child = i1;
             view.setOnClickListener(new View.OnClickListener() {//为每个分支创建一个点击事件，为了实现加入组的功能
                 @Override
                 public void  onClick(View v) {
-                    String key = getKeyByIndex(group);
-                    List<ContactsData> cont = mapDatas.get(key);//通过key值找到分支的List
-                    if(cont != null) {
-                        //通过接口将组geoupid和childID传到调用方
-                        if(callback != null) callback.jionGroup(group,child);//加入组的操作接口
-                    }
-
+                    ChildHolder ch = (ChildHolder)v.getTag();
+                    //通过接口将组geoupid和childID传到调用方
+                    if(callback != null) callback.goToGroup(ch.groupName,ch.gid);
                 }
             });
             view.setOnLongClickListener(new View.OnLongClickListener() {//为每个分支师徒创建一个长按事件，为了实现删除组的功能
                 @Override
                 public boolean onLongClick(View view) {
-                    //先根据父视图的索引得到其对应的子视图的数据源
-                    String key = getKeyByIndex(group);
-                    List<ContactsData> cont = mapDatas.get(key);//通过key值找到分支的List
-                    if(cont != null) {
+                    if(callback != null) {
+                        ChildHolder ch = (ChildHolder)view.getTag();
                         //再根据数据源和子视图的索引得到子视图对应组的id
-                        int gid = cont.get(child).getGroupId();
+                        int gid = ch.gid;
+                        String name = ch.groupName;
                         //通过接口将组id，key和childID传到调用方
-                        if(callback != null) callback.getGroupId(gid,key,child);
+                        callback.getGroupId(gid, name,ch.key);
                     }
                     return true;
                 }
@@ -135,7 +129,10 @@ public class ContactsAdapter extends BaseExpandableListAdapter {
         }else {
             childHolder = (ChildHolder) view.getTag();
         }
-        childHolder.tvName.setText(mapDatas.get(getKeyByIndex(i)).get(i1).getGroupName());
+        childHolder.gid = contactsData.getGroupId();
+        childHolder.groupName = contactsData.getGroupName();
+        childHolder.key = contactsData.getFirstLetter();
+        childHolder.tvName.setText(contactsData.getGroupName());
         return view;
     }
 
@@ -168,12 +165,14 @@ public class ContactsAdapter extends BaseExpandableListAdapter {
 
     static class ChildHolder {
         TextView tvName;
+        String groupName,key;
+        int gid;
     }
 
     //该接口用来回调传递获取的组的id，hashmap中的key值，和child<List>的下标
     public interface CallbackInContactsAdpter {
-        void getGroupId(int gid,String key,int childId);
-        void jionGroup(int i,int i1);//接口用来回调加入组的操作
+        void getGroupId(int gid,String name,String key);
+        void goToGroup(String gName,int gid);//接口用来回调加入组的操作
     }
 
 }

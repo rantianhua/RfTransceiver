@@ -6,15 +6,12 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
-import android.media.Image;
 import android.media.SoundPool;
 import android.net.Uri;
 import android.os.Bundle;
@@ -40,7 +37,6 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridView;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -159,8 +155,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     private boolean sendSounds = false;
     //数据库管理
     private DBManager dbManager;
-    //当前视图的标题
-    private String homeTitle;
+//    //当前视图的标题
+//    private String homeTitle;
     //处理异步消息
     private static Handler mainHandler;
     //播放音效
@@ -186,11 +182,15 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     private ConversationData conversationData;
     //标识有没有执行过打开蓝牙的操作
     private boolean openBle = false;
+    //标识有没有设置同步字
+    private boolean sendAsy = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         initHandler();
+        //得到最新组的id
+        currentGroupId = getCurrentGroupId();
 
         expressions = new ArrayList<>();
         imgDots = new ArrayList<>();
@@ -220,6 +220,28 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             openBle = true;
             //打开蓝牙
             openBle();
+        }
+        //先获取有没有新建的组
+        if(callback != null) {
+            GroupEntity newGroup = callback.getNewGroup();
+            if(newGroup != null) {
+                dataLists.clear();
+                conversationAdapter.updateData(dataLists);
+                updateGroup(newGroup);
+                return;
+            }
+        }
+        //加载已有的组
+        if(groupEntity == null && currentGroupId != -1) {
+            loadGroup(currentGroupId);
+            Constants.GROUPID = currentGroupId;
+        }else if(groupEntity != null){
+            showGroupTitle();
+            conversationAdapter.updateData(dataLists);
+        }else {
+            //没有任何组，处于公共频道
+            isPublicChannel = true;
+            tvTitle.setText("公共频道");
         }
     }
 
@@ -297,6 +319,12 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                         //加载了一个组
                         GroupEntity ge = (GroupEntity)msg.obj;
                         updateGroup(ge);
+                        PoolThreadUtil.getInstance().addTask(new Runnable() {
+                            @Override
+                            public void run() {
+                                loadConverationData(-1, 20, false);
+                            }
+                        });
                         break;
                     case LOAD_CONVERDATA:
                         //加载到聊天信息
@@ -310,11 +338,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                         listView.loadComplete();
                         break;
                     case CHANGE_GROUP:
-                        //取消加组或建组
+                        //改变当前的组
                         int gid = msg.arg1;
-                        if(gid == currentGroupId) return false;
                         currentGroupId = gid;
                         dataLists.clear();
+                        sendAsy = false;
                         conversationAdapter.updateData(dataLists);
                         groupEntity = null;
                         loadGroup(gid);
@@ -333,6 +361,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                         boolean connect = (boolean)msg.obj;
                         String text = tvTip.getText().toString();
                         if (connect) {
+                            //sendAsync();
                             if (tvTip.getVisibility() ==
                                     View.VISIBLE && text.equals(tipReconnecting)) {
                                 tvTip.setText(tipConnecSuccess);
@@ -502,51 +531,20 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         listView.setInterface(this);
         btnSounds.setImageBitmap(up);
         listView.setBackground(new BitmapDrawable(backGroud));
-        conversationAdapter = new ListConversationAdapter(getActivity(),imgageGetter,getFragmentManager());
+        if(conversationAdapter == null) {
+            conversationAdapter = new ListConversationAdapter(getActivity(),imgageGetter,getFragmentManager());
+        }
         listView.setAdapter(conversationAdapter);
-        conversationAdapter.updateData(dataLists);
-        if(!TextUtils.isEmpty(homeTitle)) {
-            tvTitle.setText(homeTitle);
-            homeTitle = null;
-            isPublicChannel = false;
-        }else {
-            tvTitle.setText("公共频道");
-            isPublicChannel = true;
-        }
-    }
-
-    @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        if(groupEntity == null) {
-            isPublicChannel = true;
-            if(getCurrentGroupId() != -1) {
-                loadGroup(currentGroupId);
-                Constants.GROUPID = currentGroupId;
-            }else {
-                Log.e("onViewCreated","没有组要加载");
-            }
-        }else {
-            isPublicChannel = false;
-            updateGroup(groupEntity);
-
-        }
     }
 
     /**
-     * get current group id
+     * 得到最后一次打开的组的id
      * @return
      */
     private int getCurrentGroupId() {
-        if(currentGroupId == -1) {
-            try {
-                currentGroupId = getActivity().getSharedPreferences(Constants.SP_USER,0).getInt(Constants.PRE_GROUP,-1);
-
-            }catch (Exception e ){
-
-            }
-        }
-        return currentGroupId;
+        int id = -1;
+        id = getActivity().getSharedPreferences(Constants.SP_USER,0).getInt(Constants.PRE_GROUP,-1);
+        return id;
     }
 
     /**
@@ -594,6 +592,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         btnSounds.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
+                //sendAsync();
                 switch (motionEvent.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         btnSounds.setImageBitmap(press);
@@ -624,28 +623,38 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                             }, 200);
                         }
                         return true;
-                    case MotionEvent.ACTION_CANCEL:
-                        btnSounds.setImageBitmap(up);
-                        return false;
                     case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
                         curTime=System.currentTimeMillis();
                         seconds = (curTime-preTime);
-                        BitmapFactory.Options oP = new BitmapFactory.Options();
-                        oP.inSampleSize = 2;
-                        Bitmap up = BitmapFactory.decodeResource(getResources(),R.drawable.up,oP);
-
                         btnSounds.setImageBitmap(up);
                         if (sendSounds && callback != null) callback.stopSendSounds();
                         sendSounds = false;
                         tvTip.setText("");
                         tvTip.setVisibility(View.GONE);;
-
                         return true;
                     default:
                         return true;
                 }
             }
         });
+    }
+
+    /**
+     * 设置同步字
+     */
+    private void sendAsync() {
+        if(!sendAsy && groupEntity != null) {
+            if(callback != null) callback.sendAsyncWord(groupEntity.getAsyncWord());
+        }
+    }
+
+    /**
+     * 设置同步字成功
+     */
+    public void asyncOk() {
+        sendAsy = true;
+        Toast.makeText(getActivity(),"设置同步字成功",Toast.LENGTH_SHORT).show();
     }
 
     private interface SoundsTimeCallbacks{
@@ -698,18 +707,49 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                 if(getActivity() != null) {
                     if(popMenu == null) {
                         popMenu = new ContextPopMenu(getActivity(),top);
-                        ContextPopMenu.CallbackInContextMenu callbackInContextMenu =
+                        final ContextPopMenu.CallbackInContextMenu callbackInContextMenu =
                                 new ContextPopMenu.CallbackInContextMenu() {
                                     @Override
                                     public void isRealTimePlay(boolean isPlay) {
                                         //设置是否进行实时语音
                                         if(groupEntity != null) {
                                             groupEntity.setIsRealTimePlay(isPlay);
+                                        }else {
+                                            Toast.makeText(getActivity(),"请先建组",Toast.LENGTH_SHORT).show();
+                                        }
+                                    }
+
+                                    @Override
+                                    public void showGroup() {
+                                        if(groupEntity == null) {
+                                            Toast.makeText(getActivity(),"请先建组",Toast.LENGTH_SHORT).show();
+                                            return;
+                                        }
+                                        showGeoupDetail();
+                                    }
+
+                                    @Override
+                                    public void exitGroup() {
+                                        if(groupEntity == null) {
+                                            Toast.makeText(getActivity(),"请先建组",Toast.LENGTH_SHORT).show();
+                                            return;
+                                        }
+                                        //退出改组
+                                        tvTitle.setText("公共频道");
+                                        groupEntity = null;
+                                        dataLists.clear();
+                                        conversationAdapter.updateData(dataLists);
+                                    }
+
+                                    @Override
+                                    public void reset() {
+                                        //复位
+                                        if(callback != null) {
+                                            callback.resetFromH();
                                         }
                                     }
                                 };
                         popMenu.setCallBack(callbackInContextMenu);
-                        showG();
                     }
                     popMenu.show();
                 }
@@ -739,7 +779,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                     imgMessageType.setSelected(false);
                     etSendMessage.setVisibility(View.VISIBLE);
                     btnSounds.setVisibility(View.GONE);
+                    imgFace.setVisibility(View.VISIBLE);
                 }else {
+                    imgFace.setVisibility(View.INVISIBLE);
                     imgMessageType.setSelected(true);
                     etSendMessage.setVisibility(View.INVISIBLE);
                     btnSounds.setVisibility(View.VISIBLE);
@@ -773,6 +815,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                         imgMessageType.setSelected(false);
                         etSendMessage.setVisibility(View.VISIBLE);
                         btnSounds.setVisibility(View.GONE);
+                        imgFace.setVisibility(View.VISIBLE);
                     }
                 }
                 break;
@@ -831,7 +874,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             PoolThreadUtil.getInstance().addTask(new Runnable() {
                 @Override
                 public void run() {
-                    loadConverationData(currentGroupId, myId, lastData, 20, true);
+                    loadConverationData(lastData, 20, true);
                 }
             });
         }catch (Exception e) {
@@ -854,6 +897,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
      * send text
      */
     private void sendText() {
+        //sendAsync();
         Editable editable = editableFactory.newEditable(etSendMessage.getText());
         String message = Html.toHtml(editable);
         message = message.replace("<p dir=\"ltr\">","");
@@ -881,6 +925,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                 GroupMember member = groupEntity.getMembers().get(i);
                 if(member.getId() == memberId) {
                     if(tye == 0 && data == null) {
+                        if(tvTip.getVisibility() == View.VISIBLE && tvTip.getText().toString().endsWith("正在说话...")) {
+                            tvTip.setText("");
+                            if(callback != null) callback.stopSendSounds();
+                        }
                         tvTip.setVisibility(View.VISIBLE);
                         tvTip.setText(member.getName() + "正在说话...");
                         btnSounds.setEnabled(false);
@@ -923,7 +971,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         if(receiveData == null) return;
         receiveData.setDateTime(time);
         receiveData.setPhotoDrawable(drawable);
-        String receTime = checkDataTime(time,true);
+        String receTime = checkDataTime(time, true);
         if(receTime != null) {
             ConversationData timeData = new ConversationData(ListConversationAdapter.ConversationType.TIME, receTime);
             dataLists.add(timeData);
@@ -934,9 +982,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         Object oj = recevBitmap != null ? recevBitmap : data;
         //接受语音，检查是否保存组语音信息
         if(groupEntity == null) return;
-//        if (!(tye == 0 && !groupEntity.getIsSaveSoundOfGroup())) {
-//            saveMessage(oj,tye,memberId,time);
-//        }
+        if (!(tye == 0 && !groupEntity.getIsSaveSoundOfGroup())) {
+            saveMessage(oj,tye,memberId,time);
+        }
         recevBitmap = null;
     }
 
@@ -1052,7 +1100,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
      * @param type 0 is sounds data,
      */
     public void endReceive(int type) {
-        if(type == 0 && !sendSounds) {
+        if(type == 0) {
            //stop to recevie sounds data
             tvTip.setText("");
             tvTip.setVisibility(View.GONE);
@@ -1166,41 +1214,44 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
      */
     public void deviceConnected(boolean connect) {
         if(mainHandler != null) {
-            mainHandler.obtainMessage(UPDATE_BLESTATE,-1,-1,connect).sendToTarget();
+            mainHandler.obtainMessage(UPDATE_BLESTATE, -1, -1, connect).sendToTarget();
         }
     }
     /**
-     * update the group of talk
+     * 更新组
      * @param groupEntity
      */
-    public void updateGroup(final GroupEntity groupEntity) {
+    public void updateGroup(GroupEntity groupEntity) {
 
         this.groupEntity = groupEntity;
-        if(groupEntity == null) {
-            isPublicChannel = true;
-            return;
-        }
         myId = groupEntity.getTempId();
-        if(callback != null) callback.setMyId(groupEntity.getTempId());
-        String name = groupEntity.getName();
-        homeTitle = name
-                +"(" + groupEntity.getMembers().size() + "人" + ")";
-        if(tvTitle != null) {
-            tvTitle.setText(homeTitle);
-        }
+        if(callback != null) callback.setMyId(myId);
+        showGroupTitle();
         isPublicChannel = false;
+        if(getActivity() != null) {
+            //将该id保存为最新打开的组的id
+            GroupUtil.saveCurrentGid(currentGroupId,getActivity().getSharedPreferences(Constants.SP_USER,0));
+        }
     }
 
     /**
-     * change group by gid
+     * 显示组的名称
+     */
+    private void showGroupTitle() {
+        String name = groupEntity.getName();
+        String title = name +"(" + groupEntity.getMembers().size() + "人" + ")";
+        tvTitle.setText(title);
+    }
+
+    /**
+     * 改变当前的组
      * @param gid
      */
     public void changeGroup(int gid) {
+        //如果就是现在显示的组，不做任何处理
         if(gid == currentGroupId) return;
+        //根据id加载新的组
         mainHandler.obtainMessage(CHANGE_GROUP,gid,-1,null).sendToTarget();
-        if(getActivity() != null) {
-            GroupUtil.saveCurrentGid(gid,getActivity().getSharedPreferences(Constants.SP_USER,0));
-        }
     }
 
     public interface CallbackInHomeFragment {
@@ -1226,9 +1277,12 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
 
         /**
          * 设置我的id，方便在发送时标识自己
+         * 设置同步字
          * @param tempId
          */
         void setMyId(int tempId);
+
+        void sendAsyncWord(byte[] async);
 
         void openScroll(boolean open);
 
@@ -1249,6 +1303,16 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
          * 自动连接绑定过的设备
          */
         void connectDeviceAuto();
+
+        /**
+         * 获取新建的组
+         */
+        GroupEntity getNewGroup();
+
+        /**
+         * 复位，测试使用
+         */
+        void resetFromH();
     }
 
     @Override
@@ -1301,7 +1365,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                 GroupEntity ge = dbManager.getAgroup(gid);
                 if (ge != null) {
                     mainHandler.obtainMessage(LOAD_GROUP, -1, -1, ge).sendToTarget();
-                    loadConverationData(gid, ge.getTempId(), -1, 20, false);
                 }
             }
         });
@@ -1309,18 +1372,19 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
 
     /**
      *
-     * @param gid the group's id
      * @param timeStamp message send or received time
      * @param limits get max data from db
      * @return
      */
-    private void loadConverationData(int gid,int myid,long timeStamp,int limits,boolean isLoad) {
-        if(groupEntity == null) return;
-        List<ConversationData> preDatas = dbManager.getConversationData(gid,myId,timeStamp,20);
+    private void loadConverationData(long timeStamp,int limits,boolean isLoad) {
+        List<ConversationData> preDatas = dbManager.getConversationData(currentGroupId,myId,timeStamp,limits);
         if(isLoad) {
             loadComplete();
         }
         if(preDatas != null && preDatas.size() > 0) {
+            if(Constants.DEBUG) {
+                Log.e("loadConverationData","获取到组的聊天记录");
+            }
             for(int i = 0;i < preDatas.size();i++) {
                 int mid = preDatas.get(i).getMid();
                 for(int j = 0;j < groupEntity.getMembers().size();j++) {
@@ -1348,7 +1412,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     private String takePath;    //拍照图片的存储路径
     private void openCamera() {
         Intent takePicture = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        //ensure the process can handle with the return intent
         if(takePicture.resolveActivity(getActivity().getPackageManager()) != null) {
             takePath = getActivity().getExternalFilesDir(null) +"/" + System.currentTimeMillis() + ".jpg";
             Uri imageUri = Uri.fromFile(new File(takePath));
@@ -1441,22 +1504,16 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             super.onActivityResult(requestCode, resultCode, data);
         }
     }
-    public  void showG() {//回调接口的实现  实例化查看组的类
-        ContextPopMenu.CallbackInPopMenue callbackInPopMenue = new ContextPopMenu.CallbackInPopMenue() {
-            @Override
-            public void showGroup() {
-                if (groupEntity != null && groupEntity.getMembers().size() > 0) {
-                    Fragment groupFragment = GroupDetailFragment.getInstance(groupEntity);
-                    groupFragment.setTargetFragment(HomeFragment.this, REQUEST_GROUP_DETAIL);
-                    getFragmentManager().beginTransaction().replace(R.id.frame_content,
-                            groupFragment)
-                            .addToBackStack(null)
-                            .commit();
+    public  void showGeoupDetail() {//回调接口的实现  实例化查看组的类
+        if (groupEntity != null && groupEntity.getMembers().size() > 0) {
+            Fragment groupFragment = GroupDetailFragment.getInstance(groupEntity);
+            groupFragment.setTargetFragment(HomeFragment.this, REQUEST_GROUP_DETAIL);
+            getFragmentManager().beginTransaction().replace(R.id.frame_content,
+                    groupFragment)
+                    .addToBackStack(null)
+                    .commit();
 
-                }
-            }
-        };
-        popMenu.setCallbackInPopMenue(callbackInPopMenue);
+        }
     }
     public void deleteMessage(int gid){//对数据库操作实现删除聊天记录的功能
         dbManager.deleteMessage(gid);
@@ -1476,5 +1533,4 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     private static final int LOAD_CONVERDATA = 4;    //加载到聊天信息
     private static final int LOAD_COMPELET = 5;    //加载聊天信息完毕
     private static final int SEND_IMG = 6;    //发送图片
-    private static final int GET_BITMAP = 7;    //  加载到bitmap
 }

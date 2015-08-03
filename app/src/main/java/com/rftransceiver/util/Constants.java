@@ -145,7 +145,7 @@ public class Constants {
     public static final String PRE_GROUP = "pre_group";
 
     //调试，打印log的开关
-    public static boolean DEBUG = true;
+    public static boolean DEBUG = false;
     //用来判断要删除的是否是当前所在的组
     public static int GROUPID = -1;
 }
