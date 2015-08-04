@@ -51,7 +51,7 @@ public class ConversationData {
      */
     private int mid;
     private long soundsTime;
-    // ·¢ËÍÍ¼Æ¬µÄ½ø¶È
+    // ï¿½ï¿½ï¿½ï¿½Í¼Æ¬ï¿½Ä½ï¿½ï¿½ï¿½
     private int percent;
 
     public ConversationData(ListConversationAdapter.ConversationType type) {
@@ -70,6 +70,7 @@ public class ConversationData {
         setContent(text);
         setSoundsTime(soundsTime);
     }
+    
 
     public ConversationData(ListConversationAdapter.ConversationType type,
                             String text,Bitmap bitmap) {
