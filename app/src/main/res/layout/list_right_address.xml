@@ -5,6 +5,17 @@
     android:paddingBottom="10dp"
     >
 
+    <!--<fragment  -->
+        <!--android:name="com.rftransceiver.fragments.MapViewFragment"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="180dp"-->
+        <!--android:layout_marginStart="120dp"-->
+        <!--android:id="@+id/fragment_map_list_right"-->
+        <!--android:layout_centerVertical="true"-->
+        <!--android:layout_alignParentEnd="true"-->
+        <!--android:layout_marginEnd="15dp"/>-->
+
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="180dp"

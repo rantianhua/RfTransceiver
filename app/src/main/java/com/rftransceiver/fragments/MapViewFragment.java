@@ -44,37 +44,23 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
     @InjectView(R.id.mapview_location)
     MapView mapView;
 
-    /**
-     * core class of location
-     */
+    //定位的核心类
     private LocationClient locationClient;
     private BaiduMap baiduMap;
 
-    /**
-     * mark is first location or not
-     */
+    //标识是否是第一次定位
     private boolean isFirstLocate = true;
 
-    /**
-     * geography code
-     */
+    //反编码
     private GeoCoder geocoder;
 
-    /**
-     * the address to be shown
-     * if it is not null ,just show this address in mapview
-     * else locate and poi search
-     */
+    //显示特定位置
     private String address;
 
-    /**
-     * the list of poi info
-     */
+    //poi搜索结果
     private List<PoiInfo> poiInfoList;
 
-    /**
-     * current poiInfo
-     */
+   //当前位置信息
     private PoiInfo currentInfo;
 
 
