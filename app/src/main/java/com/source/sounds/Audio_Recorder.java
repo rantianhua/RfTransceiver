@@ -33,6 +33,8 @@ public class Audio_Recorder  implements Runnable
     
     private Audio_Encoder encoder = Audio_Encoder.getInstance();
 
+    private int maxSenconds = 10 * 1000;    //最长发送20秒的语音
+
     public Audio_Recorder() {
         initRecord();
     }
@@ -77,6 +79,7 @@ public class Audio_Recorder  implements Runnable
 		}
 
         setRecording(true);
+        long start = System.currentTimeMillis();
         while (isRecording())
         {  
             bufferRead = audioRecord.read(samples, 0, bufferSize);
@@ -90,9 +93,14 @@ public class Audio_Recorder  implements Runnable
                 Thread.sleep(20);  
             } catch (InterruptedException e) 
             {  
-                e.printStackTrace();  
-            }  
-        }  
+                e.printStackTrace();
+            }
+            long end = System.currentTimeMillis();
+            if(end - start > maxSenconds) {
+                setRecording(false);
+                break;
+            }
+        }
         audioRecord.stop();
         encoder.stopEncoding();
         if(Constants.DEBUG) {

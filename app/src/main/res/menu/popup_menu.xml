@@ -11,4 +11,14 @@
         android:title="@string/close_realtime_sounds"
         android:icon="@drawable/realtime_sounds"
         android:orderInCategory="200"/>
+
+    <item android:id="@+id/action_exit_group"
+        android:title="退出该组"
+        android:orderInCategory="300"
+        />
+
+    <item android:id="@+id/action_reset"
+        android:title="复位"
+        android:orderInCategory="400"
+        />
 </menu>

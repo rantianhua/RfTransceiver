@@ -11,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.AdapterView;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
@@ -110,35 +111,6 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
     }
 
     private void initEvent() {
-
-
-        contacts.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
-            @Override
-            public boolean onChildClick(ExpandableListView expandableListView, View view, int i, int i1, long l) {
-                final ContactsData data = (ContactsData) adpter.getChild(i, i1);
-                String message = "要进入" + "\"" + data.getGroupName() + "\"" + "进行群聊吗？";
-                MyAlertDialogFragment myAlert = MyAlertDialogFragment.getInstance(200, 180, message, true);
-                myAlert.setListener(new MyAlertDialogFragment.CallbackInMyAlert() {
-                    @Override
-                    public void onClickSure() {
-                        if (callback != null) {
-                            callback.changeGroup(data.getGroupId());
-                        }
-                    }
-
-                    @Override
-                    public void onClickCancel() {
-
-                    }
-                });
-                try {
-                    myAlert.show(getFragmentManager(), null);
-                } catch (Exception e) {
-
-                }
-                return false;
-            }
-        });
         imgBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -213,7 +185,7 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
      * @param gid
      */
     @Override
-    public void getGroupId(final int gid,final String key,final int child) {
+    public void getGroupId(final int gid, String name, final String key) {
         //显示提示框进一步确认
         String message = "确定删除该组?";
         MyAlertDialogFragment myAlert = MyAlertDialogFragment.getInstance(0,0,message,true);
@@ -226,28 +198,22 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
 
                         public void run() {
                             //在此处执行删除组的操作
-
-                            dbManager = DBManager.getInstance(getActivity());
                             dbManager.deleteGroup(gid);//更新数据库中的数据
-                            mainHan.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    mapContacts.get(key).remove(child);//把hashmap中的数据更新
-                                    //更新该界面
-                                    if (mapContacts.get(key).size() == 0) {//如果组信息的key键下的child组没有分组了，那么就不显示这个key键
-                                        mapContacts.remove(key);
-                                    }
-                                    if (mapContacts.size() == 0) {//如果通讯录中没有信息了，则显示没有联系人
-                                        Toast.makeText(getActivity(), "还没有联系人", Toast.LENGTH_SHORT).show();
-                                    }
-                                    adpter.notifyDataSetChanged();
-                                }
-                            });
                         }
                     });
+                    //更新数据源
+                    List<ContactsData> contactsDatas = mapContacts.get(key);
+                    for(int i = 0; i < contactsDatas.size();i++) {
+                        ContactsData data = contactsDatas.get(i);
+                        if(data.getGroupId() == gid) {
+                            contactsDatas.remove(i);
+                            adpter.notifyDataSetChanged();
+                            break;
+                        }
+                    }
                 }else
                 {
-                    Toast.makeText(getActivity(), "无法删除您正在使用的组", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getActivity(), "不能删除您正在使用的组", Toast.LENGTH_SHORT).show();
                 }
             }
 
@@ -261,17 +227,15 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
     }
 
     @Override
-    public void jionGroup(final int i,final int i1) {//实现加入组的接口
-        final ContactsData data = (ContactsData) adpter.getChild(i, i1);
-        String message = "要进入" + "\"" + data.getGroupName() + "\"" + "进行群聊吗？";
+    public void goToGroup(String gName, final int gid) {
+        String message = "要进入" + "\"" + gName + "\"" + "进行群聊吗？";
         MyAlertDialogFragment myAlert = MyAlertDialogFragment.getInstance(200, 180, message, true);
         myAlert.setListener(new MyAlertDialogFragment.CallbackInMyAlert() {
             @Override
             public void onClickSure() {
                 if (callback != null) {
-                    Constants.GROUPID = data.getGroupId();
-                    callback.changeGroup(data.getGroupId());
-
+                    Constants.GROUPID = gid;
+                    callback.changeGroup(gid);
                 }
             }
 
@@ -283,11 +247,9 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
         try {
             myAlert.show(getFragmentManager(), null);
         } catch (Exception e) {
-        e.printStackTrace();
+            e.printStackTrace();
         }
     }
-
-
 
     private final LetterView.SelectLetterListener selectLetterListener = new LetterView.SelectLetterListener() {
         @Override

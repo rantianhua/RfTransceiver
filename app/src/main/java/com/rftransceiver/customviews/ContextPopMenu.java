@@ -21,7 +21,6 @@ public class ContextPopMenu extends MyPopuMenu {
     //保存string资源文件中的字符串
     private String textOpenRealSounds, textCloseRealSouds;
     private boolean isRealTimePlaying = true;   //实时播放语音的标识
-    private CallbackInPopMenue callbackInPopMenue;
 
     @TargetApi(19)
     public ContextPopMenu(Context context, View anchor) {
@@ -30,10 +29,6 @@ public class ContextPopMenu extends MyPopuMenu {
         textOpenRealSounds = context.getString(R.string.open_realtime_sounds);
         textCloseRealSouds = context.getString(R.string.close_realtime_sounds);
         initView();
-    }
-
-    public void setCallbackInPopMenue(CallbackInPopMenue callbackInPopMenue) {
-        this.callbackInPopMenue = callbackInPopMenue;
     }
 
     private void initView() {
@@ -45,13 +40,25 @@ public class ContextPopMenu extends MyPopuMenu {
         switch (item.getItemId()) {
             case R.id.action_see_group:
                 //查看组的详细信息
-                if (callbackInPopMenue != null)
-                    callbackInPopMenue.showGroup();//回调接口，在HomeFragment中实现该接口
+                if (callbackInContextMenu != null)
+                    callbackInContextMenu.showGroup();//回调接口，在HomeFragment中实现该接口
                 dismiss();
                 break;
             case R.id.action_realtime_play:
                 //设置实时播放语音
                 updateMenu(item);
+                break;
+            case R.id.action_exit_group:
+                //退出改组
+                if(callbackInContextMenu != null) {
+                    callbackInContextMenu.exitGroup();
+                }
+                break;
+            case R.id.action_reset:
+                //复位
+                if(callbackInContextMenu != null) {
+                    callbackInContextMenu.reset();
+                }
                 break;
         }
         return super.onMenuItemSelected(menu, item);
@@ -94,10 +101,8 @@ public class ContextPopMenu extends MyPopuMenu {
     //用于操作HomeFragment--设置groupEntity实例中的实时语音标识
     public interface CallbackInContextMenu {
         void isRealTimePlay(boolean isPlay);
-    }
-
-    public interface CallbackInPopMenue {//定义回调接口显示组的信息
-
         void showGroup();
+        void exitGroup();   //退出该组
+        void reset();   //复位
     }
 }

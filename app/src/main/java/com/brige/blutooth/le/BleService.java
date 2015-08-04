@@ -213,8 +213,10 @@ public class BleService extends Service {
         final byte[] data = characteristic.getValue();
         if(data == null) return;
         int bytes = data.length;
-        if (data.length >= 10) {
-            Log.e("receive",bytes + "");
+        if (bytes == 20) {
+            if(Constants.DEBUG) {
+                Log.e("receive",bytes + "");
+            }
             try {
                 for(int i =0; i < bytes;i++) {
                     temp[index++] =data[i];
@@ -229,7 +231,11 @@ public class BleService extends Service {
             }catch (Exception e) {
                 e.printStackTrace();
             }
-
+        }else {
+            index = 0;
+//            for(int i =0;i < bytes;i++) {
+//                Log.e("unknow",String.format("%#X",data[i]));
+//            }
         }
     }
 
