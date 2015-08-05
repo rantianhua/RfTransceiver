@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
@@ -58,7 +59,7 @@ public class SoundsTextView extends TextView implements View.OnClickListener{
             lp.width=(int)((soundsTime/60)+ (scale * 50 + 0.5f));
         else
             lp.width=(int)(width - scale * 50 +0.5f);
-
+        Log.i("--------length-------",lp.width+"");
         setLayoutParams(lp);
         invalidate();
     }

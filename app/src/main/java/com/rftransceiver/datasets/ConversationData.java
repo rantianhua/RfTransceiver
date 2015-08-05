@@ -70,7 +70,7 @@ public class ConversationData {
         setContent(text);
         setSoundsTime(soundsTime);
     }
-    
+
 
     public ConversationData(ListConversationAdapter.ConversationType type,
                             String text,Bitmap bitmap) {
@@ -79,6 +79,7 @@ public class ConversationData {
             setPhotoDrawable(bitmap);
         }
     }
+
 
     public int getPercent() {
         return percent;

@@ -138,6 +138,7 @@
             android:paddingTop="10dp"
             android:paddingBottom="10dp"
             android:src="@drawable/drawable_face"
+            android:visibility="invisible"
             />
 
 

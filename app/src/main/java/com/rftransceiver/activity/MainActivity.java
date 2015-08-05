@@ -465,6 +465,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                         stopSendSounds();
                                         //preTime为接受消息的起始时间，用于计算消息时长
                                         preTime=System.currentTimeMillis();
+                                        Log.i("---------preTime------",preTime+"");
                                         if(homeFragment != null){
                                             //是否实时接收语音
                                             if(homeFragment.getRealTimePlay()){
@@ -481,6 +482,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                         stopReceiveSounds();
                                         //curTime为接受消息的终止时间，用于计算消息时长
                                         curTime=System.currentTimeMillis();
+                                        Log.i("--------curTime-------",curTime+"");
                                         byte[] receSounds = new byte[soundsRecords.size() * Constants.Small_Sounds_Packet_Length];
                                         int index = 0;
                                         for(byte[] s : soundsRecords) {
@@ -492,6 +494,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                         receSounds = null;
                                         if(homeFragment != null) {
                                             homeFragment.endReceiveSounds(rcvSounds, (int) (msg.obj),curTime-preTime);
+                                            Log.i("----------time---------", curTime-preTime + "");
                                         }
                                         break;
                                     case 2:
