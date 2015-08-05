@@ -172,7 +172,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     //顶部菜单栏的弹出菜单
     private ContextPopMenu popMenu;
 
-    private boolean isPublicChannel = false;    //标识是否在公共频道
     private Drawable drawableDef;   //默认头像
     //显示正在处理一些事情
     private ProgressDialog pd;
@@ -240,7 +239,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             conversationAdapter.updateData(dataLists);
         }else {
             //没有任何组，处于公共频道
-            isPublicChannel = true;
             tvTitle.setText("公共频道");
         }
     }
@@ -737,6 +735,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                                         //退出改组
                                         tvTitle.setText("公共频道");
                                         groupEntity = null;
+                                        currentGroupId = -1;
+                                        if(callback != null) callback.setMyId(-1);
+                                        myId = -1;
                                         dataLists.clear();
                                         conversationAdapter.updateData(dataLists);
                                     }
@@ -911,11 +912,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     }
 
     /**
-     * is receiving sounds or text data
-     * @param tye 0 is sounds data
-     *            1 is words data
-     *            2 is address data
-     *            3 is image data
+     * 显示收到的消息
+     * @param tye 0 语音消息
+     *            1 文字消息
+     *            2 地址消息
+     *            3 图片消息
      */
     public void receivingData(int tye,String data,int memberId,long soundsReceivingTime) {
         ConversationData receiveData = null;
@@ -938,7 +939,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                     break;
                 }
             }
-        }else if(isPublicChannel) {
+        }else {
             drawable = drawableDef;
         }
         long time = new Date().getTime();
@@ -1051,9 +1052,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             }
             result.append(getHourAndMin(timeStamp,cal));
         }
-//        if(compareWithPre) {
-//            saveMessage(result.toString(), 4, 0, timeStamp-1);
-//        }
+        if(compareWithPre) {
+            saveMessage(result.toString(), 4, 0, timeStamp-1);
+        }
         cal = null;
         return result.toString();
     }
@@ -1081,7 +1082,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
 
 
     /**
-     * receive whole sounds ,cast to String to save in db
+     * 已经接收到整个语音信息
      * @param sounds
      * @param memberId
      */
@@ -1096,7 +1097,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     }
 
     /**
-     * after reveive all data
+     * 接收信息后更新界面
+     * 接收信息后更新界面
      * @param type 0 is sounds data,
      */
     public void endReceive(int type) {
@@ -1114,7 +1116,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             byte[] imgs = Base64.decode(data, Base64.DEFAULT);
             recevBitmap = BitmapFactory.decodeByteArray(imgs, 0, imgs.length);
         }catch (Exception e){
-
+            if(getActivity() != null) {
+                Toast.makeText(getActivity(),"接收图片失败",Toast.LENGTH_SHORT).show();
+            }
+            return null;
         }
         return recevBitmap;
     }
@@ -1227,7 +1232,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         myId = groupEntity.getTempId();
         if(callback != null) callback.setMyId(myId);
         showGroupTitle();
-        isPublicChannel = false;
         if(getActivity() != null) {
             //将该id保存为最新打开的组的id
             GroupUtil.saveCurrentGid(currentGroupId,getActivity().getSharedPreferences(Constants.SP_USER,0));

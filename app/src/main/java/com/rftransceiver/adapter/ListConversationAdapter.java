@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Bundle;
 import android.text.Html;
 import android.text.Spannable;
 import android.text.Spanned;
@@ -168,20 +169,10 @@ public class ListConversationAdapter extends BaseAdapter{
                 break;
             case LEFT_ADDRESS:
             case RIGHT_ADDRESS:
-                if(data.getAddress() != null) {
-                    Object object = hodler.container.getTag();
-                    MapViewFragment fragment = null;
-                    if(object == null) {
-                        fragment = MapViewFragment.getInstance(data.getAddress());
-                        hodler.container.setTag(fragment);
-                    }else {
-                        fragment = (MapViewFragment) object;
-                    }
-                    try {
-                        fm.beginTransaction().replace(hodler.container.getId(),fragment).commit();
-                    }catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                try {
+                    fm.beginTransaction().replace(hodler.container.getId(),data.getMapFragment()).commit();
+                }catch (Exception e) {
+
                 }
                 break;
             case LEFT_SOUNDS:
@@ -198,7 +189,7 @@ public class ListConversationAdapter extends BaseAdapter{
         return convertView;
     }
     /**
-     * update data source
+     * 更新数据源
      * @param dataLists
      */
     public void updateData(List<ConversationData> dataLists) {
