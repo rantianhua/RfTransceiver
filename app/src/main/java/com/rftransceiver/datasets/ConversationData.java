@@ -36,8 +36,6 @@ public class ConversationData {
     private long soundsTime;
     //发送图片的进度
     private int percent;
-    //显示地图信息的Fragment
-    private MapViewFragment mapFragment;
 
     public ConversationData(ListConversationAdapter.ConversationType type) {
         setConversationType(type);
@@ -117,7 +115,6 @@ public class ConversationData {
 
     public void setAddress(String address) {
         this.address = address;
-        mapFragment = MapViewFragment.getInstance(address);
     }
 
     public Bitmap getBitmap() {
@@ -144,7 +141,4 @@ public class ConversationData {
         this.mid = mid;
     }
 
-    public MapViewFragment getMapFragment() {
-        return mapFragment;
-    }
 }
