@@ -24,6 +24,7 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.rftransceiver.customviews.ListItemMapView;
 import com.rftransceiver.customviews.SoundsTextView;
 import com.rftransceiver.datasets.ConversationData;
 import com.rftransceiver.R;
@@ -103,7 +104,7 @@ public class ListConversationAdapter extends BaseAdapter{
                     break;
                 case LEFT_ADDRESS:
                     convertView = inflater.inflate(R.layout.list_left_address,null);
-                    hodler.container = (FrameLayout) convertView.findViewById(R.id.frame_mapview_left);
+                    hodler.listItemMapView = (ListItemMapView) convertView.findViewById(R.id.listmapview_left);
                     hodler.imgPhoto = (ImageView) convertView.findViewById(R.id.img_conversation_photo);
                     break;
                 case LEFT_SOUNDS:
@@ -123,7 +124,7 @@ public class ListConversationAdapter extends BaseAdapter{
                     break;
                 case RIGHT_ADDRESS:
                     convertView = inflater.inflate(R.layout.list_right_address,null);
-                    hodler.container = (FrameLayout) convertView.findViewById(R.id.frame_mapview_right);
+                    hodler.listItemMapView = (ListItemMapView) convertView.findViewById(R.id.listmapview_right);
                     break;
                 case RIGHT_SOUNDS:
                     convertView = inflater.inflate(R.layout.list_right_sounds,null);
@@ -169,11 +170,7 @@ public class ListConversationAdapter extends BaseAdapter{
                 break;
             case LEFT_ADDRESS:
             case RIGHT_ADDRESS:
-                try {
-                    fm.beginTransaction().replace(hodler.container.getId(),data.getMapFragment()).commit();
-                }catch (Exception e) {
-
-                }
+                hodler.listItemMapView.setAddress(data.getAddress());
                 break;
             case LEFT_SOUNDS:
             case RIGHT_SOUNDS:
@@ -205,7 +202,7 @@ public class ListConversationAdapter extends BaseAdapter{
         TextView tvContent,tvImgProgress,tvTime,soundsTime;
         SoundsTextView tvSounds;
         ImageView imgPhoto,imgData;
-        FrameLayout container;
+        ListItemMapView listItemMapView;
     }
 
     public enum ConversationType{

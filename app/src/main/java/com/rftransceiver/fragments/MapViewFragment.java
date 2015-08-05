@@ -112,11 +112,9 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
 
     private void initView(View view) {
         ButterKnife.inject(this, view);
-        //init map
+        //初始化地图
         baiduMap = mapView.getMap();
-        /**
-         * open location layer
-         */
+        //打开定位图层
         baiduMap.setMyLocationEnabled(true);
     }
 
@@ -210,9 +208,7 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
         }
     }
 
-    /**
-     * the listener of geo coder
-     */
+    //地理编码的监听器
     final OnGetGeoCoderResultListener getGeoCoderResultListener = new OnGetGeoCoderResultListener() {
         @Override
         public void onGetGeoCodeResult(GeoCodeResult geoCodeResult) {

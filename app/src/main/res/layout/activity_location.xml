@@ -57,6 +57,13 @@
             android:paddingEnd="10dp"
             />
 
+        <ProgressBar
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/pb_searching_location"
+            style="?android:progressBarStyleLarge"
+            android:layout_gravity="center"/>
+
     </FrameLayout>
 
 </RelativeLayout>
