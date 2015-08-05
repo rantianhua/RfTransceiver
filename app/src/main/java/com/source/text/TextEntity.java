@@ -227,9 +227,6 @@ public class TextEntity implements Runnable{
         }
     }
 
-    /**
-     * 关闭正在进行的发送
-     */
     public void close() {
         setAddImageData(false);
     }
