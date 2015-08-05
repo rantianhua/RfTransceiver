@@ -11,6 +11,7 @@ import android.widget.TextView;
 
 import com.rftransceiver.R;
 import com.rftransceiver.fragments.SettingFragment;
+import com.rftransceiver.util.Constants;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -27,7 +28,7 @@ public class SettingActivity extends Activity {
     private String titleSetting;
 
     private SettingFragment settingFrag;
-
+    public static final int REQUEST_SETTING = 306;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,14 +52,22 @@ public class SettingActivity extends Activity {
                 }
             });
         }
-        changeFragment(settingFrag,false);
+        changeFragment(settingFrag, false);
     }
 
     private void initEvent() {
         imgBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                onBackPressed();
+                if(Constants.INVO == -1)
+                {
+                    onBackPressed();
+                }
+               else {
+                    startActivityForResult(new Intent(SettingActivity.this,
+                                  MainActivity.class), REQUEST_SETTING);
+                    onBackPressed();
+                }
             }
         });
     }

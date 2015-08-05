@@ -20,7 +20,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.rftransceiver.R;
-import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.customviews.CircleImageDrawable;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.ImageUtil;
@@ -54,7 +53,6 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
 
     private Drawable dwHead;
     private String name;
-
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -62,11 +60,14 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
         initView(view);
         initEvent();
         getSize();
+        Constants.INVO = 0;
         return view;
     }
 
     private void initView(View view) {
+
         ButterKnife.inject(this,view);
+        Constants.INVO = 0;
         SharedPreferences sp = getActivity().getSharedPreferences(Constants.SP_USER, 0);
         String path = sp.getString(Constants.PHOTO_PATH,"");
         if(!TextUtils.isEmpty(path)) {

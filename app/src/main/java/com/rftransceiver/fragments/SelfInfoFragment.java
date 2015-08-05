@@ -1,13 +1,18 @@
 package com.rftransceiver.fragments;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Fragment;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -20,9 +25,19 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
+
 
 import com.rftransceiver.R;
 
+import com.rftransceiver.activity.MainActivity;
+import com.rftransceiver.activity.SettingActivity;
+import com.rftransceiver.customviews.CircleImageDrawable;
+import com.rftransceiver.util.Constants;
+import com.rftransceiver.util.ImageUtil;
+
+
+import java.io.File;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -38,7 +53,6 @@ public class SelfInfoFragment extends Fragment {
     EditText edName;
     @InjectView(R.id.btn_confirm_selfinfo)
     Button btnConfirm;
-
     private RelativeLayout content;
     private Drawable dwHead,dwClean,dwEdit;
     private String name;
@@ -48,7 +62,10 @@ public class SelfInfoFragment extends Fragment {
     private boolean changeInfo = false;
     //背景图片
     private Bitmap backGround;
-
+    private String photoPath;
+    private static final int REQUEST_IMAGE_CPTURE = 200;    //请求系统拍照的代码
+    private static final int RESULT_LOAD_IMAGE = 201;    //请求图库的代码
+    public static final int REQUEST_SETTING = 306;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,6 +76,7 @@ public class SelfInfoFragment extends Fragment {
         BitmapFactory.Options op = new BitmapFactory.Options();
         op.inSampleSize = 4;
         backGround = BitmapFactory.decodeResource(getResources(), R.drawable.chatbackground, op);
+        Constants.INVO = -1;
     }
 
     @Override
@@ -70,11 +88,13 @@ public class SelfInfoFragment extends Fragment {
     }
 
     private void initVierw(View view) {
+
         ButterKnife.inject(this, view);
         content.setBackground(new BitmapDrawable(backGround));
         if(dwHead != null) {
             //展示头像
             imgHead.setImageDrawable(dwHead);
+            imgHead.requestFocus();
         }
         if(!TextUtils.isEmpty(name)) {
             //展示用户�?
@@ -96,6 +116,15 @@ public class SelfInfoFragment extends Fragment {
     }
 
     public void initEvent() {
+        imgHead.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (changeInfo) {//能编辑状态下进行更改头像
+                    chooseAction();
+                }
+
+            }
+        });
         edName.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
@@ -143,24 +172,29 @@ public class SelfInfoFragment extends Fragment {
                 return false;
             }
         });
+
         btnConfirm.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 edName.clearFocus();
                 imgHead.requestFocus();
                 btnConfirm.setVisibility(View.INVISIBLE);
                 String newName = edName.getText().toString();
+                saveBaseInfo(newName, photoPath, getActivity().getSharedPreferences(Constants.SP_USER, 0));
+
                 setName(newName);
                 if (!newName.equals(name)) {
                     if (getTargetFragment() != null) {
                         Intent intent = new Intent();
-                        intent.putExtra("name",name);
+                        intent.putExtra("name", name);
                         getTargetFragment().onActivityResult(SettingFragment.REQUEST_CHANGEINFO,
-                                Activity.RESULT_OK,intent);
+                                Activity.RESULT_OK, intent);
                     }
                 }
             }
         });
+
     }
 
     @Override
@@ -194,5 +228,74 @@ public class SelfInfoFragment extends Fragment {
      */
     public void setChangeInfo(boolean changeInfo) {
         this.changeInfo = changeInfo;
+    }
+    private void chooseAction() {
+        new AlertDialog.Builder(getActivity()).setItems(new String[]{"打开图库", "拍一张"}, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                if(i == 0) {
+                    //打开系统图库
+                    openGallery();
+                }else if(i == 1){
+                    //打开系统相机
+                    openCamera();
+                }
+
+            }
+        }).show();
+    }
+    private void openGallery() {
+        Intent i = new Intent(
+                Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        if(i.resolveActivity(getActivity().getPackageManager()) != null) {
+            startActivityForResult(i, RESULT_LOAD_IMAGE);
+        }
+    }
+    private void openCamera() {
+        Intent takePicture = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        //确保进程能够获取返回的intent
+        if(takePicture.resolveActivity(getActivity().getPackageManager()) != null) {
+            photoPath = getActivity().getExternalFilesDir(null)+ Constants.PHOTO_NAME;
+            Uri imageUri = Uri.fromFile(new File(photoPath));
+            takePicture.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+            startActivityForResult(takePicture, REQUEST_IMAGE_CPTURE);
+        }
+    }
+    private void showBitmap() {
+        if(photoPath == null) return;
+        int size = (int)(getResources().getDisplayMetrics().density * 100 + 0.5f);
+        Bitmap bitmap = ImageUtil.createImageThumbnail(photoPath, size * size);
+        if(bitmap != null) {
+            CircleImageDrawable drawable = new CircleImageDrawable(bitmap);
+            setPhoto(drawable);
+        }
+    }
+    private void setPhoto(CircleImageDrawable drawable) {
+        imgHead.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        imgHead.setImageDrawable(drawable);
+    }
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(requestCode == REQUEST_IMAGE_CPTURE && resultCode == Activity.RESULT_OK) {
+            //显示图片
+            showBitmap();
+        }else if (requestCode == RESULT_LOAD_IMAGE && resultCode == Activity.RESULT_OK && null != data) {
+            photoPath = ImageUtil.getImgPathFromIntent(data,getActivity());
+            showBitmap();
+        }
+        else {
+            super.onActivityResult(requestCode, resultCode, data);
+        }
+        btnConfirm.setVisibility(View.VISIBLE);
+    }
+    public static void saveBaseInfo(String nickname,String photoPath,SharedPreferences sp) {
+        SharedPreferences.Editor editor = sp.edit();
+        if(!TextUtils.isEmpty(nickname)){
+            editor.putString(Constants.NICKNAME,nickname);
+        }
+        if(!TextUtils.isEmpty(photoPath)) {
+            editor.putString(Constants.PHOTO_PATH, photoPath);
+        }
+        editor.apply();
     }
 }
