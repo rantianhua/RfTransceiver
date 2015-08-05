@@ -317,10 +317,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private void changeFragment(Fragment fragment) {
         FragmentTransaction transaction = getFragmentManager().beginTransaction();
         transaction.replace(R.id.frame_content, fragment);
-        if(homeFragment != null && (fragment instanceof MyDeviceFragment || fragment instanceof ContactsFragment)) {
+        if(fragment instanceof MyDeviceFragment || fragment instanceof ContactsFragment) {
             transaction.addToBackStack(null);
         }
-        transaction.commitAllowingStateLoss();
+        transaction.commit();
         transaction = null;
     }
 
@@ -1114,9 +1114,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
         if(requestCode == REQUEST_GROUP && resultCode == Activity.RESULT_OK && data != null) {
-            /**
-             * in GroupActivity,after finish create or add group,send a GroupEntity
-             */
+            //返回新建的组或新加的组
             Bundle bundle = data.getExtras();
             if(bundle == null) return;
             groupEntity = bundle.getParcelable(GroupActivity.EXTRA_GROUP);
@@ -1152,12 +1150,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
         if(lockerView.isMenuOpened()) {
             lockerView.closeMenu();
         }else {
-            try {
-                super.onBackPressed();
-            }catch (Exception e) {
-
-            }
-
+            finish();
         }
     }
 
