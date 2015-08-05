@@ -16,7 +16,6 @@
         android:layout_width="match_parent"
         android:layout_height="180dp"
         android:id="@+id/frame_mapview_left"
-        android:layout_below="@+id/tv_chat_time"
         android:background="@drawable/frame_map_bg"
         android:layout_toEndOf="@+id/include_person_left_address"
         android:layout_marginStart="5dp"
