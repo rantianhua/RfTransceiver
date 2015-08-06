@@ -1,5 +1,6 @@
 package com.rftransceiver.util;
 
+import android.graphics.Bitmap;
 import android.os.AsyncTask;
 
 import com.rftransceiver.group.GroupEntity;
@@ -141,12 +142,12 @@ public class Constants {
     public static final String PHOTO_PATH = "photo_path";   //用户头像的保存路径
     public static final String BIND_DEVICE_ADDRESS = "bind_device_address";
     public static final String BIND_DEVICE_NAME = "bind_device_name";
-
+ //   public static final String BITMAP = "bitmap";
     public static final String PRE_GROUP = "pre_group";
 
     //调试，打印log的开关
     public static boolean DEBUG = false;
     //用来判断要删除的是否是当前所在的组
     public static int GROUPID = -1;
-    public static int INVO = 0;
+    public static int CHANGE = 1;//标记是否点击修改按钮
 }

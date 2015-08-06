@@ -135,6 +135,7 @@ public class DBManager {
             openWriteDB();
             db.beginTransaction();
             db.delete(DatabaseHelper.TABLE_DATA,"_gid = ?",new String[]{String.valueOf(gid)});
+
             db.delete(DatabaseHelper.TABLE_MEMBER,"_gid = ?",new String[]{String.valueOf(gid)});
             db.delete(DatabaseHelper.TABLE_GROUP,"_gid = ?",new String[]{String.valueOf(gid)});
             db.setTransactionSuccessful();
@@ -145,7 +146,22 @@ public class DBManager {
             closeDB();
         }
     }
-
+    public void changeImfor(int gid ,String path,String name){//修改数据库中的自己的头像和名字 然而并没有用上
+        try{
+            openWriteDB();
+            db.beginTransaction();
+            ContentValues cv = new ContentValues();
+            cv.put("_photopath",path);
+            cv.put("_nickname",name);
+            db.update(DatabaseHelper.TABLE_MEMBER, cv ,"_gid = ?" ,new String[]{String.valueOf(gid)});
+            db.setTransactionSuccessful();
+            db.endTransaction();
+        }catch (Exception e) {
+            Log.e("saveGroup","error in save group base info or members info",e);
+        }finally {
+            closeDB();
+        }
+    }
     /**
      * 关闭数据库
      */

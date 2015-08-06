@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
@@ -11,6 +12,7 @@ import android.widget.TextView;
 
 import com.rftransceiver.R;
 import com.rftransceiver.fragments.SettingFragment;
+import com.rftransceiver.fragments.SelfInfoFragment;
 import com.rftransceiver.util.Constants;
 
 import butterknife.ButterKnife;
@@ -28,6 +30,7 @@ public class SettingActivity extends Activity {
     private String titleSetting;
 
     private SettingFragment settingFrag;
+    private SelfInfoFragment selfInfoFragment;
     public static final int REQUEST_SETTING = 306;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,6 +53,17 @@ public class SettingActivity extends Activity {
                 public void changeINfo(Intent data) {
                     setResult(MainActivity.REQUEST_SETTING,data);
                 }
+
+                @Override
+                public void changeinfo() {
+                    Intent intent = getIntent();
+                    SharedPreferences sharedPreferences = getSharedPreferences(Constants.SP_USER, 0);
+                    String name = sharedPreferences.getString(Constants.NICKNAME, "");
+                    String photoPath = sharedPreferences.getString(Constants.PHOTO_PATH, "");
+                    intent.putExtra("name", name);
+                    intent.putExtra("photoPath", photoPath);
+                    setResult(REQUEST_SETTING, intent);
+                }
             });
         }
         changeFragment(settingFrag, false);
@@ -59,16 +73,10 @@ public class SettingActivity extends Activity {
         imgBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(Constants.INVO == -1)
-                {
-                    onBackPressed();
-                }
-               else {
-                    startActivityForResult(new Intent(SettingActivity.this,
-                                  MainActivity.class), REQUEST_SETTING);
-                    onBackPressed();
-                }
+                onBackPressed();
             }
+
+
         });
     }
 
@@ -86,4 +94,6 @@ public class SettingActivity extends Activity {
         }
         transcation.commit();
     }
+
+
 }
