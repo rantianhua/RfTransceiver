@@ -168,6 +168,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
         //解绑BleSevice
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
+            PoolThreadUtil.getInstance().close();
             bleService = null;
         }
     };
@@ -316,10 +317,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private void changeFragment(Fragment fragment) {
         FragmentTransaction transaction = getFragmentManager().beginTransaction();
         transaction.replace(R.id.frame_content, fragment);
-        if(homeFragment != null && (fragment instanceof MyDeviceFragment || fragment instanceof ContactsFragment)) {
+        if(fragment instanceof MyDeviceFragment || fragment instanceof ContactsFragment
+                || (fragment instanceof BindDeviceFragment && homeFragment != null)) {
             transaction.addToBackStack(null);
         }
-        transaction.commitAllowingStateLoss();
+        transaction.commit();
         transaction = null;
     }
 
@@ -469,8 +471,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                         if(homeFragment != null){
                                             //是否实时接收语音
                                             if(homeFragment.getRealTimePlay()){
-                                                receiver.startReceiver();
+                                                if(!receiver.isReceiving()) {
+                                                    receiver.startReceiver();
+                                                }
                                             }else {
+                                                receiver.stopReceiver();
                                                 stopReceiveSounds();
                                             }
                                             homeFragment.receivingData(0,null,(int)msg.obj,0);
@@ -557,9 +562,9 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                 break;
                             case Constants.READ_CHANNEL:
                                 if (msg.arg2 == 0) {
-                                    if(receiver.isReceiving()) {
-                                        stopReceiveSounds();
-                                    }
+//                                    if(receiver.isReceiving()) {
+//                                        stopReceiveSounds();
+//                                    }
                                     if (action == SendAction.SOUNDS) {
                                         //start record
                                         record.startRecording();
@@ -631,7 +636,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
             case Words:
                 if(end) {
                     if(homeFragment != null && homeFragment.isVisible()) {
-                        homeFragment.sendMessage(sendText, action);
+                        homeFragment.statesFinished();
                     }
                     action = SendAction.NONE;
                 }
@@ -669,10 +674,17 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     /**
+     * 发送失败
+     */
+    private void sendFail(){
+        homeFragment.statesFail();
+    }
+
+    /**
      * 停止播放语音
      */
     private void stopReceiveSounds() {
-        receiver.stopReceiver();
+        //receiver.stopReceiver();
         if(homeFragment != null) {
             homeFragment.endReceive(0);
         }
@@ -748,16 +760,14 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
     @Override
     protected void onDestroy() {
-        PoolThreadUtil.getInstance().close();
         super.onDestroy();
-
         record.stopRecording();
         receiver.stopReceiver();
         textEntity.close();
+        unbindService(serviceConnectionBle);
+        PoolThreadUtil.getInstance().close();
         textEntity.setSendListener(null);
         textEntity.setOptions(null);
-
-        unbindService(serviceConnectionBle);
         bleService.setCallback(null);
         bleService.disconnect();
         bleService.close();
@@ -1000,6 +1010,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
     public void deviceNotWork() {
         if(homeFragment != null) {
             homeFragment.deviceConnected(false);
+            homeFragment.setCanSend(false);
+            sendFail();
         }
         showToast("未检测到设备，请确保设备正在工作");
     }
@@ -1010,6 +1022,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
     @Override
     public void serviceNotInit() {
         showToast("连接未初始化，请稍候...");
+        homeFragment.setCanSend(false);
+        sendFail();
     }
 
     /**
@@ -1115,9 +1129,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
         if(requestCode == REQUEST_GROUP && resultCode == Activity.RESULT_OK && data != null) {
-            /**
-             * in GroupActivity,after finish create or add group,send a GroupEntity
-             */
+            //返回新建的组或新加的组
             Bundle bundle = data.getExtras();
             if(bundle == null) return;
             groupEntity = bundle.getParcelable(GroupActivity.EXTRA_GROUP);
@@ -1131,6 +1143,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
             lockerView.closeMenu();
         }else if(requestCode == HomeFragment.REQUEST_LOCATION && resultCode == Activity.RESULT_OK && data != null) {
             String address = data.getStringExtra(HomeFragment.EXTRA_LOCATION);
+            homeFragment.sendMessage(address,SendAction.Address);
             if(!TextUtils.isEmpty(address))
                 send(SendAction.Address,address);
         }else if(requestCode == REQUEST_SETTING && data != null) {
@@ -1153,12 +1166,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
         if(lockerView.isMenuOpened()) {
             lockerView.closeMenu();
         }else {
-            try {
-                super.onBackPressed();
-            }catch (Exception e) {
-
-            }
-
+            finish();
         }
     }
 

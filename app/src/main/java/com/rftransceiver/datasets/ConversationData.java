@@ -13,6 +13,12 @@ import com.rftransceiver.fragments.MapViewFragment;
  */
 public class ConversationData {
 
+    //数据传输状态
+    private boolean isFinished;
+
+    //是否发送失败
+    private boolean isFail;
+
     //数据内容
     private String content;
 
@@ -38,11 +44,10 @@ public class ConversationData {
     //发送图片的进度
     private int percent;
 
-    //显示地图信息的Fragment
-    private MapViewFragment mapFragment;
-
     public ConversationData(ListConversationAdapter.ConversationType type) {
         setConversationType(type);
+        isFinished = false;
+        isFail = false ;
     }
 
     public ConversationData(ListConversationAdapter.ConversationType type,
@@ -67,6 +72,21 @@ public class ConversationData {
         }
     }
 
+    public boolean isFinished(){
+        return isFinished;
+    }
+
+    public boolean isFail(){
+        return isFail;
+    }
+
+    public void fail(){
+        isFail = true;
+    }
+
+    public void finish(){
+        isFinished = true;
+    }
 
     public int getPercent() {
         return percent;
@@ -121,7 +141,6 @@ public class ConversationData {
 
     public void setAddress(String address) {
         this.address = address;
-        mapFragment = MapViewFragment.getInstance(address);
     }
 
     public Bitmap getBitmap() {
@@ -148,7 +167,4 @@ public class ConversationData {
         this.mid = mid;
     }
 
-    public MapViewFragment getMapFragment() {
-        return mapFragment;
-    }
 }

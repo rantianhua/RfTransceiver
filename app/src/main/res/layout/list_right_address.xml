@@ -5,35 +5,57 @@
     android:paddingBottom="10dp"
     >
 
-    <!--<fragment  -->
-        <!--android:name="com.rftransceiver.fragments.MapViewFragment"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="180dp"-->
-        <!--android:layout_marginStart="120dp"-->
-        <!--android:id="@+id/fragment_map_list_right"-->
-        <!--android:layout_centerVertical="true"-->
-        <!--android:layout_alignParentEnd="true"-->
-        <!--android:layout_marginEnd="15dp"/>-->
-
-
-    <FrameLayout
-        android:layout_width="match_parent"
+    <com.rftransceiver.customviews.ListItemMapView
+        android:layout_width="250dp"
         android:layout_height="180dp"
-        android:layout_marginStart="120dp"
-        android:id="@+id/frame_mapview_right"
+        android:id="@+id/listmapview_right"
+        android:padding="1dp"
         android:layout_centerVertical="true"
         android:layout_alignParentEnd="true"
         android:layout_marginEnd="15dp"
+        android:layout_marginStart="3dp"
         android:background="@drawable/frame_map_bg"
-        android:padding="1dp"/>
+        >
+
+        <com.baidu.mapapi.map.MapView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/mapview_list_right"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@+id/mapview_list_right"
+            android:layout_alignStart="@+id/mapview_list_right"
+            android:layout_alignEnd="@+id/mapview_list_right"
+            android:background="@drawable/bottom_corner"
+            android:padding="5dp"
+            android:gravity="center"
+            android:textColor="@color/white"
+            />
+
+
+    </com.rftransceiver.customviews.ListItemMapView>
 
     <ImageView
-        android:layout_width="25dp"
-        android:layout_height="25dp"
-        android:layout_toLeftOf="@id/frame_mapview_right"
-        android:layout_marginLeft="20dp"
-        android:layout_alignBottom="@id/frame_mapview_right"
-        android:background="@android:color/black"
+        android:id="@+id/img_address_states_right"
+        android:layout_width="19dp"
+        android:layout_height="19dp"
+        android:layout_toStartOf="@id/listmapview_right"
+        android:layout_marginStart="20dp"
+        android:layout_alignBottom="@id/listmapview_right"
+        android:background="@anim/states_waiting"
         />
+
+    <ImageView
+        android:id="@+id/img_address_states_fail"
+        android:layout_width="19dp"
+        android:layout_height="19dp"
+        android:layout_toStartOf="@id/listmapview_right"
+        android:layout_marginStart="20dp"
+        android:background="@color/red"
+        android:layout_centerVertical="true"
+        android:visibility="invisible"/>
 
 </RelativeLayout>
