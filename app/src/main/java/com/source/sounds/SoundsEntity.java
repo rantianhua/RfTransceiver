@@ -1,6 +1,8 @@
 package com.source.sounds;
 
 
+import android.util.Log;
+
 import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.datasets.AudioData;
 import com.rftransceiver.datasets.MyDataQueue;
@@ -12,17 +14,17 @@ import com.source.SendMessageListener;
 
 public class SoundsEntity implements Runnable
 {
-	private volatile  boolean isSendering = false;  //mark is sendering sounds
-    private boolean isRunning = false;  //mark the thread is running，
-	private MyDataQueue dataQueue;  //sounds data cache
+	private volatile  boolean isSendering = false;  //标志用户按住录音按钮
+    private boolean isRunning = false;  //标志录音线程正在运行
+	private MyDataQueue dataQueue;  //缓存录音信息
 
-    private DataPacketOptions options;
+    private DataPacketOptions options;  //数据包参数
 
-    private SendMessageListener sendListener = null;
+    private SendMessageListener sendListener = null;    //发送的回调函数
 
     byte[] temp;
 
-    private int realSoundsLen;
+    private int realSoundsLen;  //数据包中真实数据长度
 
     public SoundsEntity()
 	 {
@@ -31,6 +33,7 @@ public class SoundsEntity implements Runnable
 	
 	public void startSending() 
 	{
+        if(isRunning()) return;
         setRunning(true);
         setSendering(true);
         try {
@@ -42,11 +45,16 @@ public class SoundsEntity implements Runnable
         }
     }
 
+    /**
+     * 将编码数据加入缓存队列中
+     * @param data 编码数据
+     * @param size 数据长度
+     */
 	public void addData(byte[] data, int size)
 	{
             byte[] tempData = new byte[size];
             System.arraycopy(data,0,tempData,0,size);
-            MainActivity.soundsRecords.add(tempData);
+            MainActivity.soundsRecords.add(tempData);   //
 		    AudioData encodedData = new AudioData();
 	        encodedData.setSize(size);
             encodedData.setencodeData(tempData);
@@ -55,7 +63,7 @@ public class SoundsEntity implements Runnable
             tempData = null;
 	}
 
-	//stop send
+	//停止发送录音
 	public void stopSending() 
 	{
         setSendering(false);
@@ -64,37 +72,30 @@ public class SoundsEntity implements Runnable
 	public void run()
 	 {
             initTemp();
-            int index = options.getOffset(); //the packet's counter
-            int sum = 0;   //count the number of packets
-         /**
-          * every encode sounds packet's length is ten ,soundsPacket record a sounds sending packet have how much encode sounds packets
-          */
+            int index = options.getOffset(); //数据包索引
             int soundsPackets = (options.getLength()-options.getOffset()-1) / Constants.Small_Sounds_Packet_Length;
 	        while (isRunning())
 	        {
-                if(isSendering()) { //now the cache length is dynamic
+                if(isSendering()) {
+                    //表明现在dataQueue中数据个数是动态的
                     if(dataQueue.getSize() > 5) {
+                        //保证在用户停止录音后，dataQueue中还有数据，这样能知道发送的最后一个包
                         for(int i = 0; i < 4;i++) {
                             AudioData restData = (AudioData)dataQueue.get();
                             for(int j = 0;j<restData.getSize();j++) {
                                 temp[index++] = restData.getencodeData()[j];
                                 if (index == options.getLength()-1) {
-                                    //temp have been full,can to be sent
+                                    //拼好一个包，可以发送
                                     sendSoundsData(temp, false, realSoundsLen);
                                     initTemp();
-                                    //reset to recount
+                                    //复位索引，准备拼接下一个包
                                     index = options.getOffset();
                                 }
                             }
                         }
-                    }else {
-//                        try {
-//                            Thread.sleep(10);
-//                        }catch (Exception e) {
-//                            e.printStackTrace();
-//                        }
                     }
-                }else { //the user have stop,now the cache's length is changeless
+                }else {
+                    //用户已停止录音，现在dataQueue中的数据是固定的
                     int restCountsInDataQueue = dataQueue.getSize();
                     int restCountsIntemp = (index-options.getOffset()) / Constants.Small_Sounds_Packet_Length;
                     if(restCountsInDataQueue == 0) {
@@ -105,27 +106,24 @@ public class SoundsEntity implements Runnable
                         for(int j = 0;j<restData.getSize();j++) {
                             temp[index++] = restData.getencodeData()[j];
                             if (index == options.getLength()-1) {
-                                //temp have been full,can to be sent
+                                //检查是不是最后一个包
                                 if((restCountsInDataQueue+restCountsIntemp) % soundsPackets == 0 && i == restCountsInDataQueue-1) {
                                     temp[options.getRealLenIndex()] = (byte) (index-options.getOffset());
                                     sendSoundsData(temp, true, temp[options.getRealLenIndex()]);
-                                    setRunning(false);  //shutdown this thread
-                                    sum = 0;    //ready to count next send
+                                    setRunning(false);
                                 }else {
                                     sendSoundsData(temp, false, realSoundsLen);
                                     initTemp();
                                 }
-                                //reset to recount
+                                //复位索引
                                 index = options.getOffset();
                             }
                         }
                     }
                     if(index > options.getOffset()) {
-                        //now temp is the last packet
                         temp[options.getRealLenIndex()] = (byte) (index-options.getOffset());
-                        sendSoundsData(temp,true,temp[options.getRealLenIndex()]);
-                        setRunning(false);  //shutdown this thread
-                        sum = 0;    //ready to count next send
+                        sendSoundsData(temp, true, temp[options.getRealLenIndex()]);
+                        setRunning(false);
                         index = options.getOffset();
                     }
                 }
@@ -162,6 +160,13 @@ public class SoundsEntity implements Runnable
         this.isRunning = isRunning;
     }
 
+    /**
+     * 初始化包缓存器，
+     * temp[options.getRealLenIndex()]这位数据用来标识是不是发送的最后一个包，
+     * 如果值为option.getRealLen，则不是结束包，
+     * 若是结束包，则值为最后一个包中真实语音数据的长度，该值小于option.getRealLen
+     *
+     */
     private void initTemp() {
         temp = null;
         temp = new byte[options.getLength()];

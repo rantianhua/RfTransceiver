@@ -822,7 +822,9 @@ public class WifiNetService extends Service implements Handler.Callback{
         public synchronized void writeMessage(String hello) {
             try{
                 if(out != null && hello != null) {
-                    Log.e("have write",hello);
+                    if(Constants.DEBUG) {
+                        Log.e("have write",hello);
+                    }
                     byte[] data = hello.getBytes();
                     byte[] sendData = new byte[data.length+2];
                     sendData[0] = Constants.Data_Packet_Head;

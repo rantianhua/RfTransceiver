@@ -539,9 +539,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                 break;
                             case Constants.READ_CHANGE_CHANNEL:
                                 int channel = msg.arg2;
-                                String[] channels = getResources().getStringArray(R.array.channel);
-                                showToast("信道已修改为"+channels[channel]);
-                                channels = null;
+                                //showToast("信道已修改为"+channel);
+                                if(homeFragment != null) {
+                                    homeFragment.channelHaveChanged();
+                                }
                                 CURRENT_CHANNEL = channel;
                                 break;
                             case Constants.READ_SETASYNCWORD:
@@ -1025,6 +1026,18 @@ public class MainActivity extends Activity implements View.OnClickListener,
         action = sendAction;
         sendText = text;
         chenckChannel();
+    }
+
+    /**
+     * HomeFragment中测试使用
+     * @param channel
+     */
+    @Override
+    public void changeChannel(int channel) {
+        if(bleService != null) {
+            Constants.CHANNEL[2] = (byte)channel;
+            bleService.writeInstruction(Constants.CHANNEL);
+        }
     }
 
     /**
