@@ -44,37 +44,23 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
     @InjectView(R.id.mapview_location)
     MapView mapView;
 
-    /**
-     * core class of location
-     */
+    //定位的核心类
     private LocationClient locationClient;
     private BaiduMap baiduMap;
 
-    /**
-     * mark is first location or not
-     */
+    //标识是否是第一次定位
     private boolean isFirstLocate = true;
 
-    /**
-     * geography code
-     */
+    //反编码
     private GeoCoder geocoder;
 
-    /**
-     * the address to be shown
-     * if it is not null ,just show this address in mapview
-     * else locate and poi search
-     */
+    //显示特定位置
     private String address;
 
-    /**
-     * the list of poi info
-     */
+    //poi搜索结果
     private List<PoiInfo> poiInfoList;
 
-    /**
-     * current poiInfo
-     */
+   //当前位置信息
     private PoiInfo currentInfo;
 
 
@@ -106,15 +92,15 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_mapview,container,false);
+        View view = inflater.inflate(R.layout.fragment_mapview, container, false);
         initView(view);
 
-        if(TextUtils.isEmpty(address)) {
-            if(locationClient == null) initLocation();
-        }else {
+        if (TextUtils.isEmpty(address)) {
+            if (locationClient == null) initLocation();
+        } else {
             String[] addresses = address.split("\\|");
-            if(addresses.length > 1) {
-                if(geocoder != null) {
+            if (addresses.length > 1) {
+                if (geocoder != null) {
                     geocoder.geocode(new GeoCodeOption().address(addresses[0]).city(addresses[1]));
                 }
             }
@@ -126,11 +112,9 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
 
     private void initView(View view) {
         ButterKnife.inject(this, view);
-        //init map
+        //初始化地图
         baiduMap = mapView.getMap();
-        /**
-         * open location layer
-         */
+        //打开定位图层
         baiduMap.setMyLocationEnabled(true);
     }
 
@@ -224,9 +208,7 @@ public class MapViewFragment extends Fragment implements BDLocationListener{
         }
     }
 
-    /**
-     * the listener of geo coder
-     */
+    //地理编码的监听器
     final OnGetGeoCoderResultListener getGeoCoderResultListener = new OnGetGeoCoderResultListener() {
         @Override
         public void onGetGeoCodeResult(GeoCodeResult geoCodeResult) {

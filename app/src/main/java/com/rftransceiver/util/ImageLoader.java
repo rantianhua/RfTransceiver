@@ -1,7 +1,9 @@
 package com.rftransceiver.util;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -45,10 +47,13 @@ public class ImageLoader
 	private Thread mPoolThread;
 	private Handler mPoolThreadHander;
 
+	//保存bitmap的引用，方便回收bitmap
+	private static final List<Bitmap> bitmaps = new ArrayList<>();
+
 	/**
 	 * 运行在UI线程的handler，用于给ImageView设置图片
 	 */
-	private Handler mHandler;
+	private static Handler mHandler;
 
 	/**
 	 * 引入一个值为1的信号量，防止mPoolThreadHander未初始化完成
@@ -172,21 +177,21 @@ public class ImageLoader
 		// UI线程
 		if (mHandler == null)
 		{
-			mHandler = new Handler(Looper.getMainLooper())
-			{
+			mHandler = new Handler(Looper.getMainLooper(), new Handler.Callback() {
 				@Override
-				public void handleMessage(Message msg)
-				{
+				public boolean handleMessage(Message msg) {
 					ImgBeanHolder holder = (ImgBeanHolder) msg.obj;
 					ImageView imageView = holder.imageView;
 					Bitmap bm = holder.bitmap;
 					String path = holder.path;
-					if (imageView.getTag().toString().equals(path))
+					if (imageView.getTag().toString().equals(path) && bm != null)
 					{
 						imageView.setImageBitmap(bm);
+						bitmaps.add(bm);
 					}
+					return true;
 				}
-			};
+			});
 		}
 
 		Bitmap bm = getBitmapFromLruCache(path);
@@ -444,6 +449,19 @@ public class ImageLoader
 		{
 		}
 		return value;
+	}
+
+	/**
+	 * 回收bitmap
+	 */
+	public void recycleBitmap() {
+		try {
+			for (int i = 0; i < bitmaps.size();i++) {
+				bitmaps.get(i).recycle();
+			}
+		}catch (Exception e) {
+
+		}
 	}
 
 }

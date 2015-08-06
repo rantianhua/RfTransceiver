@@ -36,6 +36,7 @@ import com.rftransceiver.customviews.CircleImageDrawable;
 import com.rftransceiver.customviews.ImageDirsPopWindow;
 import com.rftransceiver.datasets.ImageFolderData;
 import com.rftransceiver.util.Constants;
+import com.rftransceiver.util.ImageLoader;
 import com.rftransceiver.util.ImageUtil;
 
 import java.io.File;
@@ -300,9 +301,18 @@ public class ImagesFragment extends Fragment implements ImageDirsPopWindow.OnPic
     }
 
     @Override
+    public void onStop() {
+        super.onStop();
+        //回收bitmap
+        ImageLoader.getInstance(3, ImageLoader.Type.LIFO).recycleBitmap();
+    }
+
+    @Override
     public void onDestroy() {
         super.onDestroy();
-        imageDirsPopWindow.setPictureDirSelected(null);
+        if(imageDirsPopWindow != null) {
+            imageDirsPopWindow.setPictureDirSelected(null);
+        }
         imageDirsPopWindow = null;
         imageFolders = null;
         adapter = null;

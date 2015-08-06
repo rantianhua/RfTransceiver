@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">对讲机</string>
+    <string name="app_name">Talki</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_close_device">断开连接</string>
     <string name="action_connect_device">连接设备</string>

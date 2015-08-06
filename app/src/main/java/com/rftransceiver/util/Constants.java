@@ -137,16 +137,16 @@ public class Constants {
 
     public static final int MSG_GROUP_INFO = 0; //indicate this message is group's base info
 
-    public static final String PHOTO_NAME = "/photo.png";
-    public static final String PHOTO_PATH = "photo_path";
+    public static final String PHOTO_NAME = "/photo.png";//用户头像的名称
+    public static final String PHOTO_PATH = "photo_path";   //用户头像的保存路径
     public static final String BIND_DEVICE_ADDRESS = "bind_device_address";
     public static final String BIND_DEVICE_NAME = "bind_device_name";
-    public static final String SELECTED_CHANNEL = "selected_channel";
 
     public static final String PRE_GROUP = "pre_group";
 
     //调试，打印log的开关
-    public static boolean DEBUG = true;
+    public static boolean DEBUG = false;
     //用来判断要删除的是否是当前所在的组
     public static int GROUPID = -1;
+    public static int INVO = 0;
 }

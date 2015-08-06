@@ -1,7 +1,12 @@
 package com.rftransceiver.util;
 
+import android.app.Activity;
+import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.provider.MediaStore;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -95,5 +100,28 @@ public class ImageUtil {
             file = null;
             bitmap = null;
         }
+    }
+
+    /**
+     * 从intetnt中获取图片的路径
+     * @param intent
+     * @param activity
+     * @return
+     */
+    public static String getImgPathFromIntent(Intent intent,Activity activity) {
+        try {
+            Uri selectedImage = intent.getData();
+            String[] filePathColumn = { MediaStore.Images.Media.DATA };
+            Cursor cursor = activity.getContentResolver().query(selectedImage,
+                    filePathColumn, null, null, null);
+            cursor.moveToFirst();
+            int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+            String picturePath = cursor.getString(columnIndex);
+            cursor.close();
+            return picturePath;
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

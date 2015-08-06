@@ -3,28 +3,17 @@ import android.content.Context;
 import android.graphics.drawable.AnimationDrawable;
 import android.os.Handler;
 import android.os.Looper;
-import android.text.Layout;
 import android.text.TextUtils;
 import android.util.AttributeSet;
-import android.util.Base64;
-import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.animation.Animation;
-import android.widget.BaseAdapter;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.rftransceiver.R;
-import com.rftransceiver.adapter.ListConversationAdapter;
-import com.rftransceiver.util.Constants;
-import com.rftransceiver.util.PoolThreadUtil;
-import com.source.sounds.Audio_Reciver;
 import com.source.sounds.StaticPlay;
 
-import java.util.zip.Inflater;
 
 /**
  * Created by rth on 15-7-17.
@@ -37,19 +26,24 @@ public class SoundsTextView extends TextView implements View.OnClickListener{
     private ImageView soundImg,soundPlay;
     private long soundsTime;
     private float scale;
-    //Ö÷Ïß³ÌÍ£Ö¹soundAnimµÄrunable
+    private float width;
+
+    //ï¿½ï¿½ï¿½ß³ï¿½Í£Ö¹soundAnimï¿½ï¿½runable
     Runnable runable = null;
     private static final Handler mHan = new Handler(Looper.getMainLooper());
     public SoundsTextView(Context context) {
         super(context);
         scale = context.getResources().getDisplayMetrics().density;
+        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        width = wm.getDefaultDisplay().getWidth();
     }
 
     public SoundsTextView(Context context, AttributeSet attrs) {
         super(context, attrs);
         setOnClickListener(this);
         scale = context.getResources().getDisplayMetrics().density;
-
+        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        width = wm.getDefaultDisplay().getWidth();
     }
 
     public long getSoundsTime() {
@@ -58,9 +52,13 @@ public class SoundsTextView extends TextView implements View.OnClickListener{
 
     public void setSoundsTime(long soundsTime) {
         this.soundsTime = soundsTime;
-        //ÉùÒô¿ò³¤¶È¶¯Ì¬±ä»¯
+        //ï¿½ï¿½ï¿½ï¿½ï¿½ò³¤¶È¶ï¿½Ì¬ï¿½ä»¯
         RelativeLayout.LayoutParams lp =(RelativeLayout.LayoutParams) getLayoutParams();
-        if(soundsTime/1000<50) lp.width=(int)((soundsTime/60)+ (scale * 50 + 0.5f));
+        if(((soundsTime/60)+ (scale * 50 + 0.5f)) < width - scale * 50 +0.5f)
+            lp.width=(int)((soundsTime/60)+ (scale * 50 + 0.5f));
+        else
+            lp.width=(int)(width - scale * 50 +0.5f);
+
         setLayoutParams(lp);
         invalidate();
     }
@@ -88,7 +86,7 @@ public class SoundsTextView extends TextView implements View.OnClickListener{
     }
 
     /**
-     * ÏÔÊ¾soundAnimÖðÖ¡¶¯»­
+     * ï¿½ï¿½Ê¾soundAnimï¿½ï¿½Ö¡ï¿½ï¿½ï¿½ï¿½
      */
     public void playSoundAnim(){
 
@@ -98,7 +96,7 @@ public class SoundsTextView extends TextView implements View.OnClickListener{
     }
 
     /**
-     * Í£Ö¹soundsAnim¶¯»­
+     * Í£Ö¹soundsAnimï¿½ï¿½ï¿½ï¿½
      */
     public void stopAnim(){
         cancleAnimEnd();
@@ -113,7 +111,7 @@ public class SoundsTextView extends TextView implements View.OnClickListener{
     }
 
     /**
-     * ÉèÖÃ¶¯»­ÑÓÊ±×Ô¶¯¹Ø±Õ
+     * ï¿½ï¿½ï¿½Ã¶ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½Ô¶ï¿½ï¿½Ø±ï¿½
      */
     public  void setAnimEnd() {
         runable = new Runnable() {
@@ -128,7 +126,7 @@ public class SoundsTextView extends TextView implements View.OnClickListener{
     }
 
     /**
-     * ÖÐ¶ÏÏòÖ÷Ïß³Ì·¢ËÍÑÓÊ±×Ô¶¯¹Ø±Õrunable
+     * ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß³Ì·ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½Ô¶ï¿½ï¿½Ø±ï¿½runable
      */
     public void cancleAnimEnd() {
         if(runable != null)

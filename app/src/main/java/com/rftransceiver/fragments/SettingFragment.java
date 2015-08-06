@@ -20,7 +20,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.rftransceiver.R;
-import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.customviews.CircleImageDrawable;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.ImageUtil;
@@ -44,9 +43,6 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
     ImageView imgPhoto;
     @InjectView(R.id.tv_name_setting)
     TextView tvName;
-
-
-
     @InjectView(R.id.tv_cleanCache)
     TextView tvClearCache;
     @InjectView(R.id.tv_cache_size)
@@ -57,7 +53,6 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
 
     private Drawable dwHead;
     private String name;
-
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -65,11 +60,14 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
         initView(view);
         initEvent();
         getSize();
+        Constants.INVO = 0;
         return view;
     }
 
     private void initView(View view) {
+
         ButterKnife.inject(this,view);
+        Constants.INVO = 0;
         SharedPreferences sp = getActivity().getSharedPreferences(Constants.SP_USER, 0);
         String path = sp.getString(Constants.PHOTO_PATH,"");
         if(!TextUtils.isEmpty(path)) {
@@ -111,6 +109,8 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
                 SelfInfoFragment selfInfoFragment = new SelfInfoFragment();
                 selfInfoFragment.setName(name);
                 selfInfoFragment.setHead(dwHead);
+                selfInfoFragment.setChangeInfo(true);
+                selfInfoFragment.setTargetFragment(SettingFragment.this,REQUEST_CHANGEINFO);
                 getFragmentManager().beginTransaction().replace(R.id.frame_container_setting,selfInfoFragment)
                         .addToBackStack(null).commit();
                 break;
@@ -139,28 +139,24 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
       }
         dbManager.deleteCache();
     }
-    //for test
-//    public void ins(){
-//        dbManager=DBManager.getInstance(getActivity());
-//        dbManager.insertMessage();
-//    }
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(requestCode == REQUEST_CHANNEL && resultCode == Activity.RESULT_OK && data != null) {
-            //receive a request to change channel
+        if(requestCode == REQUEST_CHANGEINFO && resultCode == Activity.RESULT_OK && data != null) {
+            String name = data.getStringExtra("name");
+            //修该名字
             if(callbackInSF != null) {
-                getFragmentManager().popBackStackImmediate();
-                callbackInSF.changeChannel(data.getIntExtra(Constants.SELECTED_CHANNEL,-1));
+                callbackInSF.changeINfo(data);
             }
-        }else {
+        }
+        else {
             super.onActivityResult(requestCode, resultCode, data);
         }
     }
 
     public interface CallbackInSF{
-        void chageChannelRequest();
-        void changeChannel(int channel);
+        void changeINfo(Intent data);
     }
 
-    public static final int REQUEST_CHANNEL = 400;
+    public static final int REQUEST_CHANGEINFO = 401; //请求修改个人信息的代码
 }

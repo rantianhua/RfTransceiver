@@ -213,8 +213,10 @@ public class BleService extends Service {
         final byte[] data = characteristic.getValue();
         if(data == null) return;
         int bytes = data.length;
-        if (data.length >= 10) {
-            Log.e("receive",bytes + "");
+        if (bytes == 20) {
+            if(Constants.DEBUG) {
+                Log.e("receive",bytes + "");
+            }
             try {
                 for(int i =0; i < bytes;i++) {
                     temp[index++] =data[i];
@@ -229,7 +231,11 @@ public class BleService extends Service {
             }catch (Exception e) {
                 e.printStackTrace();
             }
-
+        }else {
+            index = 0;
+//            for(int i =0;i < bytes;i++) {
+//                Log.e("unknow",String.format("%#X",data[i]));
+//            }
         }
     }
 
@@ -259,6 +265,9 @@ public class BleService extends Service {
             index = 0;  //避免上次遗留的错误数据对本次造成影响
             writeCharacteristic.setValue(instruction);
             mBluetoothGatt.writeCharacteristic(writeCharacteristic);
+            if(Constants.DEBUG) {
+                Log.e("writeInstruction","write a writeInstruction");
+            }
             return true;
         }else {
             return false;
@@ -380,9 +389,9 @@ public class BleService extends Service {
      * @param needResearch
      * @return
      */
-    public boolean connect(final String address,boolean needResearch) {
+    public void connect(final String address,boolean needResearch) {
         if (mBluetoothAdapter == null || address == null || mConnectionState != STATE_DISCONNECTED) {
-            return false;
+            return;
         }
         if(needResearch) {
             waitConnectDevice = address;
@@ -393,7 +402,7 @@ public class BleService extends Service {
             Runnable run = scanBle.startScan();
             isCheckDeviceAddress = true;
             mainHan.postDelayed(run,4000);
-            return true;
+            return;
         }
         //和传入的address建立新的连接
         try {
@@ -404,9 +413,7 @@ public class BleService extends Service {
             mConnectionState = STATE_CONNECTING;
         } catch (Exception e) {
             e.printStackTrace();
-            return false;
         }
-        return true;
     }
 
     /**

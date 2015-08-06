@@ -74,12 +74,15 @@ public class ImageFolderData {
         String[] datas = new String[paths.length+1];
         System.arraycopy(paths,0,datas,0,paths.length);
         paths = null;
+        //添加拍照功能
         datas[datas.length-1] = CAMERA;
         this.paths = Arrays.asList(datas);
         Collections.reverse(this.paths);
         setCounts(this.paths.size() - 1);
         try {
-            setFirstPicPath(getAbPath()+"/"+this.paths.get(1));
+            if(this.paths.size() > 1) {
+                setFirstPicPath(getAbPath()+"/"+this.paths.get(1));
+            }
         }catch (Exception e) {
             e.printStackTrace();
         }

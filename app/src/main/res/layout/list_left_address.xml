@@ -12,17 +12,36 @@
         android:layout_centerVertical="true"
         android:layout_marginStart="15dp"/>
 
-    <FrameLayout
+    <com.rftransceiver.customviews.ListItemMapView
         android:layout_width="match_parent"
         android:layout_height="180dp"
-        android:id="@+id/frame_mapview_left"
-        android:layout_below="@+id/tv_chat_time"
+        android:id="@+id/listmapview_left"
         android:background="@drawable/frame_map_bg"
         android:layout_toEndOf="@+id/include_person_left_address"
         android:layout_marginStart="5dp"
-        android:padding="1dp"
         android:layout_alignParentEnd="true"
         android:layout_marginEnd="60dp"
-        />
+        android:padding="1dp"
+        >
+        <com.baidu.mapapi.map.MapView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/mapview_list_left"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@+id/mapview_list_left"
+            android:layout_alignStart="@+id/mapview_list_left"
+            android:layout_alignEnd="@+id/mapview_list_left"
+            android:background="@drawable/bottom_corner"
+            android:padding="5dp"
+            android:gravity="center"
+            android:textColor="@color/white"
+            />
+
+    </com.rftransceiver.customviews.ListItemMapView>
+
 
 </RelativeLayout>

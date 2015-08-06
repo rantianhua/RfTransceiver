@@ -3,24 +3,15 @@ package com.rftransceiver.activity;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
-import android.support.v4.content.LocalBroadcastManager;
-import android.text.TextUtils;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.rftransceiver.R;
-import com.rftransceiver.fragments.ChannelFragment;
 import com.rftransceiver.fragments.SettingFragment;
 import com.rftransceiver.util.Constants;
-
-import java.util.Set;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -37,8 +28,7 @@ public class SettingActivity extends Activity {
     private String titleSetting;
 
     private SettingFragment settingFrag;
-    private ChannelFragment channelFrag;
-
+    public static final int REQUEST_SETTING = 306;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,42 +40,34 @@ public class SettingActivity extends Activity {
 
     private void initView() {
         ButterKnife.inject(this);
+        tvTitle.setText("设置");
         imgBack.setImageResource(R.drawable.back);
         if(settingFrag == null) {
             settingFrag = new SettingFragment();
             settingFrag.setCallbackInSF(new SettingFragment.CallbackInSF() {
-                @Override
-                public void chageChannelRequest() {
-                    if(channelFrag == null) {
-                        channelFrag = new ChannelFragment();
-                        channelFrag.setTargetFragment(settingFrag,SettingFragment.REQUEST_CHANNEL);
-                    }
-                    changeFragment(channelFrag,true);
-                    tvTitle.setText(titleSetting);
-                }
 
-                /**
-                 * change channel
-                 * @param channel
-                 */
                 @Override
-                public void changeChannel(int channel) {
-                    Intent intent = new Intent();
-                    intent.putExtra(Constants.SELECTED_CHANNEL,channel);
-                    setResult(Activity.RESULT_OK,intent);
-                    intent = null;
-                    SettingActivity.this.finish();
+                public void changeINfo(Intent data) {
+                    setResult(MainActivity.REQUEST_SETTING,data);
                 }
             });
         }
-        changeFragment(settingFrag,false);
+        changeFragment(settingFrag, false);
     }
 
     private void initEvent() {
         imgBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                onBackPressed();
+                if(Constants.INVO == -1)
+                {
+                    onBackPressed();
+                }
+               else {
+                    startActivityForResult(new Intent(SettingActivity.this,
+                                  MainActivity.class), REQUEST_SETTING);
+                    onBackPressed();
+                }
             }
         });
     }

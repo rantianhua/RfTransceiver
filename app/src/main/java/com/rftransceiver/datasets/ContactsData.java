@@ -22,9 +22,7 @@ public class ContactsData {
 
     private final Pattern pattern = Pattern.compile("^[A-Z]");
 
-    /**
-     * the first letter of pinyin or string
-     */
+    //·拼音首字母
     private String firstLetter;
 
     public ContactsData(String groupName,int groupId ){

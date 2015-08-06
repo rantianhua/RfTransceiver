@@ -1,56 +1,41 @@
 package com.rftransceiver.datasets;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
-import android.text.TextUtils;
-import android.util.Base64;
 
-import com.rftransceiver.R;
-import com.rftransceiver.activity.MainActivity;
+import com.baidu.mapapi.map.MapFragment;
 import com.rftransceiver.adapter.ListConversationAdapter;
 import com.rftransceiver.customviews.CircleImageDrawable;
+import com.rftransceiver.fragments.MapViewFragment;
 
 /**
  * Created by Rth on 2015/4/27.
  */
 public class ConversationData {
 
-    /**
-     * the content of conversation data
-     */
+    //数据内容
     private String content;
 
-    /**
-     * type : me or other
-     */
+    //数据类型
     private ListConversationAdapter.ConversationType conversationType;
 
-    /**
-     * the other people's photo
-     */
+    //发送者的图片
     private Drawable photoDrawable;
 
-    /**
-     * the address data
-     */
+    //地址信息
     private String address;
 
-    /**
-     * picture data
-     */
+    //图片内容
     private Bitmap bitmap;
 
-    /**
-     * the send or receive time
-     */
+    //数据产生的时间
     private long dateTime;
-
-    /**
-     * my id in group
-     */
+    //我在组里id
     private int mid;
+    //声音的时长
     private long soundsTime;
+    //发送图片的进度
+    private int percent;
 
     public ConversationData(ListConversationAdapter.ConversationType type) {
         setConversationType(type);
@@ -75,6 +60,14 @@ public class ConversationData {
         if(bitmap != null) {
             setPhotoDrawable(bitmap);
         }
+    }
+
+    public int getPercent() {
+        return percent;
+    }
+
+    public void setPercent(int percent) {
+        this.percent = percent;
     }
 
     public ListConversationAdapter.ConversationType getConversationType() {
@@ -147,4 +140,5 @@ public class ConversationData {
     public void setMid(int mid) {
         this.mid = mid;
     }
+
 }

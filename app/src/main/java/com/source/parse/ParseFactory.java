@@ -101,9 +101,11 @@ public class ParseFactory {
     }
 
     private void unKnowData(byte[] data) {
-        Log.e("receive", "unknow data tail"+data[Constants.Data_Packet_Length-1]);
+        if(Constants.DEBUG) {
+            Log.e("receive", "unknow data tail"+data[Constants.Data_Packet_Length-1]);
+        }
         if(handler != null) {
-            handler.obtainMessage(Constants.MESSAGE_READ,Constants.READ_UNKNOWN).sendToTarget();
+            handler.obtainMessage(Constants.MESSAGE_READ,Constants.READ_UNKNOWN,-1,null).sendToTarget();
         }
     }
 

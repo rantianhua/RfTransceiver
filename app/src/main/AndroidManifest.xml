@@ -42,7 +42,8 @@
         </activity>
 
         <activity android:name=".activity.LauncherActivity"
-            android:windowSoftInputMode="stateHidden|adjustPan">
+            android:windowSoftInputMode="stateHidden|adjustPan"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -51,11 +52,17 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".activity.GroupActivity" />
+        <activity android:name=".activity.GroupActivity"
+            android:screenOrientation="portrait"/>
 
-        <activity android:name=".activity.LocationActivity"/>
+        <activity android:name=".activity.LocationActivity"
+            android:screenOrientation="portrait"/>
 
-        <activity android:name=".activity.SettingActivity"/>
+        <activity android:name=".activity.SettingActivity"
+            android:screenOrientation="portrait"/>
+
+        <activity android:name=".activity.PersonalActivity"
+            android:screenOrientation="portrait"/>
 
 
         <service android:name="com.brige.blutooth.le.BleService" android:enabled="true"

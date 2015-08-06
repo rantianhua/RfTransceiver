@@ -7,7 +7,6 @@
         android:id="@+id/img_rainbow_above"
         android:layout_width="match_parent"
         android:layout_height="350dp"
-        android:background="@drawable/creat_group_above"
         android:scaleType="fitStart"
         android:layout_alignParentTop="true"/>
 

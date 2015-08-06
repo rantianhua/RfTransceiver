@@ -20,6 +20,7 @@ import com.rftransceiver.fragments.HomeFragment;
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.group.GroupMember;
 import com.rftransceiver.util.Constants;
+import com.rftransceiver.util.GroupUtil;
 import com.rftransceiver.util.ImageUtil;
 import com.rftransceiver.util.PoolThreadUtil;
 
@@ -86,9 +87,9 @@ public class DBManager {
             asyncWord = Base64.encodeToString(async,Base64.DEFAULT);
         }
         if(TextUtils.isEmpty(name) || TextUtils.isEmpty(asyncWord)) return;
-        openWriteDB();
-        db.beginTransaction();
         try {
+            openWriteDB();
+            db.beginTransaction();
             //save group base info
             db.execSQL("INSERT INTO " + DatabaseHelper.TABLE_GROUP + " VALUES(null,?,?,?)",
                     new Object[]{name,asyncWord,groupEntity.getTempId()});
@@ -98,13 +99,16 @@ public class DBManager {
                     null);
             if(cursor != null && cursor.moveToFirst()) {
                 gid = cursor.getInt(0);
+
                 Constants.GROUPID = gid;//保存该组的id到Constants中，用于通讯录中与选中组的id进行比较判断删除时是否是正在聊天的组
+
                 cursor.close();
             }
             //save members into member table
             List<GroupMember> members = groupEntity.getMembers();
             if(gid != -1 && members != null && members.size() > 1) {
-                saveCurrentGid(gid);
+                //更新当前组的id
+                GroupUtil.saveCurrentGid(gid,sp);
                 for(GroupMember member : members) {
                     //save the picture to local storage
                     Bitmap bitmap = member.getBitmap();
@@ -120,43 +124,34 @@ public class DBManager {
                 }
             }
             db.setTransactionSuccessful();
+            db.endTransaction();
         }catch (Exception e) {
             Log.e("saveGroup","error in save group base info or members info",e);
         }finally {
-            db.endTransaction();
             closeDB();
         }
     }
 
     public void deleteGroup(int gid) {//很据组的id删除表的信息
         try{
+
             openWriteDB();//把原来的openReadD方法改成openWrite方法
+
             db.beginTransaction();
             db.delete(DatabaseHelper.TABLE_DATA,"_gid = ?",new String[]{String.valueOf(gid)});
             db.delete(DatabaseHelper.TABLE_MEMBER,"_gid = ?",new String[]{String.valueOf(gid)});
             db.delete(DatabaseHelper.TABLE_GROUP,"_gid = ?",new String[]{String.valueOf(gid)});
             db.setTransactionSuccessful();
+            db.endTransaction();
         }catch (Exception e) {
             Log.e("saveGroup","error in save group base info or members info",e);
         }finally {
-            db.endTransaction();
-            db.close();
             closeDB();
         }
     }
 
     /**
-     * save current shown group id,
-     * @param gid
-     */
-    private void saveCurrentGid(int gid) {
-        SharedPreferences.Editor editor = sp.edit();
-        editor.putInt(Constants.PRE_GROUP, gid);
-        editor.apply();
-    }
-
-    /**
-     * close the database
+     * 关闭数据库
      */
     private synchronized void closeDB() {
         if(db != null) {
@@ -183,9 +178,9 @@ public class DBManager {
      */
     public GroupEntity getAgroup(int gid) {
         GroupEntity groupEntity = null;
-        openReadDB();
-        db.beginTransaction();
         try {
+            openReadDB();
+            db.beginTransaction();
             Cursor cursor = db.rawQuery("select * from " + DatabaseHelper.TABLE_GROUP +
                 " where _gid=" + gid,null);
             String name = null,async = null;
@@ -230,10 +225,10 @@ public class DBManager {
                 }
             }
             db.setTransactionSuccessful();
+            db.endTransaction();
         }catch (Exception e) {
             Log.e("getAgroup","error in getAgroup",e);
         }finally {
-            db.endTransaction();
             closeDB();
         }
         return groupEntity;
@@ -271,7 +266,6 @@ public class DBManager {
         values.put("_type", type);
         values.put("_data", saveData);
         listChats.add(values);
-
         if(listChats.size() > 9) {
             saveMessage();
         }
@@ -286,18 +280,17 @@ public class DBManager {
         PoolThreadUtil.getInstance().addTask(new Runnable() {
             @Override
             public void run() {
-                openWriteDB();
-                db.beginTransaction();
                 try {
+                    openWriteDB();
+                    db.beginTransaction();
                     for (ContentValues values : saveValues) {
-
                         long re = db.insert(DatabaseHelper.TABLE_DATA, "_data", values);
                     }
                     db.setTransactionSuccessful();
+                    db.endTransaction();
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
-                    db.endTransaction();
                     closeDB();
                 }
             }
@@ -305,15 +298,14 @@ public class DBManager {
     }
     public void deleteMessage(int gid) {//根据组的id来删除其聊天记录
         try{
-            openReadDB();
+            openWriteDB();
             db.beginTransaction();
-            db.delete(DatabaseHelper.TABLE_DATA,"_gid = ?",new String[]{String.valueOf(gid)});
+            db.delete(DatabaseHelper.TABLE_DATA, "_gid = ?", new String[]{String.valueOf(gid)});
             db.setTransactionSuccessful();
+            db.endTransaction();
         }catch (Exception e) {
             Log.e("saveGroup","error in save group base info or members info",e);
         }finally {
-            db.endTransaction();
-            db.close();
             closeDB();
         }
     }
@@ -344,12 +336,11 @@ public class DBManager {
                     stringBuffer.append(data);
             }
             db.setTransactionSuccessful();
+            db.endTransaction();
             size = size + DataClearnManager.getStringSize(stringBuffer.toString());
         }catch (Exception e) {
             Log.e("saveGroup","error in save group base info or members info",e);
         }finally {
-            db.endTransaction();
-            db.close();
             closeDB();
         }
         return DataClearnManager.getFormatSize((double)size);
@@ -359,40 +350,19 @@ public class DBManager {
         try{
             openReadDB();
             db.beginTransaction();
-            db.execSQL("DELETE FROM "+DatabaseHelper.TABLE_DATA);
+            db.execSQL("DELETE FROM " + DatabaseHelper.TABLE_DATA);
             db.setTransactionSuccessful();
+            db.endTransaction();
         }catch (Exception e) {
             Log.e("saveGroup","error in save group base info or members info",e);
         }finally {
-            db.endTransaction();
-            db.close();
             closeDB();
         }
 
     }
 
-    //for test
-//   public void insertMessage(){
-//       try{
-//           openWriteDB();
-//           db.beginTransaction();
-//           String sql = "INSERT INTO " + DatabaseHelper.TABLE_DATA + " VALUES(?,?,?,?,?,?)";
-//           db.execSQL(sql, new Object[]{2, "HGF", 5, 7, 1, "TDTDFGDG"});
-//           sql = "INSERT INTO " + DatabaseHelper.TABLE_DATA + " VALUES(?,?,?,?,?,?)";
-//           db.execSQL(sql, new Object[]{3, "HGF", 6, 4, 1, "好好"});
-//           db.setTransactionSuccessful();
-//       }catch (Exception e) {
-//           Log.e("saveGroup","error in save group base info or members info",e);
-//       }finally {
-//           db.endTransaction();
-//           db.close();
-//           closeDB();
-//       }
-//
-//   }
-
     /**
-     * get message data saved in db
+     * 获取聊天记录
      * @param gid group id of the data
      * @param limits how many datas get
      */
@@ -404,8 +374,8 @@ public class DBManager {
         }
         sql += " order by _date_time desc " + "limit " + limits;
         List<ConversationData> conversationDatas = null;
-        openReadDB();
         try {
+            openReadDB();
             db.beginTransaction();
             Cursor cursor = db.rawQuery(sql,null);
             conversationDatas = new ArrayList<>();
@@ -470,21 +440,28 @@ public class DBManager {
                 conversationDatas.add(data);
             }
             cursor.close();
+            db.setTransactionSuccessful();
+            db.endTransaction();
         }catch (Exception e) {
             e.printStackTrace();
-            Log.e("getData", "error " ,e);
+            Log.e("getData", "error ", e);
         }finally {
-            db.endTransaction();
             closeDB();
         }
+
         return conversationDatas;
     }
 
     public List<ContactsData> getContacts() {
         String sql = "select _gname,_gid from " + DatabaseHelper.TABLE_GROUP;
-        openReadDB();
         List<ContactsData> contactsDatas = null;
         try {
+            Thread.sleep(300);
+        }catch (Exception e2) {
+
+        }
+        try {
+            openReadDB();
             db.beginTransaction();
             Cursor cursor = db.rawQuery(sql,null);
             if(cursor == null) return null;
@@ -501,10 +478,10 @@ public class DBManager {
             }
             cursor.close();
             db.setTransactionSuccessful();
+            db.endTransaction();
         }catch (Exception e) {
             e.printStackTrace();
         }finally {
-            db.endTransaction();
             closeDB();
         }
         return contactsDatas;

@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Bundle;
 import android.text.Html;
 import android.text.Spannable;
 import android.text.Spanned;
@@ -23,6 +24,7 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.rftransceiver.customviews.ListItemMapView;
 import com.rftransceiver.customviews.SoundsTextView;
 import com.rftransceiver.datasets.ConversationData;
 import com.rftransceiver.R;
@@ -46,7 +48,6 @@ public class ListConversationAdapter extends BaseAdapter{
     private List<ConversationData> listData = new ArrayList<>();
     private LayoutInflater inflater = null;
     private FragmentManager fm;
-    private TextView tvImgProgress;
     private Map<Integer,RelativeLayout> soundTimeList = new HashMap<>();
 
     AnimationDrawable soundPlayAnim;
@@ -103,7 +104,7 @@ public class ListConversationAdapter extends BaseAdapter{
                     break;
                 case LEFT_ADDRESS:
                     convertView = inflater.inflate(R.layout.list_left_address,null);
-                    hodler.container = (FrameLayout) convertView.findViewById(R.id.frame_mapview_left);
+                    hodler.listItemMapView = (ListItemMapView) convertView.findViewById(R.id.listmapview_left);
                     hodler.imgPhoto = (ImageView) convertView.findViewById(R.id.img_conversation_photo);
                     break;
                 case LEFT_SOUNDS:
@@ -123,7 +124,7 @@ public class ListConversationAdapter extends BaseAdapter{
                     break;
                 case RIGHT_ADDRESS:
                     convertView = inflater.inflate(R.layout.list_right_address,null);
-                    hodler.container = (FrameLayout) convertView.findViewById(R.id.frame_mapview_right);
+                    hodler.listItemMapView = (ListItemMapView) convertView.findViewById(R.id.listmapview_right);
                     break;
                 case RIGHT_SOUNDS:
                     convertView = inflater.inflate(R.layout.list_right_sounds,null);
@@ -160,25 +161,16 @@ public class ListConversationAdapter extends BaseAdapter{
                 if(data.getBitmap() != null) {
                     hodler.imgData.setImageBitmap(data.getBitmap());
                 }
-                tvImgProgress = hodler.tvImgProgress;
+                if(data.getPercent() > 0 && data.getPercent() < 100) {
+                    hodler.tvImgProgress.setVisibility(View.VISIBLE);
+                    hodler.tvImgProgress.setText(data.getPercent() + "%");
+                }else {
+                    hodler.tvImgProgress.setVisibility(View.INVISIBLE);
+                }
                 break;
             case LEFT_ADDRESS:
             case RIGHT_ADDRESS:
-                if(data.getAddress() != null) {
-                    Object object = hodler.container.getTag();
-                    MapViewFragment fragment = null;
-                    if(object == null) {
-                        fragment = MapViewFragment.getInstance(data.getAddress());
-                        hodler.container.setTag(fragment);
-                    }else {
-                        fragment = (MapViewFragment) object;
-                    }
-                    try {
-                        fm.beginTransaction().replace(hodler.container.getId(),fragment).commit();
-                    }catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
+                hodler.listItemMapView.setAddress(data.getAddress());
                 break;
             case LEFT_SOUNDS:
             case RIGHT_SOUNDS:
@@ -193,18 +185,8 @@ public class ListConversationAdapter extends BaseAdapter{
 
         return convertView;
     }
-
-    public void updateImgageProgress(int percent) {
-        if(tvImgProgress != null && tvImgProgress.getVisibility() == View.VISIBLE) {
-            tvImgProgress.setText(percent + "%");
-            if(percent == 100) {
-                tvImgProgress.setVisibility(View.INVISIBLE);
-            }
-        }
-    }
-
     /**
-     * update data source
+     * 更新数据源
      * @param dataLists
      */
     public void updateData(List<ConversationData> dataLists) {
@@ -220,7 +202,7 @@ public class ListConversationAdapter extends BaseAdapter{
         TextView tvContent,tvImgProgress,tvTime,soundsTime;
         SoundsTextView tvSounds;
         ImageView imgPhoto,imgData;
-        FrameLayout container;
+        ListItemMapView listItemMapView;
     }
 
     public enum ConversationType{

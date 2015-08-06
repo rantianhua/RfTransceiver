@@ -63,7 +63,6 @@
         android:layout_below="@+id/tv_tip_home"
         android:listSelector="@android:color/transparent"
         android:divider="#000000"
-        android:background="@drawable/chatbackground"
         />
 
 
@@ -114,8 +113,6 @@
             android:gravity="center"
             android:layout_centerVertical="true"
             android:textSize="15dp"
-            android:scaleType="centerInside"
-            android:src="@drawable/send_button"
             android:background="#0fff"
             android:visibility="visible"
             />

@@ -1,7 +1,10 @@
 package com.rftransceiver.fragments;
 
 import android.app.Fragment;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.text.Editable;
@@ -41,15 +44,14 @@ public class SetGroupNameFragment extends Fragment {
     ImageView imgCancel;
     @InjectView(R.id.btn_sure_set_group_name)
     Button btnSure;
-
-    /**
-     * the instance of OnGroupNameSet
-     */
+    @InjectView(R.id.img_rainbow_above)
+    ImageView background;
+    //接口实例
     private OnGroupNameSet listener;
-    /**
-     * the max length of group name
-     */
+    //组名的最大长度
     private final int etLength = 8;
+    //背景图片
+    private Bitmap bmBg;
 
     @Nullable
     @Override
@@ -70,6 +72,11 @@ public class SetGroupNameFragment extends Fragment {
         etGroupName.setTextColor(Color.BLACK);
         etGroupName.setHint(R.string.hint_et_group_name);
         etGroupName.addTextChangedListener(textWatcher);
+
+        BitmapFactory.Options op = new BitmapFactory.Options();
+        op.inSampleSize = 4;
+        bmBg = BitmapFactory.decodeResource(getResources(),R.drawable.creat_group_above,op);
+        background.setBackground(new BitmapDrawable(bmBg));
 
         SpannableString ss = new SpannableString("一人建组");
         ForegroundColorSpan colorSpan = new ForegroundColorSpan(Color.BLUE);
@@ -127,6 +134,10 @@ public class SetGroupNameFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        //回收bitmap
+        if(bmBg != null) {
+            bmBg.recycle();
+        }
         setOnGroupNameSetCallback(null);
     }
 

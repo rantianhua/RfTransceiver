@@ -84,15 +84,10 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
     @InjectView(R.id.grid_members_raw)
     GridView gridMembers;
 
-    /**
-     * CREATE indicate is creating group
-     * ADD indicate is adding group
-     */
+    //标识建组和加组的过程
     private GroupActivity.GroupAction action;
 
-    /**
-     * the group's name
-     */
+    //组的名字
     private String groupName;
 
     //按时循环扫描的timer
@@ -101,84 +96,65 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
     //按时获取扫描结果的timer
     private Timer resultTimer;
 
-    /**
-     * save searched result
-     */
+    //保存搜索的结果
     private List<ScanResult> scanResults;
 
-    /**
-     * the callback interface
-     */
+    //回调接口
     private CallBackInRawGroup callback;
 
-    /**
-     * count have connected wifiAp
-     */
-    private int count;
+//    /**
+//     * count have connected wifiAp
+//     */
+//    private int count;
 
-    /**
-     * true if is connecting wifiAp
-     */
+    //标识是否正在搜索wifi热点
     private boolean isConnecting = false;
 
     private LayoutInflater inflater;
 
-    /**
-     * the width and height of searched group owner's view show in memberLayout
-     */
+    //显示群主图片的宽度和高度
     private int memberWidth;
     private int memberHeight;
 
-    /**
-     * the range of x and y to create a left margin of searched info to show in member layout
-     */
+    //群主信息显示的坐标
     private int randomRangeX;
     private int randomRangeY;
 
-    /**
-     * to create random left margin and right margin for searched group or member info to show in memberLayout
-     */
+    //生成随机数
     private Random random = new Random();
 
-    /**
-     * during create group,group owner need to distribute is for every member
-     */
+    //成员id
     private int memberId = 1;
 
-    /**
-     * have connected wifiAp's ssid
-     */
+    //已连接的热点的名称
     private String connectedSsid;
 
-    /**
-     * current connected socket wifiAp's ssid
-     */
+    //已经建立socket连接的热点名称
     private String socketedSsid;
 
-    /**
-     * true if need write member info to group owner,but connection has closed,
-     * need to reconnect
-     */
-    private boolean needWriteMember = false;
+    //标识是否需要将自己的信息发出去
+    //private boolean needWriteMember = false;
 
+    //记录成员信息
     private List<GroupMember> listMembers;
 
     //记录自己在各个组中的id
     private HashMap<String,Integer> subIds;
 
+    //与异步线程交互
     private static Handler handler;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        handler = new Handler(Looper.getMainLooper(),RawGroupFragment.this);
+        //区分建组和加组
         action = getArguments().getInt(ACTION_MODE) == 0 ?
                 GroupActivity.GroupAction.CREATE : GroupActivity.GroupAction.ADD;
         if(action == GroupActivity.GroupAction.CREATE) {
             groupName = getArguments().getString(GROUP_NAME);
         }
-
-        handler = new Handler(Looper.getMainLooper(),RawGroupFragment.this);
-
+        //实例化各容器
         listMembers = new ArrayList<>();
         scanResults = new ArrayList<>();
         subIds = new HashMap<>();
@@ -186,16 +162,20 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
                 50,getResources().getDisplayMetrics());
         memberHeight = (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
                 70,getResources().getDisplayMetrics());
-
-        if(action == GroupActivity.GroupAction.ADD) {
-            initTimers();
-        }
     }
 
     /**
      * 初始化timers
      */
     private void initTimers() {
+        scanTimer = new Timer();
+        //每隔1秒扫描一次热点
+        scanTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (callback != null) callback.startScan();
+            }
+        },0, 1000);
         resultTimer = new Timer();
         //每隔1.5秒获取一次扫描结果
         resultTimer.schedule(new TimerTask() {
@@ -204,14 +184,6 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
                 refreshWifiAp();
             }
         },0,1500);
-        scanTimer = new Timer();
-        //每隔2秒扫描一次热点
-        scanTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                if (callback != null) callback.startScan();
-            }
-        },0, 2000);
     }
 
     /**
@@ -220,7 +192,6 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
     private void refreshWifiAp() {
         if(callback != null) {
             List<ScanResult> scans = callback.getScanResult();
-            Log.e("refreshWifiAp","得到一次热点结果");
             if(scans == null) return;
             //根据wifi信号的强度排序
             for(int i=0;i<scans.size();i++) {
@@ -238,9 +209,7 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
             for(int i = 0; i < scans.size();i++) {
                 ScanResult result = scans.get(i);
                 String ssid = result.SSID.toLowerCase();
-                if(WifiNetService.isSSIDValid(ssid)
-                        && !containResult(result)) {
-                    Log.e("refreshWifiAp","扫描到" + result.SSID);
+                if(WifiNetService.isSSIDValid(ssid)) {
                     handler.obtainMessage(ADD_DATA, -1, -1, result).sendToTarget();
                 }
             }
@@ -251,9 +220,8 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
     /**
      * 连接wifi热点
      */
-    private void connectWifi() {
-        if(!isConnecting && count < scanResults.size() && callback != null) {
-            ScanResult result = scanResults.get(count);
+    private void connectWifi(ScanResult result) {
+        if(!isConnecting && callback != null) {
             isConnecting = true;
             callback.connectWifiAp(result.SSID);
         }
@@ -332,6 +300,14 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
         }
     }
 
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        if(action == GroupActivity.GroupAction.ADD) {
+            initTimers();
+        }
+    }
+
     private void initEvent() {
         btnCancel.setOnClickListener(this);
         btnSure.setOnClickListener(this);
@@ -360,7 +336,9 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
     private boolean containResult(ScanResult result) {
         int size = scanResults.size();
         for(int i = 0;i < size;i++) {
-            return WifiNetService.compareTwoSsid(scanResults.get(i).SSID,result.SSID);
+            if(WifiNetService.compareTwoSsid(scanResults.get(i).SSID,result.SSID)) {
+                return true;
+            }
         }
         return false;
     }
@@ -383,18 +361,21 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
      * @param ssid
      */
     public void wifiApConnected(String ssid) {
+        if(connectedSsid != null && WifiNetService.compareTwoSsid(ssid,connectedSsid)) return;
         connectedSsid = ssid;
-        if(needWriteMember) {
-            callback.getSocketConnect(ssid,false);
-        }else {
-            //
-            int size = scanResults.size();
-            if(size <= 0 || count >= size) return;
-            ScanResult connectResult = scanResults.get(count);
-            //建立socket连接
-            if(callback == null) return;
-            callback.getSocketConnect(ssid,true);
-        }
+        //建立socket连接
+        if(callback == null) return;
+        callback.getSocketConnect(ssid,true);
+//        if(needWriteMember) {
+//            callback.getSocketConnect(ssid,false);
+//        }else {
+////            int size = scanResults.size();
+////            if(size <= 0 || count >= size) return;
+////            ScanResult connectResult = scanResults.get(count);
+//            //建立socket连接
+//            if(callback == null) return;
+//            callback.getSocketConnect(ssid,true);
+//        }
     }
 
     /**
@@ -461,14 +442,14 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
                     @Override
                     public void onClick(View view) {
                         if(chooseView.getVisibility() == View.INVISIBLE) {
+//                            //停止扫描wifi热点
+//                            stopScanWifiAp();
                             chooseView.setVisibility(View.VISIBLE);
                             hideOtherViews();
                             String idKey = (String)view.getTag();
                             memberId = subIds.get(idKey);
-                            finalConnect((String)view.getTag());
+                            finalConnect(idKey);
                             tvTip.setText(getString(R.string.wait_group_owner_sure));
-                            //停止扫描wifi热点
-                            stopScanWifiAp();
                         }
                     }
                 });
@@ -509,7 +490,7 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
 
     /**
      *
-     * @return myId in the group
+     * @return 我在组里的id
      */
     public int getMyId() {
         if(action == GroupActivity.GroupAction.CREATE) {
@@ -524,10 +505,10 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
      */
     public void socketConnected(String ssid) {
         socketedSsid = ssid;
-        if(needWriteMember) {
-            needWriteMember = false;
-            callback.writeMemberInfo();
-        }
+//        if(needWriteMember) {
+//            needWriteMember = false;
+//            callback.writeMemberInfo();
+//        }
     }
 
     /**
@@ -536,20 +517,22 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
      */
     private void finalConnect(String ssid) {
         if(callback == null) return;
-        if(WifiNetService.compareTwoSsid(ssid, connectedSsid)) {
-            //热点已连接
-            if(WifiNetService.compareTwoSsid(ssid, socketedSsid)) {
-                //当前的socket就是最终要连的socket
-                callback.writeMemberInfo();
-            }else {
-                needWriteMember = true;
-                callback.getSocketConnect(ssid,false);
-            }
-        }else {
-            //重连wifi热点
-            callback.connectWifiAp(ssid);
-            needWriteMember = true;
-        }
+        //当前的socket就是最终要连的socket
+        callback.writeMemberInfo();
+//        if(WifiNetService.compareTwoSsid(ssid, connectedSsid)) {
+//            //热点已连接
+//            if(WifiNetService.compareTwoSsid(ssid, socketedSsid)) {
+//                //当前的socket就是最终要连的socket
+//                callback.writeMemberInfo();
+//            }else {
+//                needWriteMember = true;
+//                callback.getSocketConnect(ssid,false);
+//            }
+//        }else {
+//            //重连wifi热点
+//            callback.connectWifiAp(ssid);
+//            needWriteMember = true;
+//        }
     }
 
     /**
@@ -586,10 +569,7 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
      * @param ssid
      */
     public void scoketConnectFailed(String ssid) {
-        if(WifiNetService.compareTwoSsid(ssid,scanResults.get(count).SSID)) {
-            Log.e("scoketConnectFailed"," in ssid " + ssid);
-            connectWifi();
-        }
+        handler.obtainMessage(SOCKET_FAILED, -1, -1, ssid).sendToTarget();
     }
 
 
@@ -633,8 +613,10 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
      * @return
      */
     public int getCurrentId() {
-        if(connectedSsid != null) {
+        try {
             return subIds.get(connectedSsid);
+        }catch (Exception e) {
+            e.printStackTrace();
         }
         return -1;
     }
@@ -643,7 +625,7 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
      */
     private void cancelEstablish() {
         if(callback == null) return;
-        if(action == GroupActivity.GroupAction.ADD) {
+        if(action == GroupActivity.GroupAction.ADD && subIds.size() > 0 && connectedSsid != null) {
             callback.cancelAddGroup(getCurrentId());
         }else {
             callback.cancelCreateGroup();
@@ -656,18 +638,23 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
         switch (message.what) {
             case ADD_DATA:
                 //搜索到一个可用的wifi热点
+                stopScanWifiAp();
                 ScanResult result = (ScanResult)message.obj;
-                if(result == null) return false;
-                scanResults.add(result);
-                connectWifi();
+                if(!containResult(result)) {
+                    if(Constants.DEBUG) {
+                        Log.e("refreshWifiAp","扫描到" + result.SSID);
+                    }
+                    scanResults.add(result);
+                    connectWifi(result);
+                }
                 break;
             case RECEIVED_A_GROUP:
                 addGroupInUI((JSONObject)message.obj);
                 isConnecting = false;
-                if(scanTimer != null) {
-                    count ++;
-                    connectWifi();
-                }
+//                if(scanTimer != null) {
+//                    count ++;
+//                    connectWifi();
+//                }
                 break;
             case CANCEL_ADD_GROUP:
                 int id = message.arg1;
@@ -705,6 +692,9 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
                     bitmap = null;
                 }
                 break;
+            case SOCKET_FAILED:
+                Toast.makeText(getActivity(),"与" + (String)message.obj + "通信失败，请取消重新加组！",Toast.LENGTH_SHORT).show();
+                break;
             default:
                 return false;
         }
@@ -713,11 +703,12 @@ public class RawGroupFragment extends Fragment implements View.OnClickListener,H
 
     public static final String ACTION_MODE = "action";
     public static final String GROUP_NAME = "name";
-    private final int ADD_DATA = 0;   //notify that have receive a wifi device
-    private final int RECEIVED_A_GROUP = 1;   //notify that have receive a group info
-    private final int CANCEL_ADD_GROUP = 2;   //notify that have receive a group info
-    private final int CANCEL_CREATE_GROUP = 3;  //cancel create group
-    private final int GET_BITMAP = 4;   //get bitmap of user photo by url
+    private final int ADD_DATA = 0;   //添加一个扫描到的wifi热点
+    private final int RECEIVED_A_GROUP = 1;   //接收到一个组的信息
+    private final int CANCEL_ADD_GROUP = 2;   //取消加组
+    private final int CANCEL_CREATE_GROUP = 3;  //取消建组
+    private final int GET_BITMAP = 4;   //获取到图片
+    private final int SOCKET_FAILED = 5;    //socket连接失败
 
 
     public interface CallBackInRawGroup {

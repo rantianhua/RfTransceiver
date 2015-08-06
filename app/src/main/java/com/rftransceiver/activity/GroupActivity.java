@@ -75,7 +75,6 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
     //用来和非UI线程交互
     private static Handler mainHandler;
 
-    private boolean needFirstScan  = false;  // 标识是否需要首次扫描wifi
     private boolean isWifiOpenPre = false;  //标识在加组之前wifi是否开启
 
     private int callbaclMembers;    //记录有多少个组成员已经收到整个组的信息
@@ -149,7 +148,9 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
                 switch (message.what) {
                     case 0:
                         //加组或建组完成
-                        Log.e("handleMessage","加组或建组即将完成");
+                        if(Constants.DEBUG) {
+                            Log.e("handleMessage","加组或建组即将完成");
+                        }
                         finishGroup();
                         break;
                     default:
@@ -220,14 +221,9 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
             if(groupAction == GroupAction.ADD) {
                 //如果是加组，就开启wifi
                 if(service.startWifi()) {
-                    needFirstScan = true;
                     isWifiOpenPre = false;
                 }else {
-                    //扫描wifi热点
                     isWifiOpenPre = true;
-                    service.startScan();
-                    Log.e("service connected", "立即开始扫描");
-                    needFirstScan = false;
                 }
             }
         }
@@ -397,15 +393,7 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
      */
     @Override
     public void wifiEnabled() {
-        if(groupAction == GroupAction.ADD) {
-            if(needFirstScan) {
-                if(service != null) {
-                    service.startScan();
-                    needFirstScan = false;
-                    Log.e("wifiEnable","wifi打开后即开始扫描");
-                }
-            }
-        }
+
     }
 
     /**
@@ -522,7 +510,9 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
     @Override
     public void getSocketConnect(String ssid,boolean requestGroupInfo) {
         if(service == null) return;
-        Log.e("getSocketConnect","准备和"+ssid + "建立socket连接");
+        if(Constants.DEBUG) {
+            Log.e("getSocketConnect","准备和"+ssid + "建立socket连接");
+        }
         service.createClientSocket(ssid,requestGroupInfo);
     }
 
@@ -533,9 +523,13 @@ public class GroupActivity extends Activity implements SetGroupNameFragment.OnGr
     @Override
     public void connectWifiAp(String ssid) {
         if(service != null) {
-            Log.e("connectWifiAp","将要连接"+ssid);
+            if(Constants.DEBUG) {
+                Log.e("connectWifiAp","将要连接"+ssid);
+            }
             if(service.ssidConnected(ssid)) {
-                Log.e("connectWifiAp","已连接到"+ssid);
+                if(Constants.DEBUG) {
+                    Log.e("connectWifiAp","已连接到"+ssid);
+                }
                 if(rawGroupFragment != null) {
                     rawGroupFragment.wifiApConnected(ssid);
                 }
