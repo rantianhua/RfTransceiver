@@ -51,25 +51,21 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
     @InjectView(R.id.tv_title_left)
     TextView tvTitle;
 
-    /**
-     * the PopWindow to show selected letter
-     */
+    //提示选中字母的popwindow
     private PopupWindow showLetter;
 
+    //显示字母
     private TextView tvLetter;
 
-    /**
-     * the contentview of ContactdFragment
-     */
+    //根视图
     private View contentView;
 
     private DBManager dbManager;
 
-    /**
-     * the dataset of expanableListView
-     */
+    //数据源
     private Map<String,List<ContactsData>> mapContacts;
 
+    //适配器
     private ContactsAdapter adpter;
 
     private static final Handler mainHan = new Handler();
@@ -260,6 +256,7 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
                     showLetter.showAtLocation(contentView,Gravity.CENTER,0,0);
                 }
                 tvLetter.setText(letter);
+                contacts.setSelectedGroup(getIndexByKey(letter));
             }else {
                 if(showLetter != null && showLetter.isShowing()) {
                     showLetter.dismiss();
@@ -267,6 +264,21 @@ public class ContactsFragment extends Fragment implements ContactsAdapter.Callba
             }
         }
     };
+
+    /**
+     * 通过key值找到相应的索引
+     * @return
+     */
+    private int getIndexByKey(String letter) {
+        int index = 0;
+        for(String key : mapContacts.keySet()) {
+            if(letter.equals(key)) {
+                break;
+            }
+            index++;
+        }
+        return index;
+    }
 
 
     private void initPopWindow() {

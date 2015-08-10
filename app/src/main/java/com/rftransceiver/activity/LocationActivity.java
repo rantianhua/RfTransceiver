@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -13,20 +12,12 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import com.baidu.location.BDLocation;
-import com.baidu.location.BDLocationListener;
-import com.baidu.location.LocationClient;
-import com.baidu.location.LocationClientOption;
-import com.baidu.mapapi.SDKInitializer;
-import com.baidu.mapapi.map.MapView;
 import com.baidu.mapapi.search.core.PoiInfo;
 import com.rftransceiver.R;
 import com.rftransceiver.fragments.HomeFragment;
 import com.rftransceiver.fragments.MapViewFragment;
-import com.rftransceiver.util.CommonAdapter;
-import com.rftransceiver.util.CommonViewHolder;
-
-import org.w3c.dom.Text;
+import com.rftransceiver.customviews.CommonAdapter;
+import com.rftransceiver.customviews.CommonViewHolder;
 
 import java.util.ArrayList;
 import java.util.List;

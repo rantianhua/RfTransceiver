@@ -54,8 +54,8 @@ import com.rftransceiver.datasets.ConversationData;
 import com.rftransceiver.db.DBManager;
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.group.GroupMember;
-import com.rftransceiver.util.CommonAdapter;
-import com.rftransceiver.util.CommonViewHolder;
+import com.rftransceiver.customviews.CommonAdapter;
+import com.rftransceiver.customviews.CommonViewHolder;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.ExpressionUtil;
 import com.rftransceiver.util.GroupUtil;
@@ -394,7 +394,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
      * @param inflater
      */
     private void initExpressions(LayoutInflater inflater) {
-        for(int i = 0; i < ExpressionUtil.epDatas.size();i ++) {
+        for(int i = 0; i < ExpressionUtil.epDatas.size();i++) {
             GridView gridView = (GridView)inflater.inflate(R.layout.grid_expressiona,null);
             gridView.setAdapter(new CommonAdapter<Integer>(getActivity(),
                     ExpressionUtil.epDatas.get(i),R.layout.grid_expressions_item) {

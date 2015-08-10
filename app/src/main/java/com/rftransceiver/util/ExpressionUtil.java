@@ -16,15 +16,12 @@ import java.util.Map;
 public class ExpressionUtil {
 
     /**
-     * HashMap , filled with expressions' drawable id
-     * used to find expression id when user choose a expression
-     * in UI
+     * HashMap , 报存所有表情的id,key值是页数的索引，键值就是每页表情的id集合
      */
     public static Map<Integer,List<Integer>> epDatas = new HashMap<>();
 
     /**
-     * filled with expressions' id,
-     * used to find expressions' id when saved text data contained expression
+     * 报存表情id,key是在一页中，该表情的索引，键值是对应的表情id
      */
     public static Map<Integer,Integer> expressions = new HashMap<>();
 
@@ -137,7 +134,5 @@ public class ExpressionUtil {
             expressions.put(i,list1.get(i-preSize));
         }
         epDatas.put(3, list4);
-
-
     }
 }

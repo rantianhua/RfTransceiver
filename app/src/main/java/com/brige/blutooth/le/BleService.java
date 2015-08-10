@@ -53,22 +53,19 @@ public class BleService extends Service {
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothGatt mBluetoothGatt;
+
     private int mConnectionState = STATE_DISCONNECTED;
+    private static final int STATE_DISCONNECTED = 0;    //没有连接
+    private static final int STATE_CONNECTING = 1;      //正在连接
+    private static final int STATE_CONNECTED = 2;       //连接成功
 
-    private static final int STATE_DISCONNECTED = 0;
-    private static final int STATE_CONNECTING = 1;
-    private static final int STATE_CONNECTED = 2;
-
-    /**
-     * write to this characteristic
-     */
+    //写入数据发送的Characteristic
     private  BluetoothGattCharacteristic writeCharacteristic;
 
-    /**
-     * read data from this characteristic
-     */
+    //读取数据的Characteristic
     private BluetoothGattCharacteristic notifyCharacter;
 
+    //回调函数
     private CallbackInBle callback;
 
     //记录将要连接的设备的ssid,在判断连接可用时有用
@@ -88,7 +85,9 @@ public class BleService extends Service {
                 if(device.getAddress().equalsIgnoreCase(waitConnectDevice)) {
                     //表示要连的设备是可用的
                     isCheckDeviceAddress = false;
-                    Log.e("waitConnectDevice","设备是可用的");
+                    if(Constants.DEBUG) {
+                        Log.e("waitConnectDevice","设备是可用的");
+                    }
                     scanBle.stopScan(); //停止扫描
                     connect(waitConnectDevice, false);   //再次连接，此次连接不需要检查设备地址的可用性
                 }
@@ -99,7 +98,9 @@ public class BleService extends Service {
         public void scanStoped() {
             if(isCheckDeviceAddress) {
                 isCheckDeviceAddress = false;
-                Log.e("waitConnectDevice","设备是不可用");
+                if(Constants.DEBUG) {
+                    Log.e("waitConnectDevice","设备是不可用");
+                }
                 //告知连接的发起者该设备的地址当前不可用
                 if(callback != null) callback.deviceNotWork();
             }
@@ -177,6 +178,12 @@ public class BleService extends Service {
             }
         }
 
+        /**
+         * 当接收到数据时调用
+         * @param gatt
+         * @param characteristic
+         * @param status
+         */
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt,
                                          BluetoothGattCharacteristic characteristic,
@@ -193,6 +200,11 @@ public class BleService extends Service {
             }
         }
 
+        /**
+         * 当用于通知的characteristic改变时调用
+         * @param gatt
+         * @param characteristic
+         */
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
@@ -257,7 +269,7 @@ public class BleService extends Service {
     }
 
     /**
-     * write instruction to ble
+     * 发送指令
      * @param instruction
      */
     public boolean writeInstruction(byte[] instruction) {
@@ -313,8 +325,8 @@ public class BleService extends Service {
      */
     public void unBindDevice() {
         disconnect();
+        close();
         mBluetoothAdapter.disable();
-        Log.e("unBindDevice","关闭蓝牙");
     }
 
     /**
@@ -338,9 +350,7 @@ public class BleService extends Service {
 
     @Override
     public boolean onUnbind(Intent intent) {
-        // After using a given device, you should make sure that BluetoothGatt.close() is called
-        // such that resources are cleaned up properly.  In this particular example, close() is
-        // invoked when the UI is disconnected from the Service.
+        disconnect();
         close();
         return super.onUnbind(intent);
     }
@@ -348,24 +358,19 @@ public class BleService extends Service {
     private final IBinder mBinder = new LocalBinder();
 
     /**
-     * Initializes a reference to the local Bluetooth adapter.
-     *
-     * @return Return true if the initialization is successful.
+     * 初始化BluetoothAdater
+     * @return
      */
     public boolean initialize() {
-        // For API level 18 and above, get a reference to BluetoothAdapter through
-        // BluetoothManager.
+        //从系统服务中获取BlutoothAdater
         if (mBluetoothManager == null) {
             mBluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
             if (mBluetoothManager == null) {
-                Log.e(TAG, "Unable to initialize BluetoothManager.");
                 return false;
             }
         }
-
         mBluetoothAdapter = mBluetoothManager.getAdapter();
         if (mBluetoothAdapter == null) {
-            Log.e(TAG, "Unable to obtain a BluetoothAdapter.");
             return false;
         }
 
@@ -425,7 +430,6 @@ public class BleService extends Service {
         }catch (Exception e) {
 
         }
-        close();
         mConnectionState = STATE_DISCONNECTED;
         findCharacter = false;
     }
@@ -471,24 +475,24 @@ public class BleService extends Service {
 
     public interface CallbackInBle {
         /**
-         * call when received data from ble
+         * 发送接收到的数据包
          * @param data
-         * @param mode data type
+         * @param mode
          */
         void sendUnPacketedData(byte[] data,int mode);
 
         /**
-         * call to show ble connect or disconnect
+         * 告知回调方，连接成功或连接断开
          */
         void bleConnection(boolean connect);
 
         /**
-         * device not work
+         * 告知调用方，设备未工作
          */
         void deviceNotWork();
 
         /**
-         * call when ble is not initial
+         * 告知回调方服务未初始化
          */
         void serviceNotInit();
     }

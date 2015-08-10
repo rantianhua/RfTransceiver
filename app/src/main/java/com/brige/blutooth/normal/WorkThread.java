@@ -5,7 +5,6 @@ import android.os.Handler;
 import android.util.Log;
 
 import com.rftransceiver.util.Constants;
-import com.source.Crc16Check;
 import com.source.parse.ParseFactory;
 
 import java.io.IOException;
@@ -26,7 +25,6 @@ public class WorkThread extends Thread {
     private volatile boolean isReading = false;
     private StringBuilder sb = new StringBuilder();
     private ParseFactory parseFactory;
-    private Crc16Check crc;
 
 
     public WorkThread(BluetoothSocket socket,Handler han) {
@@ -44,7 +42,6 @@ public class WorkThread extends Thread {
 
         mmInStream = tmpIn;
         mmOutStream = tmpOut;
-        crc = new Crc16Check();
     }
 
     public void run() {
@@ -71,12 +68,13 @@ public class WorkThread extends Thread {
                             //the cache now is full
                             //check this cache is right or not
                             index = 0;
-                            if(crc.isPacketRight(temp)) {
-                                parseFactory.sendToRelativeParser(temp);
-                            }else {
-                                handler.obtainMessage(Constants.MESSAGE_READ,
-                                        3,-1,null).sendToTarget();
-                            }
+                            parseFactory.sendToRelativeParser(temp);
+//                            if(crc.isPacketRight(temp)) {
+//
+//                            }else {
+//                                handler.obtainMessage(Constants.MESSAGE_READ,
+//                                        3,-1,null).sendToTarget();
+//                            }
                         }
                     }
                 }catch (Exception e) {
@@ -98,7 +96,8 @@ public class WorkThread extends Thread {
     public void write(byte[] sendBuff,boolean end) {
         try {
             if(mmOutStream == null || sendBuff == null) return;
-            byte[] send = crc.createCrcCode(sendBuff);
+            //byte[] send = crc.createCrcCode(sendBuff);
+            byte[] send = sendBuff;
             if(send != null) {
                 mmOutStream.write(send);
             }
