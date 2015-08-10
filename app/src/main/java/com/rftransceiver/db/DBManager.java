@@ -360,6 +360,22 @@ public class DBManager {
         }
 
     }
+    public void updateMyMessage(String name,String path,int id,int gid){//修改我在数据库中的信息
+        try{
+            openWriteDB();
+            db.beginTransaction();
+            ContentValues contentValues =new ContentValues();
+            contentValues.put("_nickname",name);
+            contentValues.put("_photopath",path);
+            db.update(DatabaseHelper.TABLE_MEMBER,contentValues," _mid= ? and _gid= ? ",new String[]{String.valueOf(id),String.valueOf(gid)});
+            db.setTransactionSuccessful();
+            db.endTransaction();
+        }catch (Exception e) {
+            Log.e("saveGroup","error in save group base info or members info",e);
+        }finally {
+            closeDB();
+        }
+    }
 
     /**
      * 获取聊天记录

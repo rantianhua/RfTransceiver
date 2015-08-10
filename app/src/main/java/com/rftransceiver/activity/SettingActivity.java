@@ -4,14 +4,17 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.rftransceiver.R;
+import com.rftransceiver.db.DBManager;
 import com.rftransceiver.fragments.SettingFragment;
 import com.rftransceiver.util.Constants;
+import com.rftransceiver.util.PoolThreadUtil;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -50,6 +53,17 @@ public class SettingActivity extends Activity {
                 public void changeINfo(Intent data) {
                     setResult(MainActivity.REQUEST_SETTING,data);
                 }
+
+                @Override
+                public void changeInfo() {
+                    SharedPreferences sp = getSharedPreferences(Constants.SP_USER, 0);
+                    String path = sp.getString(Constants.PHOTO_PATH, "");
+                    String name = sp.getString(Constants.NICKNAME,"");
+                    Intent intent = new Intent();
+                    intent.putExtra(Constants.NICKNAME, name);
+                    intent.putExtra(Constants.PHOTO_PATH, path);
+                    setResult(REQUEST_SETTING, intent);
+                }
             });
         }
         changeFragment(settingFrag, false);
@@ -59,15 +73,7 @@ public class SettingActivity extends Activity {
         imgBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(Constants.INVO == -1)
-                {
                     onBackPressed();
-                }
-               else {
-                    startActivityForResult(new Intent(SettingActivity.this,
-                                  MainActivity.class), REQUEST_SETTING);
-                    onBackPressed();
-                }
             }
         });
     }

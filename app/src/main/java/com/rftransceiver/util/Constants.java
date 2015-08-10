@@ -148,5 +148,6 @@ public class Constants {
     public static boolean DEBUG = false;
     //用来判断要删除的是否是当前所在的组
     public static int GROUPID = -1;
-    public static int INVO = 0;
+    public static int INVO = -1;//判断是否点击修改按钮
+    public static boolean CHANGED = true;
 }

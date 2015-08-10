@@ -1510,6 +1510,32 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     }
     public  void showGeoupDetail() {//回调接口的实现  实例化查看组的类
         if (groupEntity != null && groupEntity.getMembers().size() > 0) {
+            if(Constants.CHANGED == true)
+            {
+                for(int i=0 ;i<groupEntity.getMembers().size();i++)
+                {
+                    if(groupEntity.getMembers().get(i).getId() == myId)
+                    {
+                        SharedPreferences sp = getActivity().getSharedPreferences(Constants.SP_USER, 0);
+                        String path = sp.getString(Constants.PHOTO_PATH, "");
+                        String name = sp.getString(Constants.NICKNAME,"");
+                        if(groupEntity.getMembers().get(i).getPath() != path||groupEntity.getMembers().get(i).getName() != name) {
+                            if (!TextUtils.isEmpty(path)) {
+                                int size = (int) (100 * getResources().getDisplayMetrics().density + 0.5f);
+                                size *= size;
+                                Bitmap bitmap = ImageUtil.createImageThumbnail(path, size);
+                                if (bitmap != null) {
+                                    groupEntity.getMembers().get(i).setBitmap(bitmap);
+                                    bitmap = null;
+                                }
+                            }
+                        }
+                        groupEntity.getMembers().get(i).setName(name);
+                        groupEntity.getMembers().get(i).setPath(path);
+                    }
+               }
+                Constants.CHANGED = false;
+          }
             Fragment groupFragment = GroupDetailFragment.getInstance(groupEntity);
             groupFragment.setTargetFragment(HomeFragment.this, REQUEST_GROUP_DETAIL);
             getFragmentManager().beginTransaction().replace(R.id.frame_content,

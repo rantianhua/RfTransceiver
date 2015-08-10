@@ -59,15 +59,15 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
         View view = inflater.inflate(R.layout.fragment_setting, container, false);
         initView(view);
         initEvent();
+        judge();
         getSize();
-        Constants.INVO = 0;
         return view;
     }
 
     private void initView(View view) {
 
         ButterKnife.inject(this,view);
-        Constants.INVO = 0;
+       //从SharedPreference中取得昵称和头像照片路径进行修改
         SharedPreferences sp = getActivity().getSharedPreferences(Constants.SP_USER, 0);
         String path = sp.getString(Constants.PHOTO_PATH,"");
         if(!TextUtils.isEmpty(path)) {
@@ -143,7 +143,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if(requestCode == REQUEST_CHANGEINFO && resultCode == Activity.RESULT_OK && data != null) {
-            String name = data.getStringExtra("name");
+          //  String name = data.getStringExtra("name");
             //修该名字
             if(callbackInSF != null) {
                 callbackInSF.changeINfo(data);
@@ -156,7 +156,14 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
 
     public interface CallbackInSF{
         void changeINfo(Intent data);
+        void changeInfo();
     }
-
+    public void judge(){  //判断是否按了修改按钮,若修改了，则回调给settingactivity执行setResult函数修改mainActivity中的头像昵称信息
+        if(Constants.INVO == 0)
+        {
+            if(callbackInSF != null)
+                callbackInSF.changeInfo();
+        }
+    }
     public static final int REQUEST_CHANGEINFO = 401; //请求修改个人信息的代码
 }
