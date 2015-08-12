@@ -13,6 +13,7 @@ import android.widget.TextView;
 import com.rftransceiver.R;
 import com.rftransceiver.db.DBManager;
 import com.rftransceiver.fragments.SettingFragment;
+import com.rftransceiver.fragments.SelfInfoFragment;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.PoolThreadUtil;
 
@@ -31,6 +32,7 @@ public class SettingActivity extends Activity {
     private String titleSetting;
 
     private SettingFragment settingFrag;
+    private SelfInfoFragment selfInfoFragment;
     public static final int REQUEST_SETTING = 306;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +57,7 @@ public class SettingActivity extends Activity {
                 }
 
                 @Override
+
                 public void changeInfo() {
                     SharedPreferences sp = getSharedPreferences(Constants.SP_USER, 0);
                     String path = sp.getString(Constants.PHOTO_PATH, "");
@@ -62,6 +65,7 @@ public class SettingActivity extends Activity {
                     Intent intent = new Intent();
                     intent.putExtra(Constants.NICKNAME, name);
                     intent.putExtra(Constants.PHOTO_PATH, path);
+
                     setResult(REQUEST_SETTING, intent);
                 }
             });
@@ -75,6 +79,8 @@ public class SettingActivity extends Activity {
             public void onClick(View view) {
                     onBackPressed();
             }
+
+
         });
     }
 
@@ -92,4 +98,6 @@ public class SettingActivity extends Activity {
         }
         transcation.commit();
     }
+
+
 }

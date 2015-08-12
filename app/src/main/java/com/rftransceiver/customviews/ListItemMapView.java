@@ -7,9 +7,13 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.baidu.mapapi.map.BaiduMap;
+import com.baidu.mapapi.map.BitmapDescriptor;
+import com.baidu.mapapi.map.BitmapDescriptorFactory;
 import com.baidu.mapapi.map.MapStatusUpdate;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.MarkerOptions;
+import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.model.LatLng;
 import com.baidu.mapapi.search.core.PoiInfo;
 import com.baidu.mapapi.search.core.SearchResult;
@@ -27,24 +31,32 @@ public class ListItemMapView extends RelativeLayout {
 
     private BaiduMap baiduMap;  //百度地图
     private GeoCoder geoCoder;  //编码和翻遍码
+    private boolean haveGeo = false;    //标识有没有定位位置
 
     //地理编码的监听器
     private final OnGetGeoCoderResultListener getGeoCoderResultListener = new OnGetGeoCoderResultListener() {
         @Override
         public void onGetGeoCodeResult(GeoCodeResult geoCodeResult) {
             if(geoCodeResult == null || geoCodeResult.error != SearchResult.ERRORNO.NO_ERROR) {
-                Log.e("onGetReverseGeo"," 没有检索到结果");
                 return;
             }
             if(baiduMap == null)  {
                 MapView mapView = (MapView)getChildAt(0);
                 baiduMap = mapView.getMap();
-                return;
             }
-            LatLng ll = geoCodeResult.getLocation();
-            if(ll == null) return;
-            MapStatusUpdate u = MapStatusUpdateFactory.newLatLng(ll);
-            baiduMap.animateMapStatus(u);
+            if(baiduMap != null) {
+                LatLng ll = geoCodeResult.getLocation();
+                if(ll == null) return;
+                //构建marker图标
+                BitmapDescriptor bitmapDescriptor = BitmapDescriptorFactory.fromResource(R.drawable.location_me);
+                //构建markerOptions，用于在地图上显示
+                OverlayOptions overlayOptions = new MarkerOptions()
+                        .position(ll).icon(bitmapDescriptor);
+                //显示在地图上
+                baiduMap.addOverlay(overlayOptions);
+                MapStatusUpdate u = MapStatusUpdateFactory.newLatLng(ll);
+                baiduMap.animateMapStatus(u);
+            }
         }
 
         @Override
@@ -86,12 +98,14 @@ public class ListItemMapView extends RelativeLayout {
      */
     public void setAddress(String address) {
         //解析出城市和具体位置并显示
-        String[] addresses = address.split("\\|");
-        TextView add = (TextView)getChildAt(1);
-        add.setText(addresses[0]);
-        Log.e("add",addresses.length+"");
-        if (addresses.length == 2 && geoCoder != null) {
-            geoCoder.geocode(new GeoCodeOption().address(addresses[0]).city(addresses[1]));
+        if(!haveGeo) {
+            haveGeo = true;
+            String[] addresses = address.split("\\|");
+            TextView add = (TextView)getChildAt(1);
+            add.setText(addresses[0]);
+            if (addresses.length == 2 && geoCoder != null) {
+                geoCoder.geocode(new GeoCodeOption().address(addresses[0]).city(addresses[1]));
+            }
         }
     }
 

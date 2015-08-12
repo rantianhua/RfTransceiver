@@ -51,12 +51,13 @@ public class SelfInfoFragment extends Fragment {
 
     @InjectView(R.id.img_head_selfinfo)
     ImageView imgHead;
+
     @InjectView(R.id.ed_name_selfinfo)
     EditText edName;
     @InjectView(R.id.btn_confirm_selfinfo)
     Button btnConfirm;
     private RelativeLayout content;
-    private Drawable dwHead,dwClean,dwEdit;
+    private Drawable dwHead, dwClean, dwEdit;
     private String name;
     private RelativeLayout.LayoutParams lp;
     private float dentisy;
@@ -66,9 +67,11 @@ public class SelfInfoFragment extends Fragment {
     private Bitmap backGround;
     private DBManager dbManager;
     private String photoPath;
+//    private CallBackInSelf CallBackInSelf;
     private static final int REQUEST_IMAGE_CPTURE = 200;    //请求系统拍照的代码
     private static final int RESULT_LOAD_IMAGE = 201;    //请求图库的代码
     public static final int REQUEST_SETTING = 306;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         dbManager = DBManager.getInstance(getActivity());
@@ -80,12 +83,11 @@ public class SelfInfoFragment extends Fragment {
         BitmapFactory.Options op = new BitmapFactory.Options();
         op.inSampleSize = 4;
         backGround = BitmapFactory.decodeResource(getResources(), R.drawable.chatbackground, op);
-        Constants.INVO = -1;
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        content = (RelativeLayout) inflater.inflate(R.layout.fragment_selfnfo,container,false);
+        content = (RelativeLayout) inflater.inflate(R.layout.fragment_selfnfo, container, false);
         initVierw(content);
         initEvent();
         return content;
@@ -226,7 +228,8 @@ public class SelfInfoFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if(backGround != null) {
+//        setCallBackInself(null);
+        if (backGround != null) {
             backGround.recycle();
         }
     }
@@ -234,35 +237,39 @@ public class SelfInfoFragment extends Fragment {
 
     /**
      * 设置头像
+     *
      * @param head
      */
-    public void setHead(Drawable head){
-        this.dwHead=head;
+    public void setHead(Drawable head) {
+        this.dwHead = head;
     }
 
     /**
      * 设置名称
+     *
      * @param name
      */
-    public void setName(String name){
-        this.name=name;
+    public void setName(String name) {
+        this.name = name;
     }
 
     /**
      * 设置是否可以修改个人信息
+     *
      * @param changeInfo
      */
     public void setChangeInfo(boolean changeInfo) {
         this.changeInfo = changeInfo;
     }
+
     private void chooseAction() {
         new AlertDialog.Builder(getActivity()).setItems(new String[]{"打开图库", "拍一张"}, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                if(i == 0) {
+                if (i == 0) {
                     //打开系统图库
                     openGallery();
-                }else if(i == 1){
+                } else if (i == 1) {
                     //打开系统相机
                     openCamera();
                 }
@@ -270,64 +277,63 @@ public class SelfInfoFragment extends Fragment {
             }
         }).show();
     }
+
     private void openGallery() {
         Intent i = new Intent(
                 Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        if(i.resolveActivity(getActivity().getPackageManager()) != null) {
+        if (i.resolveActivity(getActivity().getPackageManager()) != null) {
             startActivityForResult(i, RESULT_LOAD_IMAGE);
         }
     }
+
     private void openCamera() {
         Intent takePicture = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         //确保进程能够获取返回的intent
-        if(takePicture.resolveActivity(getActivity().getPackageManager()) != null) {
-            photoPath = getActivity().getExternalFilesDir(null)+ Constants.PHOTO_NAME;
+        if (takePicture.resolveActivity(getActivity().getPackageManager()) != null) {
+            photoPath = getActivity().getExternalFilesDir(null) + Constants.PHOTO_NAME;
             Uri imageUri = Uri.fromFile(new File(photoPath));
             takePicture.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
             startActivityForResult(takePicture, REQUEST_IMAGE_CPTURE);
         }
     }
+
     private void showBitmap() {
-        if(photoPath == null) return;
-        int size = (int)(getResources().getDisplayMetrics().density * 100 + 0.5f);
+        if (photoPath == null) return;
+        int size = (int) (getResources().getDisplayMetrics().density * 100 + 0.5f);
         Bitmap bitmap = ImageUtil.createImageThumbnail(photoPath, size * size);
-        if(bitmap != null) {
+        if (bitmap != null) {
             CircleImageDrawable drawable = new CircleImageDrawable(bitmap);
             setPhoto(drawable);
         }
     }
+
     private void setPhoto(CircleImageDrawable drawable) {
         imgHead.setScaleType(ImageView.ScaleType.CENTER_CROP);
         imgHead.setImageDrawable(drawable);
     }
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(requestCode == REQUEST_IMAGE_CPTURE && resultCode == Activity.RESULT_OK) {
+        if (requestCode == REQUEST_IMAGE_CPTURE && resultCode == Activity.RESULT_OK) {
             //显示图片
             showBitmap();
-        }else if (requestCode == RESULT_LOAD_IMAGE && resultCode == Activity.RESULT_OK && null != data) {
-            photoPath = ImageUtil.getImgPathFromIntent(data,getActivity());
+        } else if (requestCode == RESULT_LOAD_IMAGE && resultCode == Activity.RESULT_OK && null != data) {
+            photoPath = ImageUtil.getImgPathFromIntent(data, getActivity());
             showBitmap();
-        }
-        else {
+        } else {
             super.onActivityResult(requestCode, resultCode, data);
         }
         btnConfirm.setVisibility(View.VISIBLE);
     }
-    public static void saveBaseInfo(String nickname,String photoPath,SharedPreferences sp) {
+
+    public static void saveBaseInfo(String nickname, String photoPath, SharedPreferences sp) {
         SharedPreferences.Editor editor = sp.edit();
-        if(!TextUtils.isEmpty(nickname)){
-            editor.putString(Constants.NICKNAME,nickname);
+        if (!TextUtils.isEmpty(nickname)) {
+            editor.putString(Constants.NICKNAME, nickname);
         }
-        if(!TextUtils.isEmpty(photoPath)) {
+        if (!TextUtils.isEmpty(photoPath)) {
             editor.putString(Constants.PHOTO_PATH, photoPath);
         }
         editor.apply();
     }
-//    public void updateMyinfo(){
-//        SharedPreferences sp = getActivity().getSharedPreferences(Constants.SP_USER, 0);
-//        String path = sp.getString(Constants.PHOTO_PATH, "");
-//        String name = sp.getString(Constants.NICKNAME, "");
-//        dbManager.updateMyMessage(name,path);
-//    }
 }

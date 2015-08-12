@@ -54,14 +54,14 @@ import com.rftransceiver.datasets.ConversationData;
 import com.rftransceiver.db.DBManager;
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.group.GroupMember;
-import com.rftransceiver.util.CommonAdapter;
-import com.rftransceiver.util.CommonViewHolder;
+import com.rftransceiver.customviews.CommonAdapter;
+import com.rftransceiver.customviews.CommonViewHolder;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.ExpressionUtil;
 import com.rftransceiver.util.GroupUtil;
 import com.rftransceiver.util.ImageUtil;
 import com.rftransceiver.util.PoolThreadUtil;
-
+import com.rftransceiver.fragments.SelfInfoFragment;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -124,7 +124,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     private long curTime;
     private long preTime;
     private long seconds;
-
+    private SelfInfoFragment selfInfoFragment;
     //SoundsTextView中回调函数
     private SoundsTimeCallbacks timeCallbacks;
     //本类的回调函数
@@ -183,15 +183,18 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     private boolean openBle = false;
     //标识有没有设置同步字
     private boolean sendAsy = false;
-
+    //记录提示TextView的值
+    private String titleText;
+    //记录修改的信道>>>>>>>>>>>>>>>>>>测试使用
+    private int channel = 2;
+    private boolean channelChanged = false;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         initHandler();
         //得到最新组的id
         currentGroupId = getCurrentGroupId();
-
-        expressions = new ArrayList<>();
+         expressions = new ArrayList<>();
         imgDots = new ArrayList<>();
         initImageGetter();
 
@@ -240,6 +243,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         }else {
             //没有任何组，处于公共频道
             tvTitle.setText("公共频道");
+            if(callback != null && !channelChanged) {
+                callback.changeChannel(1);
+            }
         }
     }
 
@@ -360,15 +366,18 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                         String text = tvTip.getText().toString();
                         if (connect) {
                             //sendAsync();
+                            changeChannel();
                             if (tvTip.getVisibility() ==
-                                    View.VISIBLE && text.equals(tipReconnecting)) {
+                                    View.VISIBLE && (text.equals(tipReconnecting) || text.equals(tipConnectLose))) {
                                 tvTip.setText(tipConnecSuccess);
+                                titleText = tipConnecSuccess;
                                 tvTip.setVisibility(View.GONE);
                             }
                         } else {
                             if (!text.equals(tipReconnecting)) {
                                 tvTip.setText(tipConnectLose);
                                 tvTip.setVisibility(View.VISIBLE);
+                                titleText = tipConnectLose;
                             }
                         }
                         break;
@@ -388,7 +397,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
      * @param inflater
      */
     private void initExpressions(LayoutInflater inflater) {
-        for(int i = 0; i < ExpressionUtil.epDatas.size();i ++) {
+        for(int i = 0; i < ExpressionUtil.epDatas.size();i++) {
             GridView gridView = (GridView)inflater.inflate(R.layout.grid_expressiona,null);
             gridView.setAdapter(new CommonAdapter<Integer>(getActivity(),
                     ExpressionUtil.epDatas.get(i),R.layout.grid_expressions_item) {
@@ -533,6 +542,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             conversationAdapter = new ListConversationAdapter(getActivity(),imgageGetter,getFragmentManager());
         }
         listView.setAdapter(conversationAdapter);
+        if(titleText != null && titleText.equals(tipConnectLose)) {
+            tvTip.setVisibility(View.VISIBLE);
+            tvTip.setText(titleText);
+        }
     }
 
     /**
@@ -590,7 +603,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         btnSounds.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
-                //sendAsync();
+                changeChannel();
                 switch (motionEvent.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         btnSounds.setImageBitmap(press);
@@ -629,7 +642,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                         if (sendSounds && callback != null) callback.stopSendSounds();
                         sendSounds = false;
                         tvTip.setText("");
-                        tvTip.setVisibility(View.GONE);;
+                        tvTip.setVisibility(View.GONE);
                         return true;
                     default:
                         return true;
@@ -653,6 +666,13 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     public void asyncOk() {
         sendAsy = true;
         Toast.makeText(getActivity(),"设置同步字成功",Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * 信道修改成功
+     */
+    public void channelHaveChanged() {
+        channelChanged = true;
     }
 
     private interface SoundsTimeCallbacks{
@@ -736,7 +756,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                                         tvTitle.setText("公共频道");
                                         groupEntity = null;
                                         currentGroupId = -1;
-                                        if(callback != null) callback.setMyId(-1);
+                                        channelChanged = false;
+                                        if(callback != null){
+                                            callback.setMyId(-1);
+                                            callback.changeChannel(1);
+                                        }
                                         myId = -1;
                                         dataLists.clear();
                                         conversationAdapter.updateData(dataLists);
@@ -759,8 +783,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                 if(tvTip.getText().toString().equals(tipConnectLose)) {
                     if(callback != null) {
                         //重新连接设备
-                        callback.reconnectDevice();
                         tvTip.setText(tipReconnecting);
+                        callback.reconnectDevice();
                         //5秒之后还没有连上即显示连接失败
                         mainHandler.postDelayed(new Runnable() {
                             @Override
@@ -898,7 +922,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
      * send text
      */
     private void sendText() {
-        //sendAsync();
+        changeChannel();
         Editable editable = editableFactory.newEditable(etSendMessage.getText());
         String message = Html.toHtml(editable);
         message = message.replace("<p dir=\"ltr\">","");
@@ -907,6 +931,17 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         if(!TextUtils.isEmpty(message)) {
             if(callback != null) {
                 callback.send(MainActivity.SendAction.Words,message);
+            }
+        }
+    }
+    ///>>>>>>>>>>>>>>>
+    //测试使用
+    private void changeChannel() {
+        if(!channelChanged && callback != null) {
+            if(groupEntity == null) {
+                callback.changeChannel(1);
+            }else {
+                callback.changeChannel(channel);
             }
         }
     }
@@ -1218,6 +1253,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
      * @param connect
      */
     public void deviceConnected(boolean connect) {
+        Log.e("UPDATE_BLESTATE",connect + " ");
         if(mainHandler != null) {
             mainHandler.obtainMessage(UPDATE_BLESTATE, -1, -1, connect).sendToTarget();
         }
@@ -1230,7 +1266,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
 
         this.groupEntity = groupEntity;
         myId = groupEntity.getTempId();
-        if(callback != null) callback.setMyId(myId);
+        channelChanged = false;
+        if(callback != null) {
+            callback.setMyId(myId);
+            callback.changeChannel(channel);
+        }
         showGroupTitle();
         if(getActivity() != null) {
             //将该id保存为最新打开的组的id
@@ -1317,6 +1357,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
          * 复位，测试使用
          */
         void resetFromH();
+
+        void changeChannel(int channel);
     }
 
     @Override
@@ -1548,7 +1590,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     public void deleteMessage(int gid){//对数据库操作实现删除聊天记录的功能
         dbManager.deleteMessage(gid);
     }
-
     public static final int REQUEST_LOCATION = 302;
     public static final int REQUEST_HOME = 303;
     public static final int REQUEST_CONTEXT_MENU = 304;

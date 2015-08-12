@@ -36,20 +36,17 @@ import java.util.Objects;
 public class DBManager {
 
     private DatabaseHelper helper;
-    /**
-     * to manipulate database
-     */
+    //管理数据库
     private SQLiteDatabase db;
+    //缓存图片路径
     private ArrayList<File> fileList = new ArrayList<>();
-    /**
-     * the dir to save picture
-     */
+    //保存图片的目录
     private File picDir;
 
     private static DBManager dbManager;
 
     private SharedPreferences sp;
-
+    //缓存聊天记录
     private List<ContentValues> listChats = new ArrayList<>();
 
     private DBManager(Context context) {
@@ -64,14 +61,33 @@ public class DBManager {
         }
         return dbManager;
     }
+
+    //
     public ArrayList<File> getFileList(){
         return fileList;
     }
-    private synchronized void openWriteDB() {
+
+    private void openWriteDB() {
+        while (db != null && db.isOpen()) {
+            Thread.currentThread();
+            try {
+                Thread.sleep(50);
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         db = helper.getWritableDatabase();
     }
 
     private synchronized void openReadDB() {
+        while (db != null && db.isOpen() && !db.isReadOnly()) {
+            Thread.currentThread();
+            try {
+                Thread.sleep(50);
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         db = helper.getReadableDatabase();
     }
 
@@ -90,10 +106,10 @@ public class DBManager {
         try {
             openWriteDB();
             db.beginTransaction();
-            //save group base info
+            //插入组的基本信息
             db.execSQL("INSERT INTO " + DatabaseHelper.TABLE_GROUP + " VALUES(null,?,?,?)",
                     new Object[]{name,asyncWord,groupEntity.getTempId()});
-            //get the latest primary key in group table
+            //得到刚插入的组id（在数据库中的id）
             int gid = -1;
             Cursor cursor = db.rawQuery("select last_insert_rowid() from " + DatabaseHelper.TABLE_GROUP,
                     null);
@@ -104,13 +120,13 @@ public class DBManager {
 
                 cursor.close();
             }
-            //save members into member table
+            //保存组的成员
             List<GroupMember> members = groupEntity.getMembers();
             if(gid != -1 && members != null && members.size() > 1) {
                 //更新当前组的id
                 GroupUtil.saveCurrentGid(gid,sp);
                 for(GroupMember member : members) {
-                    //save the picture to local storage
+                    //保存图片到sd卡
                     Bitmap bitmap = member.getBitmap();
                     String bpath = null;
                     if(bitmap != null) {
@@ -139,6 +155,7 @@ public class DBManager {
 
             db.beginTransaction();
             db.delete(DatabaseHelper.TABLE_DATA,"_gid = ?",new String[]{String.valueOf(gid)});
+
             db.delete(DatabaseHelper.TABLE_MEMBER,"_gid = ?",new String[]{String.valueOf(gid)});
             db.delete(DatabaseHelper.TABLE_GROUP,"_gid = ?",new String[]{String.valueOf(gid)});
             db.setTransactionSuccessful();
@@ -149,7 +166,22 @@ public class DBManager {
             closeDB();
         }
     }
-
+    public void changeImfor(int gid ,String path,String name){//修改数据库中的自己的头像和名字 然而并没有用上
+        try{
+            openWriteDB();
+            db.beginTransaction();
+            ContentValues cv = new ContentValues();
+            cv.put("_photopath",path);
+            cv.put("_nickname",name);
+            db.update(DatabaseHelper.TABLE_MEMBER, cv ,"_gid = ?" ,new String[]{String.valueOf(gid)});
+            db.setTransactionSuccessful();
+            db.endTransaction();
+        }catch (Exception e) {
+            Log.e("saveGroup","error in save group base info or members info",e);
+        }finally {
+            closeDB();
+        }
+    }
     /**
      * 关闭数据库
      */

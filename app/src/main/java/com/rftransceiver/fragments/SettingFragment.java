@@ -68,7 +68,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
 
         ButterKnife.inject(this,view);
        //从SharedPreference中取得昵称和头像照片路径进行修改
-        SharedPreferences sp = getActivity().getSharedPreferences(Constants.SP_USER, 0);
+        SharedPreferences sp = getActivity().getSharedPreferences(Constants.SP_USER, 0);//点开不可编辑的个人中心时要改下头像和名字
         String path = sp.getString(Constants.PHOTO_PATH,"");
         if(!TextUtils.isEmpty(path)) {
             int size = (int)(100 * getResources().getDisplayMetrics().density + 0.5f);
