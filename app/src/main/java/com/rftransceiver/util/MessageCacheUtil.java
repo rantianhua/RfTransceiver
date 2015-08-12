@@ -1,5 +1,7 @@
 package com.rftransceiver.util;
 
+import android.util.Log;
+
 import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.datasets.ConversationData;
 
@@ -11,6 +13,10 @@ import java.util.ArrayList;
  */
 public class MessageCacheUtil {
     /**
+     * 单一示例
+     */
+    private static  MessageCacheUtil cacheUtil;
+    /**
      * 未发送消息的文本内容
      */
     private ArrayList<String> cacheContentList;
@@ -19,19 +25,27 @@ public class MessageCacheUtil {
      */
     private ArrayList<ConversationData> cacheDataList;
     /**
-     * 待发送消息的文本内容
+     * 未操作消息的文本内容
      */
     private ArrayList<String> unCheckContentList;
     /**
-     * 待发送消息的ConversationData
+     * 未操作消息的ConversationData
      */
     private ArrayList<ConversationData> unCheckDataList;
+
+    public static MessageCacheUtil getInstance(){
+        if(cacheUtil==null) {
+            cacheUtil= new MessageCacheUtil();
+        }
+        return cacheUtil;
+    }
 
     public MessageCacheUtil(){
         cacheContentList=new ArrayList<String>();
         cacheDataList = new ArrayList<ConversationData>();
         unCheckContentList = new ArrayList<String>();
         unCheckDataList = new ArrayList<ConversationData>();
+
     }
 
     public ArrayList<String> getCacheContentList(){
@@ -55,6 +69,13 @@ public class MessageCacheUtil {
         cacheDataList.add(data);
         unCheckContentList.add(content);
         unCheckDataList.add(data);
+    }
+
+    public void addUnCheckCacheContent(String content){
+        unCheckContentList.add(content);
+        unCheckDataList.add(cacheDataList.get(cacheContentList.indexOf(content)));
+        cacheDataList.get(cacheContentList.indexOf(content)).reset();
+        Log.i("-------uncheck---------",unCheckDataList.size()+"");
     }
 
     /**

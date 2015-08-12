@@ -46,6 +46,7 @@
         android:layout_marginStart="20dp"
         android:layout_alignBottom="@id/listmapview_right"
         android:background="@anim/states_waiting"
+        android:layout_centerVertical="true"
         />
 
     <ImageView
@@ -54,7 +55,7 @@
         android:layout_height="19dp"
         android:layout_toStartOf="@id/listmapview_right"
         android:layout_marginStart="20dp"
-        android:background="@color/red"
+        android:background="@drawable/fail"
         android:layout_centerVertical="true"
         android:visibility="invisible"/>
 

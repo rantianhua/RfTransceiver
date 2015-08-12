@@ -26,6 +26,7 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.customviews.ListItemMapView;
 import com.rftransceiver.customviews.SoundsTextView;
 import com.rftransceiver.datasets.ConversationData;
@@ -52,6 +53,7 @@ public class ListConversationAdapter extends BaseAdapter{
     private LayoutInflater inflater = null;
     private FragmentManager fm;
     private static Handler mainHan;
+    private OnStateClickListener stateClickListener;
     /**
      * parse expression data from content
      */
@@ -87,7 +89,7 @@ public class ListConversationAdapter extends BaseAdapter{
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         ViewHodler hodler = null;
-        ConversationData data = listData.get(position);
+        final ConversationData data = listData.get(position);
 
         if(convertView == null) {
             hodler = new ViewHodler();
@@ -155,19 +157,24 @@ public class ListConversationAdapter extends BaseAdapter{
                 Spanned spannable1 = Html.fromHtml(data.getContent(),imageGetter,null);
                 hodler.tvContent.setText(spannable1);
                 AnimationDrawable anim = (AnimationDrawable) hodler.imgTextStates.getBackground();
+
                 if(!data.isFinished()){
+
                     hodler.imgTextStates.setVisibility(View.VISIBLE);
                     anim.start();
-                    /*mainHan.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-
-                        }
-                    },)*/
                     if(data.isFail()){
                         hodler.imgTextStates.setVisibility(View.INVISIBLE);
                         anim.stop();
                         hodler.imgTextStatesFail.setVisibility(View.VISIBLE);
+
+                        hodler.imgTextStatesFail.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                if (data.isFail()) {
+                                    stateClickListener.onclick(MainActivity.SendAction.Words,data.getContent());
+                                }
+                            }
+                        });
                     }else{
                         hodler.imgTextStatesFail.setVisibility(View.INVISIBLE);
                     }
@@ -205,16 +212,19 @@ public class ListConversationAdapter extends BaseAdapter{
                 if(!data.isFinished()){
                     hodler.imgAddressStates.setVisibility(View.VISIBLE);
                     anim2.start();
-                    /*mainHan.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-
-                        }
-                    },)*/
                     if(data.isFail()){
                         hodler.imgAddressStates.setVisibility(View.INVISIBLE);
                         anim2.stop();
                         hodler.imgAddressStates.setVisibility(View.VISIBLE);
+
+                        hodler.imgAddressStatesFail.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                if (data.isFail()) {
+                                    stateClickListener.onclick(MainActivity.SendAction.Address, data.getAddress());
+                                }
+                            }
+                        });
                     }else{
                         hodler.imgAddressStatesFail.setVisibility(View.INVISIBLE);
                     }
@@ -248,6 +258,13 @@ public class ListConversationAdapter extends BaseAdapter{
         notifyDataSetChanged();
     }
 
+    public interface OnStateClickListener{
+        void onclick(MainActivity.SendAction action, String content);
+    }
+
+    public void setOnstateClickListener(OnStateClickListener listener){
+        this.stateClickListener=listener;
+    }
 
     class ViewHodler {
         TextView tvContent,tvImgProgress,tvTime,soundsTime;

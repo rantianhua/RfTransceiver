@@ -42,7 +42,7 @@
         android:layout_height="19dp"
         android:layout_toLeftOf="@id/tv_list_right"
         android:layout_marginLeft="20dp"
-        android:background="@color/red"
+        android:background="@drawable/fail"
         android:layout_centerVertical="true"
         android:visibility="invisible"/>
 

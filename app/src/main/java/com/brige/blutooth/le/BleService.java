@@ -295,6 +295,7 @@ public class BleService extends Service {
                 //设备已连接，但还未初始化
                 callback.serviceNotInit();
                 //重新搜索服务
+                findCharacter = false;
                 mBluetoothGatt.discoverServices();
             }
             return false;

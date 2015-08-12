@@ -13,7 +13,7 @@ import com.rftransceiver.fragments.MapViewFragment;
  */
 public class ConversationData {
 
-    //数据传输状态
+    //是否还在发送
     private boolean isFinished;
 
     //是否发送失败
@@ -86,6 +86,11 @@ public class ConversationData {
 
     public void finish(){
         isFinished = true;
+    }
+
+    public void reset(){
+        isFail=false;
+        isFinished=false;
     }
 
     public int getPercent() {

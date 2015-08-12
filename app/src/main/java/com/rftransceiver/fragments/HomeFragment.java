@@ -119,7 +119,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     private Bitmap press;
 
     //存放未发送完成的信息
-    private MessageCacheUtil cacheUtil;
+    public MessageCacheUtil cacheUtil;
 
     //抬起button时所显示的图片
     private Bitmap up;
@@ -129,7 +129,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     private long curTime;
     private long preTime;
     private long seconds;
-    private boolean canSend;
+    public boolean canSend;
 
     //SoundsTextView中回调函数
     private SoundsTimeCallbacks timeCallbacks;
@@ -216,7 +216,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         //加载Bitmap资源
         loadBitmap();
 
-        cacheUtil = new MessageCacheUtil();
+        cacheUtil = MessageCacheUtil.getInstance();
         canSend=true;
 
     }
@@ -549,6 +549,16 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         listView.setBackground(new BitmapDrawable(backGroud));
         if(conversationAdapter == null) {
             conversationAdapter = new ListConversationAdapter(getActivity(),imgageGetter,getFragmentManager());
+            conversationAdapter.setOnstateClickListener(new ListConversationAdapter.OnStateClickListener() {
+                @Override
+                public void onclick(MainActivity.SendAction action, String content) {
+                    Log.i("--------cansend------",canSend+"");
+                    if(canSend){
+                        callback.reSend(action,content);
+                        conversationAdapter.notifyDataSetChanged();
+                    }
+                }
+            });
         }
         listView.setAdapter(conversationAdapter);
     }
@@ -921,15 +931,17 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         String message = Html.toHtml(editable);
         message = message.replace("<p dir=\"ltr\">","");
         message = message.replace("</p>", "");
-        Log.e("sendText", message);
-        if(cacheUtil.getCacheNum()==0){
+        sendMessage(message, MainActivity.SendAction.Words);
+        if(!canSend){
+          statesFail();
+        } else if(cacheUtil.getUnCheckNum()==1&&canSend){
             if( !TextUtils.isEmpty(message)) {
                 if(callback != null) {
                     callback.send(MainActivity.SendAction.Words,message);
                 }
             }
         }
-        sendMessage(message, MainActivity.SendAction.Words);
+
     }
 
     //发送缓存数据
@@ -1177,10 +1189,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                         sendText);
                 //将正在发送的数据添加到缓存中
                 cacheUtil.addCache(sendText, subData);
-                Log.i("------Words进入发送队列------", "内容为" + sendText + "，共有" + cacheUtil.getCacheNum() + "条数据待发送");
-                if(!canSend){
-                    statesFail();
-                }
+
+
                 break;
             case Address:
                 subData = new ConversationData(ListConversationAdapter.ConversationType.RIGHT_ADDRESS,
@@ -1188,10 +1198,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                 subData.setAddress(sendText);
                 //将正在发送的数据添加到缓存中
                 cacheUtil.addCache(sendText, subData);
-                Log.i("-----Address进入发送队列-----", "内容为" + sendText + "，共有" + cacheUtil.getCacheNum() + "条数据待发送");
-                if(!canSend){
-                    statesFail();
-                }
                 break;
             case Image:
                 sendBitmap = getBitmapFromText(sendText);
@@ -1229,30 +1235,28 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     }
     //发送成功
     public void statesFinished(){
-
-        switch (cacheUtil.getUnCheckDataList().get(0).getConversationType()){
-            case RIGHT_TEXT:
-                    Log.i("-------Words发送完成-------", cacheUtil.getUnCheckDataList().get(0) + "已从缓存中清除，还剩" + (cacheUtil.getCacheNum() - 1) + "条数据未发送");
-                break;
-            case RIGHT_ADDRESS:
-                    Log.i("------Address发送完成------", cacheUtil.getUnCheckDataList().get(0) + "已从缓存中清除，还剩" + (cacheUtil.getCacheNum() - 1) + "条数据未发送");
-                break;
-        }
-        cacheUtil.getUnCheckDataList().get(0).finish();
-        cacheUtil.removeCache(cacheUtil.getUnCheckDataList().get(0));
-        conversationAdapter.notifyDataSetChanged();
-        //进行下一个通信
-        if(cacheUtil.getCacheNum()!=0) {
+            switch (cacheUtil.getUnCheckDataList().get(0).getConversationType()) {
+                case RIGHT_TEXT:
+                    Log.i("-------Words发送完成-------", cacheUtil.getUnCheckContentList().get(0) + "已从缓存中清除，还剩" + (cacheUtil.getCacheNum() - 1) + "条数据未发送");
+                    break;
+                case RIGHT_ADDRESS:
+                    Log.i("------Address发送完成------", cacheUtil.getUnCheckContentList().get(0) + "已从缓存中清除，还剩" + (cacheUtil.getCacheNum() - 1) + "条数据未发送");
+                    break;
+            }
+            cacheUtil.getUnCheckDataList().get(0).finish();
+            cacheUtil.removeCache(cacheUtil.getUnCheckDataList().get(0));
+            conversationAdapter.notifyDataSetChanged();
+            //进行下一个通信
             sendCache();
-        }
+
     }
     //发送失败
     public void statesFail(){
-        if(cacheUtil.getUnCheckNum()!=0){
+        if(cacheUtil.getUnCheckNum() != 0) {
+            Log.i("-------发送失败-------", "内容为" + cacheUtil.getUnCheckContentList().get(0));
             cacheUtil.getUnCheckDataList().get(0).fail();
             conversationAdapter.notifyDataSetChanged();
             cacheUtil.checkMessage();
-            Log.i("-------发送失败-------", "还剩" + (cacheUtil.getUnCheckNum()) + "条数据待发送");
         }
         //停止当前信道通信，进行下一个通信
         sendCache();
@@ -1343,6 +1347,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
          * 请求发送文本或语音信息
          */
         void send(MainActivity.SendAction sendAction,String text);
+        /**
+         * 请求重新发送文本或语音信息
+         */
+        void reSend(MainActivity.SendAction sendAction,String text);
 
         /**
          * 停止发送语音
