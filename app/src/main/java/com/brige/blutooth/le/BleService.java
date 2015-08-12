@@ -473,7 +473,7 @@ public class BleService extends Service {
         /**
          * call when received data from ble
          * @param data
-         * @param mode data type
+         * @param mode data type. "0" for success and "2" for false.
          */
         void sendUnPacketedData(byte[] data,int mode);
 
