@@ -61,7 +61,7 @@ import com.rftransceiver.util.ExpressionUtil;
 import com.rftransceiver.util.GroupUtil;
 import com.rftransceiver.util.ImageUtil;
 import com.rftransceiver.util.PoolThreadUtil;
-
+import com.rftransceiver.fragments.SelfInfoFragment;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -124,7 +124,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     private long curTime;
     private long preTime;
     private long seconds;
-
+    private SelfInfoFragment selfInfoFragment;
     //SoundsTextView中回调函数
     private SoundsTimeCallbacks timeCallbacks;
     //本类的回调函数
@@ -190,8 +190,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         initHandler();
         //得到最新组的id
         currentGroupId = getCurrentGroupId();
-
-        expressions = new ArrayList<>();
+         expressions = new ArrayList<>();
         imgDots = new ArrayList<>();
         initImageGetter();
 
@@ -1511,6 +1510,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     }
     public  void showGeoupDetail() {//回调接口的实现  实例化查看组的类
         if (groupEntity != null && groupEntity.getMembers().size() > 0) {
+            changeIAN();
             Fragment groupFragment = GroupDetailFragment.getInstance(groupEntity);
             groupFragment.setTargetFragment(HomeFragment.this, REQUEST_GROUP_DETAIL);
             getFragmentManager().beginTransaction().replace(R.id.frame_content,
@@ -1523,7 +1523,26 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     public void deleteMessage(int gid){//对数据库操作实现删除聊天记录的功能
         dbManager.deleteMessage(gid);
     }
-
+    public void changeIAN(){
+        if(Constants.CHANGE == 1) {    //如果点击了修改按钮，则进行groupentity中头像和名字的更新操作
+            for (int i = 0; i < groupEntity.getMembers().size(); i++) {
+                if (groupEntity.getMembers().get(i).getId() == myId) {
+                    SharedPreferences sp = getActivity().getSharedPreferences(Constants.SP_USER, 0);
+                    String path = sp.getString(Constants.PHOTO_PATH, "");
+                    String name = sp.getString(Constants.NICKNAME, "");
+                    //dbManager.changeImfor(myId,path,name);
+                    groupEntity.getMembers().get(i).setName(name);
+                    if (!TextUtils.isEmpty(path)) {
+                        int size = (int) (100 * getResources().getDisplayMetrics().density + 0.5f);
+                        size *= size;
+                        Bitmap bitmap = ImageUtil.createImageThumbnail(path, size);
+                            groupEntity.getMembers().get(i).setBitmap(bitmap);
+                    }
+                }
+            }
+            Constants.CHANGE = 0;
+        }
+    }
     public static final int REQUEST_LOCATION = 302;
     public static final int REQUEST_HOME = 303;
     public static final int REQUEST_CONTEXT_MENU = 304;
