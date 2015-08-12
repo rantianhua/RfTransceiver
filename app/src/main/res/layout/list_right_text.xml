@@ -26,13 +26,6 @@
         android:textColor="@color/white"
         android:gravity="left"
         />
-    <ImageView
-        android:layout_width="25dp"
-        android:layout_height="25dp"
-        android:layout_toLeftOf="@id/tv_list_right"
-        android:layout_marginLeft="20dp"
-        android:layout_alignBottom="@id/tv_list_right"
-        android:background="@android:color/black"
-        />
+
 
 </RelativeLayout>

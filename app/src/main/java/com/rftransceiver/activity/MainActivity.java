@@ -143,6 +143,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private int myId;
     public static final int REQUEST_GROUP = 301;    //获取组信息的请求代码，用于GroupActivity
     public static final int REQUEST_SETTING = 306; //设置的请求代码
+    //重连设备的标识
+    private boolean reconnected = false;
     //区分请求绑定设备的来源
     private BineDeviceFrom bindFrom;
     private enum BineDeviceFrom {
@@ -168,6 +170,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
         //解绑BleSevice
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
+            PoolThreadUtil.getInstance().close();
             bleService = null;
         }
     };
@@ -183,12 +186,23 @@ public class MainActivity extends Activity implements View.OnClickListener,
                         if(bleService != null && unBind) {
                             //重新开启蓝牙
                             bleService.openBluetooth();
+                        }else if(homeFragment != null) {
+                            if(bleService != null) {
+                                bleService.disconnect();
+                                bleService.close();
+                            }
+                            homeFragment.deviceConnected(false);
                         }
                         break;
                     case BluetoothAdapter.STATE_ON:
                         //通知蓝牙已开启
                         if(homeFragment != null) {
-                            homeFragment.bleOpend();
+                            if(reconnected) {
+                                reconnected = false;
+                                reconnectDevice();
+                            }else {
+                                homeFragment.bleOpend();
+                            }
                         }
                         if(bindDeviceFragment != null) {
                             bindDeviceFragment.bleOpend();
@@ -238,6 +252,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
             bindService(new Intent(this, BleService.class), serviceConnectionBle, BIND_AUTO_CREATE);
             //设置媒体音量最大
             maxVolume();
+            registerReceiver(bluetoothSate,
+                    new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
         }
     }
 
@@ -316,10 +332,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private void changeFragment(Fragment fragment) {
         FragmentTransaction transaction = getFragmentManager().beginTransaction();
         transaction.replace(R.id.frame_content, fragment);
-        if(homeFragment != null && (fragment instanceof MyDeviceFragment || fragment instanceof ContactsFragment)) {
+        if(fragment instanceof MyDeviceFragment || fragment instanceof ContactsFragment) {
             transaction.addToBackStack(null);
         }
-        transaction.commitAllowingStateLoss();
+        transaction.commit();
         transaction = null;
     }
 
@@ -469,8 +485,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                         if(homeFragment != null){
                                             //是否实时接收语音
                                             if(homeFragment.getRealTimePlay()){
-                                                receiver.startReceiver();
+                                                if(!receiver.isReceiving()) {
+                                                    receiver.startReceiver();
+                                                }
                                             }else {
+                                                receiver.stopReceiver();
                                                 stopReceiveSounds();
                                             }
                                             homeFragment.receivingData(0,null,(int)msg.obj,0);
@@ -538,9 +557,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                 break;
                             case Constants.READ_CHANGE_CHANNEL:
                                 int channel = msg.arg2;
-                                String[] channels = getResources().getStringArray(R.array.channel);
-                                showToast("信道已修改为"+channels[channel]);
-                                channels = null;
+                                //showToast("信道已修改为"+channel);
+                                if(homeFragment != null) {
+                                    homeFragment.channelHaveChanged();
+                                }
                                 CURRENT_CHANNEL = channel;
                                 break;
                             case Constants.READ_SETASYNCWORD:
@@ -557,9 +577,9 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                 break;
                             case Constants.READ_CHANNEL:
                                 if (msg.arg2 == 0) {
-                                    if(receiver.isReceiving()) {
-                                        stopReceiveSounds();
-                                    }
+//                                    if(receiver.isReceiving()) {
+//                                        stopReceiveSounds();
+//                                    }
                                     if (action == SendAction.SOUNDS) {
                                         //start record
                                         record.startRecording();
@@ -672,7 +692,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
      * 停止播放语音
      */
     private void stopReceiveSounds() {
-        receiver.stopReceiver();
+        //receiver.stopReceiver();
         if(homeFragment != null) {
             homeFragment.endReceive(0);
         }
@@ -727,37 +747,16 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        registerReceiver(bluetoothSate,
-                new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        unregisterReceiver(bluetoothSate);
-    }
-
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        Log.e("onStop", "onstop");
-    }
-
-    @Override
     protected void onDestroy() {
-        PoolThreadUtil.getInstance().close();
+        unregisterReceiver(bluetoothSate);
         super.onDestroy();
-
         record.stopRecording();
         receiver.stopReceiver();
         textEntity.close();
+        unbindService(serviceConnectionBle);
+        PoolThreadUtil.getInstance().close();
         textEntity.setSendListener(null);
         textEntity.setOptions(null);
-
-        unbindService(serviceConnectionBle);
         bleService.setCallback(null);
         bleService.disconnect();
         bleService.close();
@@ -1029,6 +1028,18 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     /**
+     * HomeFragment中测试使用
+     * @param channel
+     */
+    @Override
+    public void changeChannel(int channel) {
+        if(bleService != null) {
+            Constants.CHANNEL[2] = (byte)channel;
+            bleService.writeInstruction(Constants.CHANNEL);
+        }
+    }
+
+    /**
      * HomeFragment中的回调函数，获取新建的组
      * @return
      */
@@ -1062,7 +1073,13 @@ public class MainActivity extends Activity implements View.OnClickListener,
             return;
         }
         if(bleService == null) return;
-        bleService.connect(bindAddress,true);
+        if(bleService.isBluetoothEnable()) {
+            bleService.connect(bindAddress,true);
+        }else {
+            //先开启蓝牙
+            reconnected = true;
+            bleService.openBluetooth();
+        }
     }
 
     /**
@@ -1115,9 +1132,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
         if(requestCode == REQUEST_GROUP && resultCode == Activity.RESULT_OK && data != null) {
-            /**
-             * in GroupActivity,after finish create or add group,send a GroupEntity
-             */
+            //返回新建的组或新加的组
             Bundle bundle = data.getExtras();
             if(bundle == null) return;
             groupEntity = bundle.getParcelable(GroupActivity.EXTRA_GROUP);
@@ -1133,14 +1148,23 @@ public class MainActivity extends Activity implements View.OnClickListener,
             String address = data.getStringExtra(HomeFragment.EXTRA_LOCATION);
             if(!TextUtils.isEmpty(address))
                 send(SendAction.Address,address);
-        }else if(requestCode == REQUEST_SETTING && data != null) {
+        }else if(requestCode == REQUEST_SETTING && data != null) {//把头像和名字改下
             String newName = data.getStringExtra("name");
+            String photoPath = data.getStringExtra("photoPath");
             if(!TextUtils.isEmpty(name)) {
                 name = newName;
                 tvName.setText(newName);
                 SharedPreferences.Editor editor = sp.edit();
                 editor.putString(Constants.NICKNAME,newName);
                 editor.apply();
+            }
+            if(photoPath != null) {
+                int size = (int) (getResources().getDisplayMetrics().density * 100 + 0.5f);
+                Bitmap bitmap = ImageUtil.createImageThumbnail(photoPath, size * size);
+                if (bitmap != null) {
+                    CircleImageDrawable drawable = new CircleImageDrawable(bitmap);
+                    setPhoto(drawable);
+                }
             }
         }
         else {
@@ -1153,13 +1177,12 @@ public class MainActivity extends Activity implements View.OnClickListener,
         if(lockerView.isMenuOpened()) {
             lockerView.closeMenu();
         }else {
-            try {
-                super.onBackPressed();
-            }catch (Exception e) {
-
-            }
-
+            finish();
         }
     }
+    private void setPhoto(CircleImageDrawable drawable) {//设置头像
+    imgPhoto.setScaleType(ImageView.ScaleType.CENTER_CROP);
+    imgPhoto.setImageDrawable(drawable);
+}
 
 }

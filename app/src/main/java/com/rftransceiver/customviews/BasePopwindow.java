@@ -1,4 +1,4 @@
-package com.rftransceiver.util;
+package com.rftransceiver.customviews;
 
 import android.content.Context;
 import android.graphics.drawable.BitmapDrawable;

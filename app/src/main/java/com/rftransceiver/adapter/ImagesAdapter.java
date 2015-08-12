@@ -6,8 +6,8 @@ import android.widget.ImageView;
 
 import com.rftransceiver.R;
 import com.rftransceiver.datasets.ImageFolderData;
-import com.rftransceiver.util.CommonAdapter;
-import com.rftransceiver.util.CommonViewHolder;
+import com.rftransceiver.customviews.CommonAdapter;
+import com.rftransceiver.customviews.CommonViewHolder;
 
 import java.util.List;
 

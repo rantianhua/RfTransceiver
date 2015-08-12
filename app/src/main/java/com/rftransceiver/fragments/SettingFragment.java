@@ -20,7 +20,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.rftransceiver.R;
-import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.customviews.CircleImageDrawable;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.ImageUtil;
@@ -54,7 +53,6 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
 
     private Drawable dwHead;
     private String name;
-
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -62,12 +60,17 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
         initView(view);
         initEvent();
         getSize();
+
+        if(callbackInSF != null) {
+            callbackInSF.changeinfo();
+        }
         return view;
     }
 
     private void initView(View view) {
+
         ButterKnife.inject(this,view);
-        SharedPreferences sp = getActivity().getSharedPreferences(Constants.SP_USER, 0);
+        SharedPreferences sp = getActivity().getSharedPreferences(Constants.SP_USER, 0);//点开不可编辑的个人中心时要改下头像和名字
         String path = sp.getString(Constants.PHOTO_PATH,"");
         if(!TextUtils.isEmpty(path)) {
             int size = (int)(100 * getResources().getDisplayMetrics().density + 0.5f);
@@ -155,6 +158,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
 
     public interface CallbackInSF{
         void changeINfo(Intent data);
+        void changeinfo();
     }
 
     public static final int REQUEST_CHANGEINFO = 401; //请求修改个人信息的代码

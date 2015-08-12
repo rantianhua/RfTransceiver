@@ -1,5 +1,6 @@
 package com.rftransceiver.util;
 
+import android.graphics.Bitmap;
 import android.os.AsyncTask;
 
 import com.rftransceiver.group.GroupEntity;
@@ -28,51 +29,46 @@ public class Constants {
 
     public static final String TOAST = "toast";
 
-    /**
-     * the value of Type_Sounds to mark the sounds data
-     *  the value of Type_Words to mark the words data
-     *  the value of Type_Address to mark the address data
-     *  the value of Type_Image to mark the image data
-     */
+    //表示语音数据
     public static final byte Type_Sounds = (byte) 0x03;
-
+    //表示文本信息
     public static final byte Type_Words = (byte) 0x02;
-
+    //表示地理位置信息
     public static final byte Type_Address = (byte) 0x04;
-
+    //表示图片信息
     public static final byte Type_Image = (byte) 0x05;
-
+    //接收到语音信息
     public static final int READ_SOUNDS = 0;
-
+    //接收到文字信息
     public static final int READ_WORDS = 1;
-
+    //接收到位置信息
     public static final int READ_ADDRESS = 2;
-
+    //接收到图片信息
     public static final int READ_Image = 3;
-
+    //接收到设置同步字的反馈
     public static final int READ_SETASYNCWORD = 4;
-
+    //读取到设备的rssi值
     public static final int READ_RSSI = 5;
-
+    //读取到信道状态
     public static final int READ_CHANNEL = 6;
-
+    //改变信道成功的反馈
     public static final int READ_CHANGE_CHANNEL = 7;
-
-    public static final int READ_ERROR = 8; //读到错误数据
-
-    public static final int GET_BITMAP = 9; //加载图片完毕
-
-    public static final int READ_UNKNOWN = 10;  //接收到未知数据
-
-    public static final int HANDLE_SEND = 11;   //发送数据后处理更新UI的操作
-
-    public static final int Data_Packet_Length = 60;    //数据包的长度
-
-    public static final int Instruction_Packet_Length = 10; //指令包的长度
-
-    public static final byte Data_Packet_Head = (byte) 0x01;    //数据包的帧头
-
-    public static final byte Data_Packet_Tail = (byte) 0xff;    //数据包的帧尾
+    //读到错误数据
+    public static final int READ_ERROR = 8;
+    //加载图片完毕
+    public static final int GET_BITMAP = 9;
+    //接收到未知数据
+    public static final int READ_UNKNOWN = 10;
+    //发送数据后处理更新UI的操作
+    public static final int HANDLE_SEND = 11;
+    //数据包的长度
+    public static final int Data_Packet_Length = 60;
+    //指令包的长度
+    public static final int Instruction_Packet_Length = 10;
+    //数据包的帧头
+    public static final byte Data_Packet_Head = (byte) 0x01;
+    //数据包的帧尾
+    public static final byte Data_Packet_Tail = (byte) 0xff;
 
     /**
      * the head and tail of instruction packet
@@ -137,15 +133,16 @@ public class Constants {
 
     public static final int MSG_GROUP_INFO = 0; //indicate this message is group's base info
 
-    public static final String PHOTO_NAME = "/photo.png";
-    public static final String PHOTO_PATH = "photo_path";
+    public static final String PHOTO_NAME = "/photo.png";//用户头像的名称
+    public static final String PHOTO_PATH = "photo_path";   //用户头像的保存路径
     public static final String BIND_DEVICE_ADDRESS = "bind_device_address";
     public static final String BIND_DEVICE_NAME = "bind_device_name";
-
+ //   public static final String BITMAP = "bitmap";
     public static final String PRE_GROUP = "pre_group";
 
     //调试，打印log的开关
     public static boolean DEBUG = false;
     //用来判断要删除的是否是当前所在的组
     public static int GROUPID = -1;
+    public static int CHANGE = 1;//标记是否点击修改按钮
 }

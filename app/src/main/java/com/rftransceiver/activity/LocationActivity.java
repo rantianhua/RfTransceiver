@@ -4,27 +4,20 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.Toast;
 
-import com.baidu.location.BDLocation;
-import com.baidu.location.BDLocationListener;
-import com.baidu.location.LocationClient;
-import com.baidu.location.LocationClientOption;
-import com.baidu.mapapi.SDKInitializer;
-import com.baidu.mapapi.map.MapView;
 import com.baidu.mapapi.search.core.PoiInfo;
 import com.rftransceiver.R;
 import com.rftransceiver.fragments.HomeFragment;
 import com.rftransceiver.fragments.MapViewFragment;
-import com.rftransceiver.util.CommonAdapter;
-import com.rftransceiver.util.CommonViewHolder;
-
-import org.w3c.dom.Text;
+import com.rftransceiver.customviews.CommonAdapter;
+import com.rftransceiver.customviews.CommonViewHolder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +34,8 @@ public class LocationActivity extends Activity implements MapViewFragment.Callba
     Button btnSendLocation;
     @InjectView(R.id.listview_location_result)
     ListView listView;
+    @InjectView(R.id.pb_searching_location)
+    ProgressBar pb;
 
     private MapViewFragment mapViewFragment;
 
@@ -60,6 +55,8 @@ public class LocationActivity extends Activity implements MapViewFragment.Callba
     private String address;
 
     private String city;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,9 +115,14 @@ public class LocationActivity extends Activity implements MapViewFragment.Callba
      */
     @Override
     public void surroundInfo(List<PoiInfo> infos,String city) {
+        pb.setVisibility(View.GONE);
         this.city = city;
         posInfos.clear();
         posInfos.addAll(infos);
+        if(infos.size() == 0) {
+            Toast.makeText(this,"未搜索到周边位置",Toast.LENGTH_SHORT).show();
+            return;
+        }
         CommonAdapter adapter = (CommonAdapter)listView.getAdapter();
         adapter.notifyDataSetChanged();
     }

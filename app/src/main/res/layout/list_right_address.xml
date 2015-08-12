@@ -5,35 +5,37 @@
     android:paddingBottom="10dp"
     >
 
-    <!--<fragment  -->
-        <!--android:name="com.rftransceiver.fragments.MapViewFragment"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="180dp"-->
-        <!--android:layout_marginStart="120dp"-->
-        <!--android:id="@+id/fragment_map_list_right"-->
-        <!--android:layout_centerVertical="true"-->
-        <!--android:layout_alignParentEnd="true"-->
-        <!--android:layout_marginEnd="15dp"/>-->
-
-
-    <FrameLayout
+    <com.rftransceiver.customviews.ListItemMapView
         android:layout_width="match_parent"
         android:layout_height="180dp"
+        android:id="@+id/listmapview_right"
         android:layout_marginStart="120dp"
-        android:id="@+id/frame_mapview_right"
+        android:padding="1dp"
         android:layout_centerVertical="true"
         android:layout_alignParentEnd="true"
         android:layout_marginEnd="15dp"
         android:background="@drawable/frame_map_bg"
-        android:padding="1dp"/>
+        >
 
-    <ImageView
-        android:layout_width="25dp"
-        android:layout_height="25dp"
-        android:layout_toLeftOf="@id/frame_mapview_right"
-        android:layout_marginLeft="20dp"
-        android:layout_alignBottom="@id/frame_mapview_right"
-        android:background="@android:color/black"
-        />
+        <com.baidu.mapapi.map.MapView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/mapview_list_right"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@+id/mapview_list_right"
+            android:layout_alignStart="@+id/mapview_list_right"
+            android:layout_alignEnd="@+id/mapview_list_right"
+            android:background="@drawable/bottom_corner"
+            android:padding="5dp"
+            android:gravity="center"
+            android:textColor="@color/white"
+            />
+
+    </com.rftransceiver.customviews.ListItemMapView>
+
 
 </RelativeLayout>
