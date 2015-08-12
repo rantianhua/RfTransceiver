@@ -11,9 +11,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.rftransceiver.R;
+import com.rftransceiver.db.DBManager;
 import com.rftransceiver.fragments.SettingFragment;
 import com.rftransceiver.fragments.SelfInfoFragment;
 import com.rftransceiver.util.Constants;
+import com.rftransceiver.util.PoolThreadUtil;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -55,13 +57,15 @@ public class SettingActivity extends Activity {
                 }
 
                 @Override
-                public void changeinfo() {
-                    Intent intent = getIntent();
-                    SharedPreferences sharedPreferences = getSharedPreferences(Constants.SP_USER, 0);
-                    String name = sharedPreferences.getString(Constants.NICKNAME, "");
-                    String photoPath = sharedPreferences.getString(Constants.PHOTO_PATH, "");
-                    intent.putExtra("name", name);
-                    intent.putExtra("photoPath", photoPath);
+
+                public void changeInfo() {
+                    SharedPreferences sp = getSharedPreferences(Constants.SP_USER, 0);
+                    String path = sp.getString(Constants.PHOTO_PATH, "");
+                    String name = sp.getString(Constants.NICKNAME,"");
+                    Intent intent = new Intent();
+                    intent.putExtra(Constants.NICKNAME, name);
+                    intent.putExtra(Constants.PHOTO_PATH, path);
+
                     setResult(REQUEST_SETTING, intent);
                 }
             });
@@ -73,7 +77,7 @@ public class SettingActivity extends Activity {
         imgBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                onBackPressed();
+                    onBackPressed();
             }
 
 

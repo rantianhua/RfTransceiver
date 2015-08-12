@@ -36,6 +36,7 @@ import com.rftransceiver.customviews.CircleImageDrawable;
 import com.rftransceiver.db.DBManager;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.ImageUtil;
+import com.rftransceiver.util.PoolThreadUtil;
 
 
 import java.io.File;
@@ -64,6 +65,7 @@ public class SelfInfoFragment extends Fragment {
     private boolean changeInfo = false;
     //背景图片
     private Bitmap backGround;
+    private DBManager dbManager;
     private String photoPath;
 //    private CallBackInSelf CallBackInSelf;
     private static final int REQUEST_IMAGE_CPTURE = 200;    //请求系统拍照的代码
@@ -72,6 +74,7 @@ public class SelfInfoFragment extends Fragment {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        dbManager = DBManager.getInstance(getActivity());
         super.onCreate(savedInstanceState);
         dentisy = getResources().getDisplayMetrics().density;
         dwClean = getResources().getDrawable(R.drawable.cancel1);
@@ -94,37 +97,40 @@ public class SelfInfoFragment extends Fragment {
 
         ButterKnife.inject(this, view);
         content.setBackground(new BitmapDrawable(backGround));
+        SharedPreferences sp = getActivity().getSharedPreferences(Constants.SP_USER, 0);
+        String path = sp.getString(Constants.PHOTO_PATH, "");
 
+        if (dwHead != null) {
             //展示头像
-            SharedPreferences sp = getActivity().getSharedPreferences(Constants.SP_USER, 0);
-            String path = sp.getString(Constants.PHOTO_PATH,"");
-            if(!TextUtils.isEmpty(path)) {
-                int size = (int)(100 * getResources().getDisplayMetrics().density + 0.5f);
+            if (!TextUtils.isEmpty(path)) {
+                int size = (int) (100 * getResources().getDisplayMetrics().density + 0.5f);
                 size *= size;
-                Bitmap bitmap = ImageUtil.createImageThumbnail(path,size);
-                if(bitmap != null) {
+                Bitmap bitmap = ImageUtil.createImageThumbnail(path, size);
+                if (bitmap != null) {
                     dwHead = new CircleImageDrawable(bitmap);
+                    imgHead.setImageDrawable(dwHead);
+                    imgHead.requestFocus();
+                    bitmap = null;
                 }
+
             }
-            imgHead.setImageDrawable(dwHead);
-            imgHead.requestFocus();
+            if (!TextUtils.isEmpty(name)) {
+                //展示用户�?
+                edName.setText(name);
+            }
 
-        if (!TextUtils.isEmpty(name)) {
-            //展示用户�?
-            edName.setText(name);
-        }
-
-        lp = (RelativeLayout.LayoutParams) edName.getLayoutParams();
-        //������ʾ��edName�Ҳ����ΪdwClean��dwEdit��CompoundDrawables��С
-        dwClean.setBounds(0, 0, (int) (dentisy * 20 + 0.5f), (int) (dentisy * 20 + 0.5f));
-        dwEdit.setBounds(0, 0, (int) (dentisy * 20 + 0.5f), (int) (dentisy * 20 + 0.5f));
-        edName.setCompoundDrawables(null, null, dwEdit, null);
-        edName.setCompoundDrawablePadding((int) (dentisy * 5 + 0.5f));
-        if (!changeInfo) {
-            //设置EditText不能编辑
-            edName.setClickable(false);
-            edName.setFocusable(false);
-            edName.setEnabled(false);
+            lp = (RelativeLayout.LayoutParams) edName.getLayoutParams();
+            //������ʾ��edName�Ҳ����ΪdwClean��dwEdit��CompoundDrawables��С
+            dwClean.setBounds(0, 0, (int) (dentisy * 20 + 0.5f), (int) (dentisy * 20 + 0.5f));
+            dwEdit.setBounds(0, 0, (int) (dentisy * 20 + 0.5f), (int) (dentisy * 20 + 0.5f));
+            edName.setCompoundDrawables(null, null, dwEdit, null);
+            edName.setCompoundDrawablePadding((int) (dentisy * 5 + 0.5f));
+            if (!changeInfo) {
+                //设置EditText不能编辑
+                edName.setClickable(false);
+                edName.setFocusable(false);
+                edName.setEnabled(false);
+            }
         }
     }
 
@@ -189,13 +195,23 @@ public class SelfInfoFragment extends Fragment {
         btnConfirm.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Constants.INVO = 0;
+                Constants.CHANGED = true;
                 edName.clearFocus();
                 imgHead.requestFocus();
                 btnConfirm.setVisibility(View.INVISIBLE);
                 String newName = edName.getText().toString();
                 saveBaseInfo(newName, photoPath, getActivity().getSharedPreferences(Constants.SP_USER, 0));
                 setName(newName);
-                Constants.CHANGE = 1;
+                PoolThreadUtil.getInstance().addTask(new Runnable() {
+                    @Override
+                    public void run() {
+                        SharedPreferences sp = getActivity().getSharedPreferences(Constants.SP_USER, 0);
+                        String path = sp.getString(Constants.PHOTO_PATH, "");
+                        String name = sp.getString(Constants.NICKNAME, "");
+                        dbManager.updateMyMessage(name,path);
+                    }
+                });
                 if (!newName.equals(name)) {
                     if (getTargetFragment() != null) {
                         Intent intent = new Intent();
@@ -320,11 +336,4 @@ public class SelfInfoFragment extends Fragment {
         }
         editor.apply();
     }
-
-//    public void setCallBackInself(CallBackInSelf CallBackInSelf){
-//        this.CallBackInSelf = CallBackInSelf;
-//    }
-//    public interface CallBackInSelf{
-//        void changeIAN();
-//    }
 }

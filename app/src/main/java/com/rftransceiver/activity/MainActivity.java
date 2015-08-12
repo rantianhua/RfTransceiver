@@ -1145,22 +1145,25 @@ public class MainActivity extends Activity implements View.OnClickListener,
             String address = data.getStringExtra(HomeFragment.EXTRA_LOCATION);
             if(!TextUtils.isEmpty(address))
                 send(SendAction.Address,address);
-        }else if(requestCode == REQUEST_SETTING && data != null) {//把头像和名字改下
-            String newName = data.getStringExtra("name");
-            String photoPath = data.getStringExtra("photoPath");
-            if(!TextUtils.isEmpty(name)) {
+        }else if(requestCode == REQUEST_SETTING && data != null) {
+            String newName = data.getStringExtra(Constants.NICKNAME);
+            String path = data.getStringExtra(Constants.PHOTO_PATH);
+            if(!TextUtils.isEmpty(name)) {//修改昵称
                 name = newName;
                 tvName.setText(newName);
                 SharedPreferences.Editor editor = sp.edit();
                 editor.putString(Constants.NICKNAME,newName);
                 editor.apply();
             }
-            if(photoPath != null) {
-                int size = (int) (getResources().getDisplayMetrics().density * 100 + 0.5f);
-                Bitmap bitmap = ImageUtil.createImageThumbnail(photoPath, size * size);
-                if (bitmap != null) {
-                    CircleImageDrawable drawable = new CircleImageDrawable(bitmap);
-                    setPhoto(drawable);
+
+            if(!TextUtils.isEmpty(path)) {//修改头像
+                int size = (int)(100 * getResources().getDisplayMetrics().density + 0.5f);
+                size *= size;
+                Bitmap bitmap = ImageUtil.createImageThumbnail(path,size);
+                if(bitmap != null) {
+                    imgPhoto.setImageDrawable(new CircleImageDrawable(bitmap));
+                    bitmap = null;
+
                 }
             }
         }

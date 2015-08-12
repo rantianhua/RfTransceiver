@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 
 
 /**
- * Created by Administrator on 2015/7/28.
+ * Created by Wxb on 2015/7/28.
  */
 public class DataClearnManager {
 

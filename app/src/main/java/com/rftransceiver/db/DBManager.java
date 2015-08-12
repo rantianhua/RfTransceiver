@@ -115,7 +115,9 @@ public class DBManager {
                     null);
             if(cursor != null && cursor.moveToFirst()) {
                 gid = cursor.getInt(0);
-                Constants.GROUPID = gid;
+
+                Constants.GROUPID = gid;//保存该组的id到Constants中，用于通讯录中与选中组的id进行比较判断删除时是否是正在聊天的组
+
                 cursor.close();
             }
             //保存组的成员
@@ -148,7 +150,9 @@ public class DBManager {
 
     public void deleteGroup(int gid) {//很据组的id删除表的信息
         try{
-            openWriteDB();
+
+            openWriteDB();//把原来的openReadD方法改成openWrite方法
+
             db.beginTransaction();
             db.delete(DatabaseHelper.TABLE_DATA,"_gid = ?",new String[]{String.valueOf(gid)});
 
@@ -387,6 +391,30 @@ public class DBManager {
             closeDB();
         }
 
+    }
+    public void   updateMyMessage(String name,String path){//修改我在数据库中的信息
+        try{
+            openWriteDB();
+            db.beginTransaction();
+            ContentValues contentValues =new ContentValues();
+            contentValues.put("_nickname",name);
+            contentValues.put("_photopath",path);
+            Cursor cursor = db.rawQuery("select * from " + DatabaseHelper.TABLE_GROUP,null);
+            if(cursor != null) {
+                while (cursor.moveToNext()) {
+                    int gid = cursor.getInt(cursor.getColumnIndex("_gid"));
+                    int id = cursor.getInt(cursor.getColumnIndex("_myId"));
+                    db.update(DatabaseHelper.TABLE_MEMBER,contentValues," _mid= ? and _gid= ? ",new String[]{String.valueOf(id),String.valueOf(gid)});
+                        }
+                      cursor.close();
+                    }
+            db.setTransactionSuccessful();
+            db.endTransaction();
+        }catch (Exception e) {
+            Log.e("saveGroup","error in save group base info or members info",e);
+        }finally {
+            closeDB();
+        }
     }
 
     /**
