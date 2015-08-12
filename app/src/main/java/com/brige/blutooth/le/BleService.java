@@ -129,10 +129,12 @@ public class BleService extends Service {
                 }
                 mBluetoothGatt.discoverServices();
                 //利用接口报告蓝牙连接成功
+                Log.e("onConnectionStateChange","设备已连接");
                 if(callback != null) callback.bleConnection(true);
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 mConnectionState = STATE_DISCONNECTED;
                 //利用接口报告蓝牙BLE连接断开
+                Log.e("onConnectionStateChange","设备已断开");
                 if(callback != null) callback.bleConnection(false);
                 if(writeCharacteristic != null) {
                     setCharacteristicNotification(

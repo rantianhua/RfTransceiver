@@ -183,6 +183,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     private boolean openBle = false;
     //标识有没有设置同步字
     private boolean sendAsy = false;
+    //记录提示TextView的值
+    private String titleText;
     //记录修改的信道>>>>>>>>>>>>>>>>>>测试使用
     private int channel = 2;
     private boolean channelChanged = false;
@@ -367,14 +369,16 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                             //sendAsync();
                             changeChannel();
                             if (tvTip.getVisibility() ==
-                                    View.VISIBLE && text.equals(tipReconnecting)) {
+                                    View.VISIBLE && (text.equals(tipReconnecting) || text.equals(tipConnectLose))) {
                                 tvTip.setText(tipConnecSuccess);
+                                titleText = tipConnecSuccess;
                                 tvTip.setVisibility(View.GONE);
                             }
                         } else {
                             if (!text.equals(tipReconnecting)) {
                                 tvTip.setText(tipConnectLose);
                                 tvTip.setVisibility(View.VISIBLE);
+                                titleText = tipConnectLose;
                             }
                         }
                         break;
@@ -539,6 +543,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             conversationAdapter = new ListConversationAdapter(getActivity(),imgageGetter,getFragmentManager());
         }
         listView.setAdapter(conversationAdapter);
+        if(titleText != null && titleText.equals(tipConnectLose)) {
+            tvTip.setVisibility(View.VISIBLE);
+            tvTip.setText(titleText);
+        }
     }
 
     /**
@@ -635,7 +643,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                         if (sendSounds && callback != null) callback.stopSendSounds();
                         sendSounds = false;
                         tvTip.setText("");
-                        tvTip.setVisibility(View.GONE);;
+                        tvTip.setVisibility(View.GONE);
                         return true;
                     default:
                         return true;
@@ -776,8 +784,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                 if(tvTip.getText().toString().equals(tipConnectLose)) {
                     if(callback != null) {
                         //重新连接设备
-                        callback.reconnectDevice();
                         tvTip.setText(tipReconnecting);
+                        callback.reconnectDevice();
                         //5秒之后还没有连上即显示连接失败
                         mainHandler.postDelayed(new Runnable() {
                             @Override

@@ -143,6 +143,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private int myId;
     public static final int REQUEST_GROUP = 301;    //获取组信息的请求代码，用于GroupActivity
     public static final int REQUEST_SETTING = 306; //设置的请求代码
+    //重连设备的标识
+    private boolean reconnected = false;
     //区分请求绑定设备的来源
     private BineDeviceFrom bindFrom;
     private enum BineDeviceFrom {
@@ -184,12 +186,23 @@ public class MainActivity extends Activity implements View.OnClickListener,
                         if(bleService != null && unBind) {
                             //重新开启蓝牙
                             bleService.openBluetooth();
+                        }else if(homeFragment != null) {
+                            if(bleService != null) {
+                                bleService.disconnect();
+                                bleService.close();
+                            }
+                            homeFragment.deviceConnected(false);
                         }
                         break;
                     case BluetoothAdapter.STATE_ON:
                         //通知蓝牙已开启
                         if(homeFragment != null) {
-                            homeFragment.bleOpend();
+                            if(reconnected) {
+                                reconnected = false;
+                                reconnectDevice();
+                            }else {
+                                homeFragment.bleOpend();
+                            }
                         }
                         if(bindDeviceFragment != null) {
                             bindDeviceFragment.bleOpend();
@@ -239,6 +252,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
             bindService(new Intent(this, BleService.class), serviceConnectionBle, BIND_AUTO_CREATE);
             //设置媒体音量最大
             maxVolume();
+            registerReceiver(bluetoothSate,
+                    new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
         }
     }
 
@@ -729,27 +744,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        registerReceiver(bluetoothSate,
-                new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        unregisterReceiver(bluetoothSate);
-    }
-
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        Log.e("onStop", "onstop");
-    }
-
-    @Override
     protected void onDestroy() {
+        unregisterReceiver(bluetoothSate);
         super.onDestroy();
         record.stopRecording();
         receiver.stopReceiver();
@@ -1074,7 +1070,13 @@ public class MainActivity extends Activity implements View.OnClickListener,
             return;
         }
         if(bleService == null) return;
-        bleService.connect(bindAddress,true);
+        if(bleService.isBluetoothEnable()) {
+            bleService.connect(bindAddress,true);
+        }else {
+            //先开启蓝牙
+            reconnected = true;
+            bleService.openBluetooth();
+        }
     }
 
     /**
