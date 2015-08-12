@@ -9,7 +9,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.support.annotation.Nullable;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,8 +19,8 @@ import android.widget.Toast;
 
 import com.brige.blutooth.le.ScanBle;
 import com.rftransceiver.R;
-import com.rftransceiver.util.CommonAdapter;
-import com.rftransceiver.util.CommonViewHolder;
+import com.rftransceiver.customviews.CommonAdapter;
+import com.rftransceiver.customviews.CommonViewHolder;
 
 import java.util.ArrayList;
 import butterknife.ButterKnife;

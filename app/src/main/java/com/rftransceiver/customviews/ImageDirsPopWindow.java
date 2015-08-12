@@ -3,15 +3,10 @@ package com.rftransceiver.customviews;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
-import android.widget.ImageView;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 
 import com.rftransceiver.R;
 import com.rftransceiver.datasets.ImageFolderData;
-import com.rftransceiver.util.BasePopwindow;
-import com.rftransceiver.util.CommonAdapter;
-import com.rftransceiver.util.CommonViewHolder;
 
 import java.util.List;
 
