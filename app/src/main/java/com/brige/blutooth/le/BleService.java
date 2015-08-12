@@ -59,14 +59,10 @@ public class BleService extends Service {
     private static final int STATE_CONNECTING = 1;
     private static final int STATE_CONNECTED = 2;
 
-    /**
-     * write to this characteristic
-     */
+    //用来写数据的特性
     private  BluetoothGattCharacteristic writeCharacteristic;
 
-    /**
-     * read data from this characteristic
-     */
+    //用来读取数据的特性
     private BluetoothGattCharacteristic notifyCharacter;
 
     private CallbackInBle callback;

@@ -1218,6 +1218,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
      * @param connect
      */
     public void deviceConnected(boolean connect) {
+        Log.e("UPDATE_BLESTATE",connect + " ");
         if(mainHandler != null) {
             mainHandler.obtainMessage(UPDATE_BLESTATE, -1, -1, connect).sendToTarget();
         }
