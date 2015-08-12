@@ -33,8 +33,10 @@ import com.rftransceiver.R;
 import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.activity.SettingActivity;
 import com.rftransceiver.customviews.CircleImageDrawable;
+import com.rftransceiver.db.DBManager;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.ImageUtil;
+import com.rftransceiver.util.PoolThreadUtil;
 
 
 import java.io.File;
@@ -62,12 +64,14 @@ public class SelfInfoFragment extends Fragment {
     private boolean changeInfo = false;
     //背景图片
     private Bitmap backGround;
+    private DBManager dbManager;
     private String photoPath;
     private static final int REQUEST_IMAGE_CPTURE = 200;    //请求系统拍照的代码
     private static final int RESULT_LOAD_IMAGE = 201;    //请求图库的代码
     public static final int REQUEST_SETTING = 306;
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        dbManager = DBManager.getInstance(getActivity());
         super.onCreate(savedInstanceState);
         dentisy = getResources().getDisplayMetrics().density;
         dwClean = getResources().getDrawable(R.drawable.cancel1);
@@ -197,6 +201,15 @@ public class SelfInfoFragment extends Fragment {
                 String newName = edName.getText().toString();
                 saveBaseInfo(newName, photoPath, getActivity().getSharedPreferences(Constants.SP_USER, 0));
                 setName(newName);
+                PoolThreadUtil.getInstance().addTask(new Runnable() {
+                    @Override
+                    public void run() {
+                        SharedPreferences sp = getActivity().getSharedPreferences(Constants.SP_USER, 0);
+                        String path = sp.getString(Constants.PHOTO_PATH, "");
+                        String name = sp.getString(Constants.NICKNAME, "");
+                        dbManager.updateMyMessage(name,path);
+                    }
+                });
                 if (!newName.equals(name)) {
                     if (getTargetFragment() != null) {
                         Intent intent = new Intent();
@@ -311,4 +324,10 @@ public class SelfInfoFragment extends Fragment {
         }
         editor.apply();
     }
+//    public void updateMyinfo(){
+//        SharedPreferences sp = getActivity().getSharedPreferences(Constants.SP_USER, 0);
+//        String path = sp.getString(Constants.PHOTO_PATH, "");
+//        String name = sp.getString(Constants.NICKNAME, "");
+//        dbManager.updateMyMessage(name,path);
+//    }
 }

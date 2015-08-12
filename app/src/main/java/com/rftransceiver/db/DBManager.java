@@ -360,14 +360,22 @@ public class DBManager {
         }
 
     }
-    public void updateMyMessage(String name,String path,int id,int gid){//修改我在数据库中的信息
+    public void   updateMyMessage(String name,String path){//修改我在数据库中的信息
         try{
             openWriteDB();
             db.beginTransaction();
             ContentValues contentValues =new ContentValues();
             contentValues.put("_nickname",name);
             contentValues.put("_photopath",path);
-            db.update(DatabaseHelper.TABLE_MEMBER,contentValues," _mid= ? and _gid= ? ",new String[]{String.valueOf(id),String.valueOf(gid)});
+            Cursor cursor = db.rawQuery("select * from " + DatabaseHelper.TABLE_GROUP,null);
+            if(cursor != null) {
+                while (cursor.moveToNext()) {
+                    int gid = cursor.getInt(cursor.getColumnIndex("_gid"));
+                    int id = cursor.getInt(cursor.getColumnIndex("_myId"));
+                    db.update(DatabaseHelper.TABLE_MEMBER,contentValues," _mid= ? and _gid= ? ",new String[]{String.valueOf(id),String.valueOf(gid)});
+                        }
+                      cursor.close();
+                    }
             db.setTransactionSuccessful();
             db.endTransaction();
         }catch (Exception e) {
