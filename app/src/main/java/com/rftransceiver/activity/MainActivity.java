@@ -26,6 +26,7 @@ import android.os.Message;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
@@ -765,7 +766,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
         myDeviceFragment = null;
     }
 
-
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
         if(homeFragment != null) {
@@ -1169,4 +1169,29 @@ public class MainActivity extends Activity implements View.OnClickListener,
         }
     }
 
+
+
+    ////////////////////测试把发送语音放在音量键上
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if(keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN){
+            if(event.getRepeatCount() == 0 && homeFragment != null) {
+                //按下增大音量的音量键时发送语音
+                homeFragment.startSoundsRecored();
+            }
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if((keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) && homeFragment != null){
+            //松开时停止发送
+            homeFragment.stopSoundsRecord();
+            return true;
+        }
+        return super.onKeyUp(keyCode, event);
+    }
 }

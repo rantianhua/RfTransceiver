@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
@@ -16,6 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -48,12 +50,21 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
     TextView tvClearCache;
     @InjectView(R.id.tv_cache_size)
     TextView cacheSize;
+    @InjectView(R.id.seekbar_setting_volume)
+    SeekBar seekBar;    //调节音量
 
     private CallbackInSF callbackInSF;
     private DBManager dbManager;
 
-    private Drawable dwHead;
-    private String name;
+    private Drawable dwHead;    //用户头像
+    private String name;    //用户昵称
+    private AudioManager audioManager;  //设置音量
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        audioManager = (AudioManager)getActivity().getSystemService(Context.AUDIO_SERVICE);
+    }
 
     @Nullable
     @Override
@@ -83,6 +94,12 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
         if(!TextUtils.isEmpty(name)) {
             tvName.setText(name);
         }
+
+        //显示当前音量
+        int maxVoluem = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        seekBar.setMax(maxVoluem);
+        int currentVoluem = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        seekBar.setProgress(currentVoluem);
     }
 
     public void setCallbackInSF ( CallbackInSF callbackInSF) {
@@ -93,6 +110,23 @@ public class SettingFragment extends Fragment implements View.OnClickListener{
         rlPersonal.setOnClickListener(this);
         tvClearCache.setOnClickListener(this);
         rlPersonal.setOnClickListener(this);
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,
+                        i, AudioManager.FLAG_PLAY_SOUND);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
     }
 
     @Override

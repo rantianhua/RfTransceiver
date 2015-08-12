@@ -607,49 +607,63 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                 changeChannel();
                 switch (motionEvent.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        btnSounds.setImageBitmap(press);
-                        soundPool.play(soundsId, 1, 1, 1, 0, 1);
-                        sendSounds = true;
-                        if (tvTip.getVisibility() == View.VISIBLE) {
-                            String text = tvTip.getText().toString();
-                            if (text.endsWith("正在说话...") || text.equals(tipConnectLose) ||
-                                    text.equals(tipReconnecting)) {
-                                sendSounds = false;
-                                return false;
-                            }
-                        } else {
-                            btnSounds.setImageResource(R.drawable.press);
-                            mainHandler.postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (sendSounds) {
-                                        if (callback != null) {
-                                            callback.send(MainActivity.SendAction.SOUNDS, null);
-                                            tvTip.setVisibility(View.VISIBLE);
-                                            tvTip.setText("我正在说话...");
-                                            preTime=System.currentTimeMillis();
-                                        }
-                                    }
-
-                                }
-                            }, 200);
-                        }
-                        return true;
+                        return startSoundsRecored();
                     case MotionEvent.ACTION_UP:
                     case MotionEvent.ACTION_CANCEL:
-                        curTime=System.currentTimeMillis();
-                        seconds = (curTime-preTime);
-                        btnSounds.setImageBitmap(up);
-                        if (sendSounds && callback != null) callback.stopSendSounds();
-                        sendSounds = false;
-                        tvTip.setText("");
-                        tvTip.setVisibility(View.GONE);
+                        stopSoundsRecord();
                         return true;
                     default:
                         return true;
                 }
             }
         });
+    }
+
+    /**
+     * 开启录音
+     */
+    public boolean startSoundsRecored() {
+        btnSounds.setImageBitmap(press);
+        soundPool.play(soundsId, 1, 1, 1, 0, 1);
+        sendSounds = true;
+        if (tvTip.getVisibility() == View.VISIBLE) {
+            String text = tvTip.getText().toString();
+            if (text.endsWith("正在说话...") || text.equals(tipConnectLose) ||
+                    text.equals(tipReconnecting)) {
+                sendSounds = false;
+                return false;
+            }
+        } else {
+            btnSounds.setImageResource(R.drawable.press);
+            mainHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (sendSounds) {
+                        if (callback != null) {
+                            callback.send(MainActivity.SendAction.SOUNDS, null);
+                            tvTip.setVisibility(View.VISIBLE);
+                            tvTip.setText("我正在说话...");
+                            preTime=System.currentTimeMillis();
+                        }
+                    }
+
+                }
+            }, 200);
+        }
+        return true;
+    }
+
+    /**
+     * 停止发送语音
+     */
+    public void stopSoundsRecord() {
+        curTime=System.currentTimeMillis();
+        seconds = (curTime-preTime);
+        btnSounds.setImageBitmap(up);
+        if (sendSounds && callback != null) callback.stopSendSounds();
+        sendSounds = false;
+        tvTip.setText("");
+        tvTip.setVisibility(View.GONE);
     }
 
     /**

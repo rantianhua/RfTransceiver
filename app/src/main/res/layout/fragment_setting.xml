@@ -92,8 +92,27 @@
         android:layout_height="1px"
         android:background="@android:color/darker_gray"
         android:layout_below="@+id/tv_cleanCache"
+        android:id="@+id/view_line_setting_last"
         />
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/view_line_setting_last"
+        android:layout_marginTop="10dp"
+        android:padding="8dp"
+        android:background="@color/white"
+        android:text="调节音量"
+        android:gravity="start"
+        android:textSize="12dp"
+        android:id="@+id/tv_label_set_volume"
+        />
 
+    <SeekBar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/seekbar_setting_volume"
+        android:layout_below="@+id/tv_label_set_volume"
+        android:background="@color/white"/>
 
 </RelativeLayout>
