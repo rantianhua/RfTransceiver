@@ -8,28 +8,28 @@ import com.rftransceiver.datasets.ConversationData;
 import java.util.ArrayList;
 
 /**
- * ¸ÃÀà´æ´¢ÒÑ¾­ÏÔÊ¾ÔÚ½çÃæÉÏÈ´ĞèÒª±»·¢ËÍÖÁÓ²¼şµÄÏûÏ¢ÄÚÈİ
+ * ç¼“å­˜å‘é€å¤±è´¥çš„æ•°æ®
  * Created by wuyang on 2015/8/6.
  */
 public class MessageCacheUtil {
     /**
-     * µ¥Ò»Ê¾Àı
+     * å•ä¸€å®ä¾‹
      */
     private static  MessageCacheUtil cacheUtil;
     /**
-     * Î´·¢ËÍÏûÏ¢µÄÎÄ±¾ÄÚÈİ
+     * æœªå‘é€çš„å†…å®¹æ–‡æœ¬
      */
     private ArrayList<String> cacheContentList;
     /**
-     * Î´·¢ËÍÏûÏ¢µÄConversationData
+     * æœªå‘é€çš„ConversationData
      */
     private ArrayList<ConversationData> cacheDataList;
     /**
-     * Î´²Ù×÷ÏûÏ¢µÄÎÄ±¾ÄÚÈİ
+     * æœªæ“ä½œçš„å†…å®¹æ–‡æœ¬ï¼Œç”¨äºè‡ªåŠ¨å‘é€
      */
     private ArrayList<String> unCheckContentList;
     /**
-     * Î´²Ù×÷ÏûÏ¢µÄConversationData
+     * æœªæ“ä½œçš„ConversationDataï¼Œç”¨äºè‡ªåŠ¨å‘é€
      */
     private ArrayList<ConversationData> unCheckDataList;
 
@@ -79,14 +79,14 @@ public class MessageCacheUtil {
     }
 
     /**
-     * ´ı·¢ËÍµÄÊı¾İ·¢ËÍÊ§°Ü£¬±äÎªÎ´·¢ËÍµÄÊı¾İ£¬¼´Êı¾İ´ÓunCheckÁĞ±íÖĞÉ¾³ı
+     * æ“ä½œæ•°æ®ï¼Œå°†æ•°æ®ä»æœªæ“ä½œçš„é‡Œè¡¨ä¸­ç§»é™¤ï¼Œç”¨åœ¨è‡ªåŠ¨å‘é€çš„åŠ¨ä½œé‡Œ
      */
     public void checkMessage(){
         unCheckContentList.remove(0);
         unCheckDataList.remove(0);
     }
     /**
-     * ´ı·¢ËÍµÄÊı¾İ·¢ËÍ³É¹¦£¬¼´Êı¾İ´ÓcacheÁĞ±íÒÔ¼°unCheckÁĞ±íÖĞÉ¾³ı
+     * ç§»é™¤æ•°æ®ç¼“å­˜ï¼Œç”¨åœ¨å‘é€æˆåŠŸçš„åŠ¨ä½œé‡Œ
      */
     public void removeCache(ConversationData data){
         cacheContentList.remove(cacheDataList.indexOf(data));
