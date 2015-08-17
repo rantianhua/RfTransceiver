@@ -40,7 +40,7 @@ public class MessageCacheUtil {
         return cacheUtil;
     }
 
-    public MessageCacheUtil(){
+    private MessageCacheUtil(){
         cacheContentList=new ArrayList<String>();
         cacheDataList = new ArrayList<ConversationData>();
         unCheckContentList = new ArrayList<String>();
