@@ -8,6 +8,8 @@ import android.graphics.Color;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Html;
 import android.text.Spannable;
 import android.text.Spanned;
@@ -24,6 +26,7 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.rftransceiver.activity.MainActivity;
 import com.rftransceiver.customviews.ListItemMapView;
 import com.rftransceiver.customviews.SoundsTextView;
 import com.rftransceiver.datasets.ConversationData;
@@ -38,6 +41,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -48,11 +52,8 @@ public class ListConversationAdapter extends BaseAdapter{
     private List<ConversationData> listData = new ArrayList<>();
     private LayoutInflater inflater = null;
     private FragmentManager fm;
-    private Map<Integer,RelativeLayout> soundTimeList = new HashMap<>();
-
-    AnimationDrawable soundPlayAnim;
-    ImageView soundImg,soundPlay;
-
+    private static Handler mainHan;
+    private OnStateClickListener stateClickListener;
     /**
      * parse expression data from content
      */
@@ -62,6 +63,7 @@ public class ListConversationAdapter extends BaseAdapter{
         inflater = LayoutInflater.from(context);
         this.imageGetter = imageGetter;
         this.fm = fm;
+        mainHan = new Handler(Looper.getMainLooper());
     }
 
     @Override
@@ -87,7 +89,7 @@ public class ListConversationAdapter extends BaseAdapter{
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         ViewHodler hodler = null;
-        ConversationData data = listData.get(position);
+        final ConversationData data = listData.get(position);
 
         if(convertView == null) {
             hodler = new ViewHodler();
@@ -116,6 +118,8 @@ public class ListConversationAdapter extends BaseAdapter{
                 case RIGHT_TEXT:
                     convertView = inflater.inflate(R.layout.list_right_text,null);
                     hodler.tvContent = (TextView)convertView.findViewById(R.id.tv_list_right);
+                    hodler.imgTextStates = (ImageView) convertView.findViewById(R.id.img_text_states_right);
+                    hodler.imgTextStatesFail = (ImageView) convertView.findViewById(R.id.img_text_states_fail);
                     break;
                 case RIGHT_PIC:
                     convertView = inflater.inflate(R.layout.list_right_pic,null);
@@ -125,6 +129,8 @@ public class ListConversationAdapter extends BaseAdapter{
                 case RIGHT_ADDRESS:
                     convertView = inflater.inflate(R.layout.list_right_address,null);
                     hodler.listItemMapView = (ListItemMapView) convertView.findViewById(R.id.listmapview_right);
+                    hodler.imgAddressStates = (ImageView) convertView.findViewById(R.id.img_address_states_right);
+                    hodler.imgAddressStatesFail = (ImageView) convertView.findViewById(R.id.img_address_states_fail);
                     break;
                 case RIGHT_SOUNDS:
                     convertView = inflater.inflate(R.layout.list_right_sounds,null);
@@ -148,9 +154,38 @@ public class ListConversationAdapter extends BaseAdapter{
         }
         switch (data.getConversationType()) {
             case RIGHT_TEXT:
+                Spanned spannable1 = Html.fromHtml(data.getContent(),imageGetter,null);
+                hodler.tvContent.setText(spannable1);
+                AnimationDrawable anim = (AnimationDrawable) hodler.imgTextStates.getBackground();
+
+                if(!data.isFinished()){
+
+                    hodler.imgTextStates.setVisibility(View.VISIBLE);
+                    anim.start();
+                    if(data.isFail()){
+                        hodler.imgTextStates.setVisibility(View.INVISIBLE);
+                        anim.stop();
+                        hodler.imgTextStatesFail.setVisibility(View.VISIBLE);
+
+                        hodler.imgTextStatesFail.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                if (data.isFail()) {
+                                    stateClickListener.onclick(MainActivity.SendAction.Words,data.getContent());
+                                }
+                            }
+                        });
+                    }else{
+                        hodler.imgTextStatesFail.setVisibility(View.INVISIBLE);
+                    }
+                }else {
+                    hodler.imgTextStates.setVisibility(View.INVISIBLE);
+                    anim.stop();
+                }
+                break;
             case LEFT_TEXT:
-                Spanned spannable = Html.fromHtml(data.getContent(),imageGetter,null);
-                hodler.tvContent.setText(spannable);
+                Spanned spannable2 = Html.fromHtml(data.getContent(),imageGetter,null);
+                hodler.tvContent.setText(spannable2);
                 break;
             case LEFT_PIC:
                 if(data.getBitmap() != null) {
@@ -169,8 +204,34 @@ public class ListConversationAdapter extends BaseAdapter{
                 }
                 break;
             case LEFT_ADDRESS:
+                hodler.listItemMapView.setAddress(data.getAddress());
+                break;
             case RIGHT_ADDRESS:
                 hodler.listItemMapView.setAddress(data.getAddress());
+                AnimationDrawable anim2 = (AnimationDrawable) hodler.imgAddressStates.getBackground();
+                if(!data.isFinished()){
+                    hodler.imgAddressStates.setVisibility(View.VISIBLE);
+                    anim2.start();
+                    if(data.isFail()){
+                        hodler.imgAddressStates.setVisibility(View.INVISIBLE);
+                        anim2.stop();
+                        hodler.imgAddressStates.setVisibility(View.VISIBLE);
+
+                        hodler.imgAddressStatesFail.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                if (data.isFail()) {
+                                    stateClickListener.onclick(MainActivity.SendAction.Address, data.getAddress());
+                                }
+                            }
+                        });
+                    }else{
+                        hodler.imgAddressStatesFail.setVisibility(View.INVISIBLE);
+                    }
+                }else {
+                    hodler.imgAddressStates.setVisibility(View.INVISIBLE);
+                    anim2.stop();
+                }
                 break;
             case LEFT_SOUNDS:
             case RIGHT_SOUNDS:
@@ -197,11 +258,18 @@ public class ListConversationAdapter extends BaseAdapter{
         notifyDataSetChanged();
     }
 
+    public interface OnStateClickListener{
+        void onclick(MainActivity.SendAction action, String content);
+    }
+
+    public void setOnstateClickListener(OnStateClickListener listener){
+        this.stateClickListener=listener;
+    }
 
     class ViewHodler {
         TextView tvContent,tvImgProgress,tvTime,soundsTime;
         SoundsTextView tvSounds;
-        ImageView imgPhoto,imgData;
+        ImageView imgPhoto,imgData,imgTextStates,imgAddressStates,imgTextStatesFail,imgAddressStatesFail;
         ListItemMapView listItemMapView;
     }
 

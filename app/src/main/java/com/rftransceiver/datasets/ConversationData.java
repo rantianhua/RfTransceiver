@@ -13,6 +13,12 @@ import com.rftransceiver.fragments.MapViewFragment;
  */
 public class ConversationData {
 
+    //是否还在发送
+    private boolean isFinished;
+
+    //是否发送失败
+    private boolean isFail;
+
     //数据内容
     private String content;
 
@@ -40,6 +46,8 @@ public class ConversationData {
 
     public ConversationData(ListConversationAdapter.ConversationType type) {
         setConversationType(type);
+        isFinished = false;
+        isFail = false ;
     }
 
     public ConversationData(ListConversationAdapter.ConversationType type,
@@ -64,6 +72,26 @@ public class ConversationData {
         }
     }
 
+    public boolean isFinished(){
+        return isFinished;
+    }
+
+    public boolean isFail(){
+        return isFail;
+    }
+
+    public void fail(){
+        isFail = true;
+    }
+
+    public void finish(){
+        isFinished = true;
+    }
+
+    public void reset(){
+        isFail=false;
+        isFinished=false;
+    }
 
     public int getPercent() {
         return percent;

@@ -309,6 +309,7 @@ public class BleService extends Service {
                 //设备已连接，但还未初始化
                 callback.serviceNotInit();
                 //重新搜索服务
+                findCharacter = false;
                 mBluetoothGatt.discoverServices();
             }
             return false;
@@ -479,7 +480,7 @@ public class BleService extends Service {
         /**
          * 发送接收到的数据包
          * @param data
-         * @param mode
+         * @param mode data type. "0" for success and "2" for false.
          */
         void sendUnPacketedData(byte[] data,int mode);
 

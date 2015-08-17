@@ -45,6 +45,7 @@ import com.rftransceiver.fragments.MyDeviceFragment;
 import com.rftransceiver.group.GroupEntity;
 import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.ImageUtil;
+import com.rftransceiver.util.MessageCacheUtil;
 import com.rftransceiver.util.PoolThreadUtil;
 import com.source.DataPacketOptions;
 import com.source.SendMessageListener;
@@ -87,6 +88,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
     @InjectView(R.id.tv_menu_contacts)
     TextView tvContacts;
 
+    //消息缓存
+    private MessageCacheUtil cacheUtil;
     private Bitmap back;
     //接受的消息时长的起始时间
     private long preTime;
@@ -151,6 +154,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
         HF, //请求来自与HomeFragment
         BF //请求来自与BindDeviceFragment
     }
+
+
     /**
      * 当BleService绑定成功或者绑定失败的时候回调
      */
@@ -239,6 +244,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
         initDataExchangeHandler();
         initView();
         initEvent();
+        cacheUtil=MessageCacheUtil.getInstance();
     }
 
     @Override
@@ -332,7 +338,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private void changeFragment(Fragment fragment) {
         FragmentTransaction transaction = getFragmentManager().beginTransaction();
         transaction.replace(R.id.frame_content, fragment);
-        if(fragment instanceof MyDeviceFragment || fragment instanceof ContactsFragment) {
+        if(fragment instanceof MyDeviceFragment || fragment instanceof ContactsFragment
+                || (fragment instanceof BindDeviceFragment && homeFragment != null)) {
             transaction.addToBackStack(null);
         }
         transaction.commit();
@@ -651,7 +658,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
             case Words:
                 if(end) {
                     if(homeFragment != null && homeFragment.isVisible()) {
-                        homeFragment.sendMessage(sendText, action);
+                        homeFragment.statesFinished();
                     }
                     action = SendAction.NONE;
                 }
@@ -686,6 +693,13 @@ public class MainActivity extends Activity implements View.OnClickListener,
                 }
                 break;
         }
+    }
+
+    /**
+     * 发送失败
+     */
+    private void sendFail(){
+        homeFragment.statesFail();
     }
 
     /**
@@ -975,7 +989,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
                 initHomeFragment();
                 changeFragment(homeFragment);
             }
-        }else if(bindFrom == BineDeviceFrom.HF && homeFragment != null) {
+        }
+        if(homeFragment != null) {
             homeFragment.deviceConnected(connect);
         }
     }
@@ -999,6 +1014,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     public void deviceNotWork() {
         if(homeFragment != null) {
             homeFragment.deviceConnected(false);
+            sendFail();
         }
         showToast("未检测到设备，请确保设备正在工作");
     }
@@ -1009,6 +1025,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     @Override
     public void serviceNotInit() {
         showToast("连接未初始化，请稍候...");
+        sendFail();
     }
 
     /**
@@ -1022,9 +1039,41 @@ public class MainActivity extends Activity implements View.OnClickListener,
 //            showToast("上一条消息还在发送，请等待！");
 //            return;
 //        }
+        if(sendAction==SendAction.Words){
+            Log.i("------Words进入发送队列------", "内容为" + text);
+        } else if(sendAction==SendAction.Address){
+            Log.i("-----Address进入发送队列-----", "内容为" + text );
+        }
+
+        if(!homeFragment.canSend){
+            homeFragment.statesFail();
+        }
         action = sendAction;
         sendText = text;
         chenckChannel();
+
+    }
+
+    /**
+     * 在HomeFragment中回调，请求重新发送信息
+     * @param sendAction    发送的信息类别
+     * @param text  要发送的信息
+     */
+    @Override
+    public void reSend(SendAction sendAction,String text) {
+
+            if(sendAction==SendAction.Words){
+                Log.i("------WordsRe进入发送队列----", "内容为" + text);
+            } else if(sendAction==SendAction.Address){
+                Log.i("-----AddressRe进入发送队列---", "内容为" + text );
+            }
+
+            cacheUtil.addUnCheckCacheContent(text);
+            action = sendAction;
+            sendText = text;
+            chenckChannel();
+
+
     }
 
     /**
@@ -1146,8 +1195,12 @@ public class MainActivity extends Activity implements View.OnClickListener,
             lockerView.closeMenu();
         }else if(requestCode == HomeFragment.REQUEST_LOCATION && resultCode == Activity.RESULT_OK && data != null) {
             String address = data.getStringExtra(HomeFragment.EXTRA_LOCATION);
-            if(!TextUtils.isEmpty(address))
-                send(SendAction.Address,address);
+            if(!TextUtils.isEmpty(address)){
+                homeFragment.sendMessage(address,SendAction.Address);
+                if(homeFragment.cacheUtil.getUnCheckNum()==0){
+                    send(SendAction.Address,address);
+                }
+            }
         }else if(requestCode == REQUEST_SETTING && data != null) {
             String newName = data.getStringExtra(Constants.NICKNAME);
             String path = data.getStringExtra(Constants.PHOTO_PATH);

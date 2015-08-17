@@ -60,6 +60,7 @@ import com.rftransceiver.util.Constants;
 import com.rftransceiver.util.ExpressionUtil;
 import com.rftransceiver.util.GroupUtil;
 import com.rftransceiver.util.ImageUtil;
+import com.rftransceiver.util.MessageCacheUtil;
 import com.rftransceiver.util.PoolThreadUtil;
 import com.rftransceiver.fragments.SelfInfoFragment;
 
@@ -116,6 +117,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     ImageView imgFace;
     //按压button时所显示的图片
     private Bitmap press;
+
+    //存放未发送完成的信息
+    public MessageCacheUtil cacheUtil;
+
     //抬起button时所显示的图片
     private Bitmap up;
     //聊天背景图片
@@ -124,7 +129,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
     private long curTime;
     private long preTime;
     private long seconds;
-    private SelfInfoFragment selfInfoFragment;
+
+    public boolean canSend;
+
     //SoundsTextView中回调函数
     private SoundsTimeCallbacks timeCallbacks;
     //本类的回调函数
@@ -212,6 +219,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         pd = new ProgressDialog(getActivity());
         //加载Bitmap资源
         loadBitmap();
+
+        cacheUtil = MessageCacheUtil.getInstance();
+        canSend=true;
+
     }
 
 
@@ -365,6 +376,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                         boolean connect = (boolean)msg.obj;
                         String text = tvTip.getText().toString();
                         if (connect) {
+                            Log.i("------可用-----","");
                             //sendAsync();
                             changeChannel();
                             if (tvTip.getVisibility() ==
@@ -373,12 +385,15 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                                 titleText = tipConnecSuccess;
                                 tvTip.setVisibility(View.GONE);
                             }
+                            setCanSend(true);
                         } else {
+                            Log.i("------不可用-----","");
                             if (!text.equals(tipReconnecting)) {
                                 tvTip.setText(tipConnectLose);
                                 tvTip.setVisibility(View.VISIBLE);
                                 titleText = tipConnectLose;
                             }
+                            setCanSend(false);
                         }
                         break;
                     case SEND_IMG:
@@ -390,6 +405,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             }
         });
 
+    }
+
+    public void setCanSend(boolean canSend){
+        this.canSend = canSend;
     }
 
     /**
@@ -540,6 +559,16 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         listView.setBackground(new BitmapDrawable(backGroud));
         if(conversationAdapter == null) {
             conversationAdapter = new ListConversationAdapter(getActivity(),imgageGetter,getFragmentManager());
+            conversationAdapter.setOnstateClickListener(new ListConversationAdapter.OnStateClickListener() {
+                @Override
+                public void onclick(MainActivity.SendAction action, String content) {
+                    Log.i("--------cansend------",canSend+"");
+                    if(canSend){
+                        callback.reSend(action,content);
+                        conversationAdapter.notifyDataSetChanged();
+                    }
+                }
+            });
         }
         listView.setAdapter(conversationAdapter);
         if(titleText != null && titleText.equals(tipConnectLose)) {
@@ -927,10 +956,31 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
         String message = Html.toHtml(editable);
         message = message.replace("<p dir=\"ltr\">","");
         message = message.replace("</p>", "");
-        Log.e("sendText", message);
-        if(!TextUtils.isEmpty(message)) {
-            if(callback != null) {
-                callback.send(MainActivity.SendAction.Words,message);
+        sendMessage(message, MainActivity.SendAction.Words);
+        if(!canSend){
+          statesFail();
+        } else if(cacheUtil.getUnCheckNum()==1&&canSend){
+            if( !TextUtils.isEmpty(message)) {
+                if(callback != null) {
+                    callback.send(MainActivity.SendAction.Words,message);
+                }
+            }
+        }
+
+    }
+
+    //发送缓存数据
+    private void sendCache(){
+
+        if(cacheUtil.getUnCheckNum()!=0){
+            String message = cacheUtil.getUnCheckContentList().get(0);
+            if( cacheUtil.getUnCheckDataList().get(0).getConversationType()== ListConversationAdapter.ConversationType.RIGHT_TEXT && !TextUtils.isEmpty(message)) {
+                if(callback != null) {
+                    callback.send(MainActivity.SendAction.Words,message);
+                }
+            }
+            else if(cacheUtil.getUnCheckDataList().get(0).getConversationType()== ListConversationAdapter.ConversationType.RIGHT_ADDRESS && !TextUtils.isEmpty(message)){
+                //显示地图
             }
         }
     }
@@ -1173,11 +1223,17 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
                 etSendMessage.setText("");
                 subData = new ConversationData(ListConversationAdapter.ConversationType.RIGHT_TEXT,
                         sendText);
+                //将正在发送的数据添加到缓存中
+                cacheUtil.addCache(sendText, subData);
+
+
                 break;
             case Address:
                 subData = new ConversationData(ListConversationAdapter.ConversationType.RIGHT_ADDRESS,
                         null);
                 subData.setAddress(sendText);
+                //将正在发送的数据添加到缓存中
+                cacheUtil.addCache(sendText, subData);
                 break;
             case Image:
                 sendBitmap = getBitmapFromText(sendText);
@@ -1211,6 +1267,35 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
             saveMessage(object, sendAction.ordinal(), myId, time);
         }
         sendBitmap = null;
+
+    }
+    //发送成功
+    public void statesFinished(){
+            switch (cacheUtil.getUnCheckDataList().get(0).getConversationType()) {
+                case RIGHT_TEXT:
+                    Log.i("-------Words发送完成-------", cacheUtil.getUnCheckContentList().get(0) + "已从缓存中清除，还剩" + (cacheUtil.getCacheNum() - 1) + "条数据未发送");
+                    break;
+                case RIGHT_ADDRESS:
+                    Log.i("------Address发送完成------", cacheUtil.getUnCheckContentList().get(0) + "已从缓存中清除，还剩" + (cacheUtil.getCacheNum() - 1) + "条数据未发送");
+                    break;
+            }
+            cacheUtil.getUnCheckDataList().get(0).finish();
+            cacheUtil.removeCache(cacheUtil.getUnCheckDataList().get(0));
+            conversationAdapter.notifyDataSetChanged();
+            //进行下一个通信
+            sendCache();
+
+    }
+    //发送失败
+    public void statesFail(){
+        if(cacheUtil.getUnCheckNum() != 0) {
+            Log.i("-------发送失败-------", "内容为" + cacheUtil.getUnCheckContentList().get(0));
+            cacheUtil.getUnCheckDataList().get(0).fail();
+            conversationAdapter.notifyDataSetChanged();
+            cacheUtil.checkMessage();
+        }
+        //停止当前信道通信，进行下一个通信
+        sendCache();
     }
 
     /**
@@ -1303,6 +1388,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener,MyLis
          * 请求发送文本或语音信息
          */
         void send(MainActivity.SendAction sendAction,String text);
+        /**
+         * 请求重新发送文本或语音信息
+         */
+        void reSend(MainActivity.SendAction sendAction,String text);
 
         /**
          * 停止发送语音

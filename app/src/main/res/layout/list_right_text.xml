@@ -28,4 +28,25 @@
         />
 
 
+    <ImageView
+        android:id="@+id/img_text_states_right"
+        android:layout_width="19dp"
+        android:layout_height="19dp"
+        android:layout_toLeftOf="@id/tv_list_right"
+        android:layout_marginLeft="20dp"
+        android:background="@anim/states_waiting"
+        android:layout_centerVertical="true"
+        />
+
+
+    <ImageView
+        android:id="@+id/img_text_states_fail"
+        android:layout_width="19dp"
+        android:layout_height="19dp"
+        android:layout_toLeftOf="@id/tv_list_right"
+        android:layout_marginLeft="20dp"
+        android:background="@drawable/fail"
+        android:layout_centerVertical="true"
+        android:visibility="invisible"/>
+
 </RelativeLayout>
