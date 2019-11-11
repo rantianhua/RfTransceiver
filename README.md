@@ -1,7 +1,7 @@
 # RfTransceiver
-#对讲机第一版程序文档--简洁版
+# 对讲机第一版程序文档--简洁版
 
-##程序包结构简介：
+## 程序包结构简介：
 - com.audio:该包只含有一个Speex语音编码解码库文件
 - com.brige.blutooth.le:该包主要是蓝牙BLE的服务，其中BleService.java主要用来监听、管理蓝牙的连接，并操作数据的实际读取和发送。
 - com.brige.blutooth.normal:该包也是和蓝牙有关的操作，不过这是最初用的普通蓝牙，现在已经没有在用，只是保留在这里。
